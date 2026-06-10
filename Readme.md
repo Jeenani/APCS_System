@@ -20,6 +20,89 @@ docker-compose up -d
 **Тестовые данные:** `ivan.petrov` / `__seed_pass__`
 
 ---
+## 🏗️ Запуск сервера
+
+### Вариант 1: Docker (рекомендуется)
+```bash
+docker-compose up -d
+# API: http://localhost:8080/api/v1
+```
+
+### Вариант 2: Локально
+```bash
+cd server
+go run ./cmd/server/
+# API: http://localhost:8080/api/v1
+```
+
+### Вариант 3: Ubuntu
+```bash
+cd ~
+sudo chmod +x *.sh
+./setup_ubuntu.sh     # установка
+./start_docker.sh up  # запуск
+# или: ./start_server.sh
+```
+
+
+## 📍 Три сценария использования
+
+### **Сценарий 1: Локальное тестирование (БЕЗ Caddy)**
+
+```bash
+# Просто запустите текущий docker-compose
+docker-compose up -d
+
+# API доступен на: http://localhost:8080/api/v1
+```
+
+**Когда использовать:**
+- Локальная разработка на Windows/Mac
+- Мобильное приложение на эмуляторе/симуляторе
+
+---
+
+### **Сценарий 2: Ubuntu + Caddy (с HTTPS)**
+
+**Требования:**
+- Доменное имя (например `api.example.com`)
+- VPS/сервер с открытыми портами 80 и 443
+- DNS A запись, указывающая на IP сервера
+
+**Шаг 1: Обновить Caddyfile**
+
+Отредактируйте `Caddyfile`:
+
+```caddy
+# Замените example.com на ваш домен
+example.com, www.example.com {
+  reverse_proxy localhost:8080 {
+    header_up Host {http.request.host}
+    header_up X-Forwarded-For {http.request.remote.host}
+  }
+  encode gzip
+}
+```
+
+**Шаг 2: Запустить Docker Compose с Caddy**
+
+```bash
+# Включить Caddy в docker-compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# Проверить статус
+docker-compose logs -f caddy
+
+# Проверить доступность
+curl https://api.example.com/api/v1/references/categories
+```
+
+**Результат:**
+- ✅ API доступен на `https://api.example.com/api/v1`
+- ✅ SSL сертификат автоматический (Let's Encrypt)
+- ✅ Redirects HTTP → HTTPS
+- ✅ Сжатие gzip включено
+
 
 ### 📱 **Flutter приложение**
 
