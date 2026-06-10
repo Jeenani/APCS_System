@@ -28,7 +28,7 @@
 
 missednoteserv.chickenkiller.com {
   # Redirect www to root
-  handle_path /api/v1/* {
+  handle /api/v1/* {
     reverse_proxy asutp_server:8080 {
       # Сохраняем оригинальный Host
       header_up Host {http.request.host}
