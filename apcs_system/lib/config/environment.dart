@@ -17,7 +17,7 @@ class Environment {
   /// - 'http://localhost:8080/api/v1'   (iOS симулятор на Mac)
   /// - 'http://192.168.1.100:8080/api/v1' (Реальное устройство + Ubuntu сервер)
   /// - 'https://api.example.com/api/v1' (Production)
-  static const String apiBaseUrl = 'https://missednoteserv.chickenkiller.com:8080/api/v1';
+  static const String apiBaseUrl = 'https://missednoteserv.chickenkiller.com/api/v1';
   
   /// Request timeout (в секундах)
   static const Duration requestTimeout = Duration(seconds: 30);

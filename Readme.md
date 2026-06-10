@@ -95,6 +95,9 @@ docker-compose logs -f caddy
 
 # Проверить доступность
 curl https://api.example.com/api/v1/references/categories
+
+docker compose -f docker-compose.prod.yml build --no-cache server
+docker compose -f docker-compose.prod.yml up -d server
 ```
 
 **Результат:**

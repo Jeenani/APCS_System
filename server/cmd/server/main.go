@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"asutp-server/ent"
-	"asutp-server/ent/migrate"
 	"asutp-server/internal/config"
 	"asutp-server/internal/handler"
 	"asutp-server/internal/middleware"
@@ -29,11 +28,6 @@ func main() {
 	defer client.Close()
 
 	ctx := context.Background()
-	if err := client.Schema.Create(ctx, migrate.WithDropIndex(true), migrate.WithDropColumn(true)); err != nil {
-		log.Fatalf("Ошибка миграции: %v", err)
-	}
-	log.Println("Миграция БД выполнена успешно")
-
 	if err := seed.Run(ctx, client); err != nil {
 		log.Printf("Предупреждение seed: %v", err)
 	}
