@@ -38,6 +38,8 @@ flutter run
 
 # Собрать Release APK (с подписью)
 ..\build_release_apk.bat
+flutter build apk --release --split-per-abi
+flutter build apk --release --split-per-abi
 ```
 
 **Выходной файл:** `asutp-tasks-release.apk`
