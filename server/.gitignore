@@ -1,7 +1,7 @@
 # ================================
 # Go бинарные файлы
 # ================================
-server
+/server
 server.exe
 cmd/server/server
 cmd/server/*.exe
