@@ -1,0 +1,172 @@
+# ================================
+# Операционные системы
+# ================================
+.DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+.Trashes
+.TemporaryItems
+
+# ================================
+# IDEs и редакторы
+# ================================
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.sublime-workspace
+*.sublime-project
+.settings/
+*.launch
+.factorypath
+
+# ================================
+# Flutter / Dart (apcs_system/)
+# ================================
+# Папки сборки и кэша
+apcs_system/build/
+apcs_system/.dart_tool/
+apcs_system/.pub/
+apcs_system/.pub-cache/
+apcs_system/.packages
+apcs_system/pubspec.lock  # обычно коммитится
+apcs_system/.flutter-plugins
+apcs_system/.flutter-plugins-dependencies
+
+# Android часть
+apcs_system/android/.gradle/
+apcs_system/android/.idea/
+apcs_system/android/local.properties
+apcs_system/android/*.iml
+apcs_system/android/captures/
+apcs_system/android/app/build/
+apcs_system/android/key.properties
+
+# iOS часть
+apcs_system/ios/.symlinks/
+apcs_system/ios/Pods/
+apcs_system/ios/Podfile.lock
+apcs_system/ios/Flutter/Generated.xcconfig
+apcs_system/ios/Flutter/ephemeral/
+apcs_system/ios/Flutter/flutter_export_environment.sh
+apcs_system/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS часть
+apcs_system/macos/Flutter/Generated.xcconfig
+apcs_system/macos/Flutter/ephemeral/
+apcs_system/macos/Pods/
+apcs_system/macos/Podfile.lock
+
+# Linux часть
+apcs_system/linux/flutter/ephemeral/
+apcs_system/linux/flutter/generated_plugins.cmake
+
+# Windows часть
+apcs_system/windows/flutter/ephemeral/
+apcs_system/windows/flutter/generated_plugins.cmake
+apcs_system/windows/runner/GeneratedPluginRegistrant.*
+apcs_system/*.user
+apcs_system/*.userosscache
+apcs_system/*.sln.docstates
+
+# Веб часть
+apcs_system/web/index.html.backup
+apcs_system/.dart_tool/
+
+# ================================
+# Go сервер (server/)
+# ================================
+# Бинарные файлы
+server/server
+server/server.exe
+server/*.exe
+server/*.exe~
+server/*.dll
+server/*.so
+server/*.dylib
+server/cmd/server/server
+server/cmd/server/*.exe
+server/main
+
+# Кэш Go
+server/vendor/
+server/go.sum.bak
+
+# Переменные окружения (НИКОГДА не коммитить с реальными значениями!)
+server/.env
+server/.env.local
+server/.env.production
+
+# Тестовые файлы и покрытие
+server/*.test
+server/*.out
+server/coverage.html
+server/coverage.out
+server/*.cover
+
+# Отладочные файлы
+server/debug
+server/__debug_bin
+server/tmp/
+
+# IDE специфичные
+server/.vscode/
+server/.idea/
+server/*.iml
+
+# ================================
+# Логи и данные
+# ================================
+logs/
+*.log
+*.log.gz
+
+# Временные файлы
+tmp/
+temp/
+*.tmp
+
+# Кэш
+.cache/
+
+# ================================
+# Окружение и конфигурация
+# ================================
+# Никогда не коммитить этот файл с реальными credentials!
+.env.local
+.env.production.local
+.env.development.local
+
+# ================================
+# OS-специфичные скрипты
+# ================================
+*.bat.bak
+*.sh.bak
+
+# ================================
+# Docker (опционально, если локальная разработка)
+# ================================
+# Раскомментируйте если не хотите коммитить собранные образы
+# docker-compose.override.yml
+database/*.db-journal
+
+# Временные изображения (если генерируются)
+Images/temp/
+Images/cache/
+
+# Файлы окружения и конфигурации с секретами
+.env
+*.env.local
+*.key
+*.pem
+config/local.*

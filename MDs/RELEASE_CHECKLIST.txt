@@ -1,0 +1,234 @@
+📌 ФИНАЛЬНАЯ ПОДГОТОВКА К РЕЛИЗУ
+
+════════════════════════════════════════════════════════════════
+
+ФАЙЛЫ ДЛЯ УДАЛЕНИЯ (ЛИШНИЕ):
+
+❌ Удалить эти файлы:
+   CADDY_HTTPS_GUIDE.md           (специфичный гайд)
+   CHANGES_SUMMARY.md             (временный)
+   FLUTTER_API_CONFIG.md          (заменён на .env)
+   FLUTTER_CADDY_SUMMARY.md       (заменён на .env)
+   SETTINGS_SCREEN_DEMO.txt       (демонстрация)
+   FLUTTER_ENV_SUMMARY.txt        (summary)
+   configure_flutter.sh           (опционально)
+   setup_ubuntu.sh                (опционально)
+   start_app.bat                  (опционально)
+   apcs_system/lib/config/environment.examples.dart (примеры)
+
+Команда для удаления (Windows):
+   cleanup_docs.bat
+
+════════════════════════════════════════════════════════════════
+
+ФАЙЛЫ ДЛЯ СОХРАНЕНИЯ (ВАЖНЫЕ):
+
+✅ Оставить эти файлы:
+   README.md                      (главный файл)
+   README_COMPLETE.md             (полная документация)
+   UBUNTU_SETUP_QUICK.md          (Ubuntu инструкции)
+   FLUTTER_ENV_CONFIG.md          (конфигурация)
+   SUMMARY.md                     (финальный гайд)
+   
+   Caddyfile                      (для HTTPS)
+   docker-compose.yml             (основной)
+   docker-compose.prod.yml        (production с Caddy)
+   
+   build_release_apk.bat          (сборка APK!)
+   start_server.sh                (запуск сервера)
+   start_docker.sh                (запуск Docker)
+   
+   apcs_system/lib/config/environment.dart  (конфигурация)
+   apcs_system/lib/screens/settings_screen.dart (если нужен Settings)
+   apcs_system/lib/core/api_client.dart (динамический URL)
+
+════════════════════════════════════════════════════════════════
+
+ФИНАЛЬНАЯ СТРУКТУРА ПРОЕКТА:
+
+ASUTP_Praktik/
+├── 📄 README.md ⭐
+├── 📄 SUMMARY.md ⭐ (новый - финальный гайд)
+├── 📄 README_COMPLETE.md (полная документация)
+├── 📄 UBUNTU_SETUP_QUICK.md
+├── 📄 FLUTTER_ENV_CONFIG.md
+│
+├── 🔧 build_release_apk.bat ⭐ (новый - сборка APK!)
+├── 🔧 cleanup_docs.bat (удаление лишних файлов)
+├── 🔧 start_server.sh
+├── 🔧 start_docker.sh
+│
+├── 🐳 docker-compose.yml
+├── 🐳 docker-compose.prod.yml
+├── 🔐 Caddyfile
+│
+├── 📦 server/
+│   ├── cmd/server/main.go
+│   ├── internal/...
+│   ├── ent/...
+│   ├── Dockerfile
+│   ├── go.mod
+│   └── .env
+│
+├── 📱 apcs_system/
+│   ├── lib/
+│   │   ├── config/environment.dart ⭐ (ГЛАВНОЕ!)
+│   │   ├── core/api_client.dart
+│   │   ├── core/constants.dart
+│   │   ├── screens/settings_screen.dart
+│   │   └── ...
+│   ├── pubspec.yaml
+│   └── ...
+│
+├── 🗄️ database/
+│   └── schema.sql
+│
+└── 📋 .gitignore
+
+════════════════════════════════════════════════════════════════
+
+ЧТО ДЕЛАТЬ ПЕРЕД РЕЛИЗОМ:
+
+1. ✅ Отредактировать конфигурацию:
+   apcs_system/lib/config/environment.dart
+   - Проверить apiBaseUrl (production IP/домен)
+   - Установить enableServerSettings = false
+   - Установить isDebugMode = false
+   - Установить enableApiLogging = false
+
+2. ✅ Запустить тесты:
+   flutter test
+
+3. ✅ Собрать Release APK:
+   build_release_apk.bat
+
+4. ✅ Удалить лишние файлы:
+   cleanup_docs.bat
+
+5. ✅ Проверить .gitignore:
+   .gitignore (защищает .env файлы с credentials)
+
+6. ✅ Коммит в git:
+   git add -A
+   git commit -m "Release v1.0.0"
+   git tag -a v1.0.0 -m "Release version 1.0.0"
+
+════════════════════════════════════════════════════════════════
+
+ПАРАМЕТРЫ КОНФИГУРАЦИИ ДЛЯ PRODUCTION:
+
+// apcs_system/lib/config/environment.dart
+
+class Environment {
+  // PRODUCTION АДРЕС!
+  static const String apiBaseUrl = 'https://api.example.com/api/v1';
+  
+  // ВСЕ ОТКЛЮЧЕНО В PRODUCTION
+  static const bool isDebugMode = false;
+  static const bool enableServerSettings = false;
+  static const bool enableApiLogging = false;
+  static const bool enableQRCodeConfig = false;
+  
+  // OFFLINE ВКЛЮЧЕНО
+  static const bool enableOfflineMode = true;
+}
+
+════════════════════════════════════════════════════════════════
+
+СБОРКА APK RELEASE:
+
+Запустить батник:
+   build_release_apk.bat
+
+Что происходит:
+   1. flutter clean
+   2. flutter pub get
+   3. flutter build apk --release
+   4. Сохраняет в: asutp-tasks-release.apk
+
+Установка на устройство:
+   adb install asutp-tasks-release.apk
+
+════════════════════════════════════════════════════════════════
+
+ОТВЕТЫ НА ЧАСТЫЕ ВОПРОСЫ:
+
+Q: Нужен ли Settings экран в production?
+A: ❌ Нет. Установите enableServerSettings = false
+
+Q: Что такое environment.dart?
+A: Это .env файл для Flutter (как server/.env для Go)
+
+Q: Когда удалить документы?
+A: После тестирования, перед коммитом в git
+   Запустите: cleanup_docs.bat
+
+Q: Как подписать APK пользовательским ключом?
+A: Смотрите инструкцию в build_release_apk.bat
+   Нужно создать .keystore файл
+
+Q: Где найти APK после сборки?
+A: apcs_system/build/app/outputs/flutter-apk/app-release.apk
+   Копируется в: asutp-tasks-release.apk
+
+Q: Какой размер APK?
+A: Примерно 50-100 MB (зависит от включённых feature flag'ов)
+
+════════════════════════════════════════════════════════════════
+
+ЧЕКЛИСТ ПЕРЕД РЕЛИЗОМ:
+
+[ ] Конфигурация production (environment.dart)
+[ ] API URL правильный (https, production IP/домен)
+[ ] isDebugMode = false
+[ ] enableServerSettings = false
+[ ] enableApiLogging = false
+[ ] Тесты passed (flutter test)
+[ ] APK собран (build_release_apk.bat)
+[ ] Размер APK < 200 MB
+[ ] .gitignore защищает credentials
+[ ] git tag создан (v1.0.0)
+[ ] Лишние документы удалены (cleanup_docs.bat)
+[ ] README.md актуален
+[ ] SUMMARY.md актуален
+
+════════════════════════════════════════════════════════════════
+
+КОМАНДЫ ДЛЯ РЕЛИЗА (Windows):
+
+# 1. Очистить документы
+cleanup_docs.bat
+
+# 2. Собрать Release APK
+build_release_apk.bat
+
+# 3. Git коммит
+git add -A
+git commit -m "Release v1.0.0"
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin main --tags
+
+# 4. Опубликовать на Google Play (если нужно)
+# Требуется Google Play Developer аккаунт
+
+════════════════════════════════════════════════════════════════
+
+ФАЙЛЫ КОТОРЫЕ БЫЛ СОЗДАНЫ/ОБНОВЛЕНЫ:
+
+✅ Новые:
+   - build_release_apk.bat (сборка Release APK с подписью)
+   - cleanup_docs.bat (удаление лишних файлов)
+   - SUMMARY.md (финальный гайд)
+   - lib/config/environment.dart (.env для Flutter)
+
+✅ Обновлены:
+   - README.md (лаконичнее)
+   - lib/core/constants.dart (использует Environment)
+   - lib/core/api_client.dart (поддержка Environment)
+   - lib/main.dart (инициализация ApiClient)
+
+════════════════════════════════════════════════════════════════
+
+ГОТОВО К РЕЛИЗУ! 🚀
+
+Проект полностью готов. Следуйте чеклисту и команде выше.

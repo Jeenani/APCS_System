@@ -1,0 +1,329 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../core/constants.dart';
+import '../models/task_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/task_provider.dart';
+
+class TaskDetailScreen extends StatefulWidget {
+  final int taskId;
+  const TaskDetailScreen({super.key, required this.taskId});
+
+  @override
+  State<TaskDetailScreen> createState() => _TaskDetailScreenState();
+}
+
+class _TaskDetailScreenState extends State<TaskDetailScreen> {
+  TaskModel? _task;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTask();
+  }
+
+  Future<void> _loadTask() async {
+    final task = await context.read<TaskProvider>().getTask(widget.taskId);
+    setState(() {
+      _task = task;
+      _loading = false;
+    });
+  }
+
+  Color _priorityColor(String? name) {
+    switch (name) {
+      case 'high': return AppColors.priorityHigh;
+      case 'medium': return AppColors.priorityMedium;
+      case 'low': return AppColors.priorityLow;
+      default: return Colors.grey;
+    }
+  }
+
+  IconData _categoryIcon(String? iconId) {
+    switch (iconId) {
+      case 'icon_sensor': return Icons.speed;
+      case 'icon_plc': return Icons.memory;
+      case 'icon_hmi': return Icons.monitor;
+      case 'icon_valve': return Icons.toggle_on;
+      case 'icon_pump': return Icons.water_drop;
+      case 'icon_level': return Icons.straighten;
+      case 'icon_plc_rack': return Icons.dns;
+      case 'icon_scada': return Icons.dashboard;
+      case 'icon_equipment': return Icons.build;
+      default: return Icons.task;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Детали задачи'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        actions: [
+          if (_task != null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                await Navigator.pushNamed(context, '/edit-task', arguments: _task);
+                _loadTask();
+              },
+            ),
+          if (_task != null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.error),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Удалить задачу?'),
+                    content: const Text('Это действие нельзя отменить'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Удалить', style: TextStyle(color: AppColors.error)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  await context.read<TaskProvider>().deleteTask(_task!.id);
+                  if (mounted) Navigator.pop(context);
+                }
+              },
+            ),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _task == null
+              ? const Center(child: Text('Задача не найдена'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title + category
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(_categoryIcon(_task!.category?.iconIdentifier), color: AppColors.primary, size: 24),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_task!.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                      if (_task!.category != null)
+                                        Text(_task!.category!.name, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Status & Priority
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _InfoCard(
+                              label: 'Статус',
+                              value: _task!.status?.label ?? '',
+                              icon: Icons.flag_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _InfoCard(
+                              label: 'Приоритет',
+                              value: _task!.priority?.label ?? '',
+                              icon: Icons.priority_high,
+                              valueColor: _priorityColor(_task!.priority?.name),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Due date & Progress
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _InfoCard(
+                              label: 'Срок выполнения',
+                              value: _task!.dueDate,
+                              icon: Icons.calendar_today,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _InfoCard(
+                              label: 'Прогресс',
+                              value: '${_task!.progress}%',
+                              icon: Icons.trending_up,
+                              valueColor: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Progress bar
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Выполнение', style: TextStyle(fontWeight: FontWeight.w600)),
+                                Text('${_task!.progress}%', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: _task!.progress / 100,
+                                backgroundColor: Colors.grey[200],
+                                valueColor: AlwaysStoppedAnimation(_priorityColor(_task!.priority?.name)),
+                                minHeight: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Description
+                      if (_task!.description != null && _task!.description!.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Описание', style: TextStyle(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 8),
+                              Text(_task!.description!, style: TextStyle(color: Colors.grey[700], height: 1.5)),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+
+                      // Assignee
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColors.primary,
+                              child: Text(_task!.assignee?.initials ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Исполнитель', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text(_task!.assignee?.fullName ?? 'Не назначен', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // History button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/task-history', arguments: _task!.id),
+                          icon: const Icon(Icons.history),
+                          label: const Text('История изменений'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color? valueColor;
+
+  const _InfoCard({required this.label, required this.value, required this.icon, this.valueColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.grey[500]),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: valueColor)),
+        ],
+      ),
+    );
+  }
+}

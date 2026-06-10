@@ -1,0 +1,84 @@
+# ============================================
+# АСУТП Tasks — Caddy Configuration
+# ============================================
+# 
+# Caddy — это modern web server с встроенной поддержкой Let's Encrypt HTTPS
+# Автоматически обновляет сертификаты, управляет CORS, балансирует нагрузку
+#
+# Используйте нужный блок в зависимости от вашего окружения
+
+# ============================================
+# Вариант 1: ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ
+# Localhost без HTTPS (для разработки)
+# ============================================
+
+# http://localhost {
+#   reverse_proxy localhost:8080 {
+#     header_uri /api/v1(*)  /api/v1$1
+#   }
+#   
+#   encode gzip
+# }
+
+# ============================================
+# Вариант 2: PRODUCTION с доменом
+# Автоматический HTTPS с Let's Encrypt
+# Замените example.com на ваш доменом
+# ============================================
+
+example.com, www.example.com {
+  # Redirect www to root
+  handle_path /api/v1/* {
+    reverse_proxy localhost:8080 {
+      # Сохраняем оригинальный Host
+      header_up Host {http.request.host}
+      header_up X-Forwarded-For {http.request.remote.host}
+      header_up X-Forwarded-Proto {http.request.proto}
+      header_up X-Forwarded-Host {http.request.host}
+    }
+  }
+
+  # Сжатие ответов
+  encode gzip
+
+  # Логирование
+  log {
+    output file /var/log/caddy/access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+    format json
+  }
+}
+
+# ============================================
+# Вариант 3: PRODUCTION с множеством доменов
+# ============================================
+
+# api.example.com {
+#   reverse_proxy localhost:8080
+#   encode gzip
+# }
+
+# ============================================
+# Вариант 4: IP адрес + самоподписанный сертификат
+# (для тестирования на VPS без доменного имени)
+# ============================================
+
+# 192.168.1.100:443 {
+#   tls internal
+#   reverse_proxy localhost:8080
+#   encode gzip
+# }
+
+# ============================================
+# Настройки Caddy для разработки
+# ============================================
+
+# Если нужна поддержка самоподписанного SSL:
+# https_port 443
+# http_port 80
+#
+# Или для локального использования с HTTP:
+# http_port 8000
+# https_port 8443
