@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============================================
   # PostgreSQL Database
@@ -46,10 +44,11 @@ services:
       - asutp-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/v1/references/categories"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
   # ============================================
   # Caddy - Reverse Proxy + HTTPS

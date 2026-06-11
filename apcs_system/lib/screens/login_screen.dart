@@ -18,6 +18,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final _fullNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  int _selectedRoleId = 3;
+
+  final Map<int, String> _roles = const {
+    1: 'Главный инженер',
+    2: 'Нач. службы АСУТП',
+    3: 'Инженер',
+    4: 'Оператор',
+    5: 'Администратор',
+  };
+
   @override
   void dispose() {
     _loginController.dispose();
@@ -44,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _loginController.text.trim(),
         _passwordController.text,
         _fullNameController.text.trim(),
-        2, // engineer by default
+        _selectedRoleId,
       );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -229,6 +239,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+
+                // Role selector (register only)
+                if (!_isLogin)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedRoleId,
+                      decoration: InputDecoration(
+                        labelText: 'Роль',
+                        prefixIcon: const Icon(Icons.work_outline),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: _roles.entries
+                          .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedRoleId = v!),
+                      validator: (v) {
+                        if (!_isLogin && v == null) return 'Выберите роль';
+                        return null;
+                      },
+                    ),
+                  ),
+
                 const SizedBox(height: 24),
 
                 // Submit button

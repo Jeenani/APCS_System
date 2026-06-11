@@ -109,6 +109,29 @@ docker compose -f docker-compose.prod.yml build --no-cache server
 docker compose -f docker-compose.prod.yml up -d
 docker ps
 ```
+
+```bash
+# Полный перезапуск с пересборкой образа сервера
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d --build
+# Или быстрый restart без пересборки
+docker compose -f docker-compose.prod.yml restart
+
+```
+Проверка логов и статуса:
+
+```bash
+# Логи всех сервисов
+docker compose -f docker-compose.prod.yml logs -f
+ 
+# Только сервер
+docker compose -f docker-compose.prod.yml logs -f server
+ 
+# Статус контейнеров
+docker compose -f docker-compose.prod.yml ps
+```
+
+
 ### 📱 **Flutter приложение**
 
 ```bash
