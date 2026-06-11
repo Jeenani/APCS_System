@@ -103,6 +103,7 @@ docker compose -f docker-compose.prod.yml up -d server
 ```bash
 #пересборка С ОБНУЛЕНИЕМ БАЗОЙ ДАННЫХ СЕРВЕРА! 
 git pull
+docker compose down -v
 docker compose -f docker-compose.prod.yml build --no-cache server
 docker compose -f docker-compose.prod.yml up -d --force-recreate server
 docker ps
