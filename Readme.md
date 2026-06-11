@@ -97,15 +97,17 @@ docker-compose logs -f caddy
 curl https://api.example.com/api/v1/references/categories
 
 docker compose -f docker-compose.prod.yml build --no-cache server
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml up -d server
 ```
 
 ```bash
 #пересборка С ОБНУЛЕНИЕМ БАЗОЙ ДАННЫХ СЕРВЕРА! 
 git pull
-docker compose down -v
+docker compose -f docker-compose.prod.yml down -v
 docker compose -f docker-compose.prod.yml build --no-cache server
-docker compose -f docker-compose.prod.yml up -d --force-recreate server
+docker compose -f docker-compose.prod.yml up -d
 docker ps
 ```
 ### 📱 **Flutter приложение**

@@ -133,7 +133,8 @@ COMMENT ON COLUMN users.initials      IS 'Вычисляется на уровн
 -- Настройки уведомлений (1:1 с users).
 -- Вынесено отдельно по 3NF: атрибуты зависят только от user_id.
 CREATE TABLE notification_settings (
-    user_id                INTEGER  PRIMARY KEY
+    id                     SERIAL       PRIMARY KEY,
+    user_id                INTEGER      NOT NULL UNIQUE
                                REFERENCES users(id) ON DELETE CASCADE,
     push_enabled           BOOLEAN  NOT NULL DEFAULT TRUE,
     sound_enabled          BOOLEAN  NOT NULL DEFAULT TRUE,
@@ -235,10 +236,11 @@ COMMENT ON TABLE export_logs IS 'Аудит CSV-экспортов';
 -- Связь экспорта с конкретными задачами (только при export_type = selected).
 -- ON DELETE RESTRICT: нельзя удалить задачу, вошедшую в аудит-экспорт — сохраняем историю.
 CREATE TABLE export_log_tasks (
+    id            SERIAL PRIMARY KEY,
     export_log_id INTEGER NOT NULL REFERENCES export_logs(id) ON DELETE CASCADE,
     task_id       INTEGER NOT NULL REFERENCES tasks(id)       ON DELETE RESTRICT,
 
-    PRIMARY KEY (export_log_id, task_id)
+    UNIQUE (export_log_id, task_id)
 );
 
 COMMENT ON TABLE export_log_tasks IS 'M:N — какие задачи вошли в конкретный экспорт (только для type=selected)';
