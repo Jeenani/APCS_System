@@ -48,16 +48,16 @@ CREATE TABLE priorities (
 COMMENT ON TABLE priorities IS 'Приоритеты: high | medium | low; color_hex — для UI';
 
 -- 1.3 Статусы задач
-CREATE TABLE task_statuses (
+CREATE TABLE task_status (
     id          SMALLSERIAL PRIMARY KEY,
     code        VARCHAR(20) NOT NULL UNIQUE,
     is_terminal BOOLEAN     NOT NULL DEFAULT FALSE,
 
-    CONSTRAINT chk_task_statuses_code
+    CONSTRAINT chk_task_status_code
         CHECK (code IN ('new', 'in_progress', 'completed', 'cancelled'))
 );
 
-COMMENT ON TABLE task_statuses IS 'Статусы жизненного цикла задачи; is_terminal=TRUE у completed/cancelled';
+COMMENT ON TABLE task_status IS 'Статусы жизненного цикла задачи; is_terminal=TRUE у completed/cancelled';
 
 -- 1.4 Типы изменений в истории
 CREATE TABLE change_types (
@@ -162,7 +162,7 @@ CREATE TABLE tasks (
     description TEXT,
     due_date    DATE         NOT NULL,
     priority_id SMALLINT     NOT NULL REFERENCES priorities(id),
-    status_id   SMALLINT     NOT NULL REFERENCES task_statuses(id),
+    status_id   SMALLINT     NOT NULL REFERENCES task_status(id),
     category_id SMALLINT              REFERENCES task_categories(id) ON DELETE SET NULL,
     progress    SMALLINT     NOT NULL DEFAULT 0,
     created_by  INTEGER      NOT NULL REFERENCES users(id),
