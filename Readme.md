@@ -100,13 +100,13 @@ docker compose -f docker-compose.prod.yml build --no-cache server
 docker compose -f docker-compose.prod.yml up -d server
 ```
 
-**Результат:**
-- ✅ API доступен на `https://api.example.com/api/v1`
-- ✅ SSL сертификат автоматический (Let's Encrypt)
-- ✅ Redirects HTTP → HTTPS
-- ✅ Сжатие gzip включено
-
-
+```bash
+#пересборка С ОБНУЛЕНИЕМ БАЗОЙ ДАННЫХ СЕРВЕРА! 
+git pull
+docker compose -f docker-compose.prod.yml build --no-cache server
+docker compose -f docker-compose.prod.yml up -d --force-recreate server
+docker ps
+```
 ### 📱 **Flutter приложение**
 
 ```bash
@@ -124,7 +124,6 @@ flutter run
 
 # Собрать Release APK (с подписью)
 ..\build_release_apk.bat
-flutter build apk --release --split-per-abi
 flutter build apk --release --split-per-abi
 ```
 
