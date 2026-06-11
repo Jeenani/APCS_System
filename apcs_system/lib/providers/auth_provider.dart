@@ -56,7 +56,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Ошибка подключения к серверу';
+      _error = 'Ошибка подключения к серверу: $e';
       _isLoading = false;
       notifyListeners();
       return false;

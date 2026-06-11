@@ -97,7 +97,6 @@ docker-compose logs -f caddy
 curl https://api.example.com/api/v1/references/categories
 
 docker compose -f docker-compose.prod.yml build --no-cache server
-docker compose -f docker-compose.prod.yml build
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml up -d server
 ```
@@ -127,7 +126,11 @@ flutter run
 
 # Собрать Release APK (с подписью)
 ..\build_release_apk.bat
+flutter clean 
+flutter pub get 
 flutter build apk --release --split-per-abi
+flutter emulators --launch Medium_Phone_API_36.1
+flutter run
 ```
 
 **Выходной файл:** `asutp-tasks-release.apk`
