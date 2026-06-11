@@ -2,6 +2,7 @@ package seed
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,7 +12,10 @@ import (
 )
 
 func Run(ctx context.Context, client *ent.Client) error {
-	count, _ := client.Role.Query().Count(ctx)
+	count, err := client.Role.Query().Count(ctx)
+	if err != nil {
+		return fmt.Errorf("ошибка проверки ролей: %w", err)
+	}
 	if count > 0 {
 		log.Println("Seed: данные уже существуют, пропускаем")
 		return nil
@@ -20,22 +24,55 @@ func Run(ctx context.Context, client *ent.Client) error {
 	log.Println("Seed: заполняем справочники...")
 
 	// Roles (5 ролей АСУТП)
-	roleAdmin, _ := client.Role.Create().SetName("admin").Save(ctx)
-	roleChiefEng, _ := client.Role.Create().SetName("chief_engineer").Save(ctx)
-	roleAsutpChief, _ := client.Role.Create().SetName("asutp_chief").Save(ctx)
-	roleEngineer, _ := client.Role.Create().SetName("engineer").Save(ctx)
-	roleOperator, _ := client.Role.Create().SetName("operator").Save(ctx)
+	roleAdmin, err := client.Role.Create().SetName("admin").Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed role admin: %w", err)
+	}
+	roleChiefEng, err := client.Role.Create().SetName("chief_engineer").Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed role chief_engineer: %w", err)
+	}
+	roleAsutpChief, err := client.Role.Create().SetName("asutp_chief").Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed role asutp_chief: %w", err)
+	}
+	roleEngineer, err := client.Role.Create().SetName("engineer").Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed role engineer: %w", err)
+	}
+	roleOperator, err := client.Role.Create().SetName("operator").Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed role operator: %w", err)
+	}
 
 	// Priorities
-	prioHigh, _ := client.Priority.Create().SetName("high").SetColorHex("#E53935").SetSortOrder(1).Save(ctx)
-	prioMedium, _ := client.Priority.Create().SetName("medium").SetColorHex("#F9A825").SetSortOrder(2).Save(ctx)
-	_, _ = client.Priority.Create().SetName("low").SetColorHex("#2E7D32").SetSortOrder(3).Save(ctx)
+	prioHigh, err := client.Priority.Create().SetName("high").SetColorHex("#E53935").SetSortOrder(1).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed priority high: %w", err)
+	}
+	prioMedium, err := client.Priority.Create().SetName("medium").SetColorHex("#F9A825").SetSortOrder(2).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed priority medium: %w", err)
+	}
+	if _, err := client.Priority.Create().SetName("low").SetColorHex("#2E7D32").SetSortOrder(3).Save(ctx); err != nil {
+		return fmt.Errorf("seed priority low: %w", err)
+	}
 
 	// Task Statuses
-	statusNew, _ := client.TaskStatus.Create().SetCode("new").SetIsTerminal(false).Save(ctx)
-	statusInProgress, _ := client.TaskStatus.Create().SetCode("in_progress").SetIsTerminal(false).Save(ctx)
-	_, _ = client.TaskStatus.Create().SetCode("completed").SetIsTerminal(true).Save(ctx)
-	_, _ = client.TaskStatus.Create().SetCode("cancelled").SetIsTerminal(true).Save(ctx)
+	statusNew, err := client.TaskStatus.Create().SetCode("new").SetIsTerminal(false).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed status new: %w", err)
+	}
+	statusInProgress, err := client.TaskStatus.Create().SetCode("in_progress").SetIsTerminal(false).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed status in_progress: %w", err)
+	}
+	if _, err := client.TaskStatus.Create().SetCode("completed").SetIsTerminal(true).Save(ctx); err != nil {
+		return fmt.Errorf("seed status completed: %w", err)
+	}
+	if _, err := client.TaskStatus.Create().SetCode("cancelled").SetIsTerminal(true).Save(ctx); err != nil {
+		return fmt.Errorf("seed status cancelled: %w", err)
+	}
 
 	// Change Types
 	for _, code := range []string{
@@ -43,17 +80,23 @@ func Run(ctx context.Context, client *ent.Client) error {
 		"due_date_changed", "priority_changed", "progress_changed",
 		"status_changed", "assignee_changed",
 	} {
-		client.ChangeType.Create().SetCode(code).Save(ctx)
+		if _, err := client.ChangeType.Create().SetCode(code).Save(ctx); err != nil {
+			return fmt.Errorf("seed change_type %s: %w", code, err)
+		}
 	}
 
 	// Notification Types
 	for _, code := range []string{"reminder", "deadline", "update", "system"} {
-		client.NotificationType.Create().SetCode(code).Save(ctx)
+		if _, err := client.NotificationType.Create().SetCode(code).Save(ctx); err != nil {
+			return fmt.Errorf("seed notification_type %s: %w", code, err)
+		}
 	}
 
 	// Export Types
 	for _, code := range []string{"all", "completed", "selected"} {
-		client.ExportType.Create().SetCode(code).Save(ctx)
+		if _, err := client.ExportType.Create().SetCode(code).Save(ctx); err != nil {
+			return fmt.Errorf("seed export_type %s: %w", code, err)
+		}
 	}
 
 	// Task Categories
@@ -70,61 +113,84 @@ func Run(ctx context.Context, client *ent.Client) error {
 	}
 	catMap := make(map[string]*ent.TaskCategory)
 	for _, cat := range categories {
-		c, _ := client.TaskCategory.Create().
+		c, err := client.TaskCategory.Create().
 			SetName(cat.name).SetIconIdentifier(cat.icon).SetDescription(cat.desc).Save(ctx)
+		if err != nil {
+			return fmt.Errorf("seed category %s: %w", cat.name, err)
+		}
 		catMap[cat.name] = c
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte("__seed_pass__"), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte("__seed_pass__"), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("seed bcrypt: %w", err)
+	}
 
 	// Главный инженер — ставит задачи
-	userChiefEng, _ := client.User.Create().
+	userChiefEng, err := client.User.Create().
 		SetLogin("chief.engineer").
 		SetPasswordHash(string(hash)).
 		SetFullName("Сергей Волков").
 		SetInitials("СВ").
 		SetRoleID(roleChiefEng.ID).
 		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed user chief.engineer: %w", err)
+	}
 
 	// Начальник службы АСУТП — управляет выполнением
-	userAsutpChief, _ := client.User.Create().
+	userAsutpChief, err := client.User.Create().
 		SetLogin("asutp.chief").
 		SetPasswordHash(string(hash)).
 		SetFullName("Иван Петров").
 		SetInitials("ИП").
 		SetRoleID(roleAsutpChief.ID).
 		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed user asutp.chief: %w", err)
+	}
 
 	// Инженер — только просмотр
-	userEngineer, _ := client.User.Create().
+	userEngineer, err := client.User.Create().
 		SetLogin("ivan.engineer").
 		SetPasswordHash(string(hash)).
 		SetFullName("Алексей Сидоров").
 		SetInitials("АС").
 		SetRoleID(roleEngineer.ID).
 		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed user ivan.engineer: %w", err)
+	}
 
 	// Оператор — эксплуатация
-	userOperator, _ := client.User.Create().
+	userOperator, err := client.User.Create().
 		SetLogin("operator1").
 		SetPasswordHash(string(hash)).
 		SetFullName("Мария Козлова").
 		SetInitials("МК").
 		SetRoleID(roleOperator.ID).
 		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed user operator1: %w", err)
+	}
 
 	// Администратор
-	userAdmin, _ := client.User.Create().
+	userAdmin, err := client.User.Create().
 		SetLogin("admin").
 		SetPasswordHash(string(hash)).
 		SetFullName("Администратор Системы").
 		SetInitials("АС").
 		SetRoleID(roleAdmin.ID).
 		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("seed user admin: %w", err)
+	}
 
 	// Notification Settings
 	for _, u := range []*ent.User{userChiefEng, userAsutpChief, userEngineer, userOperator, userAdmin} {
-		client.NotificationSetting.Create().SetUserID(u.ID).Save(ctx)
+		if _, err := client.NotificationSetting.Create().SetUserID(u.ID).Save(ctx); err != nil {
+			return fmt.Errorf("seed notification_setting user %d: %w", u.ID, err)
+		}
 	}
 
 	// Задачи (создаёт Главный инженер, назначает Нач. службы АСУТП)
@@ -161,7 +227,10 @@ func Run(ctx context.Context, client *ent.Client) error {
 	}
 
 	for _, td := range sampleTasks {
-		dueDate, _ := time.Parse("2006-01-02", td.dueDate)
+		dueDate, err := time.Parse("2006-01-02", td.dueDate)
+		if err != nil {
+			return fmt.Errorf("seed task parse date %s: %w", td.dueDate, err)
+		}
 		builder := client.Task.Create().
 			SetTitle(td.title).SetDescription(td.desc).SetDueDate(dueDate).
 			SetPriorityID(td.priority.ID).SetStatusID(td.status.ID).
@@ -171,7 +240,9 @@ func Run(ctx context.Context, client *ent.Client) error {
 		if cat, ok := catMap[td.category]; ok {
 			builder = builder.SetCategoryID(cat.ID)
 		}
-		builder.Save(ctx)
+		if _, err := builder.Save(ctx); err != nil {
+			return fmt.Errorf("seed task %s: %w", td.title, err)
+		}
 	}
 
 	log.Println("Seed: данные успешно загружены")
