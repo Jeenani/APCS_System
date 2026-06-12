@@ -72,7 +72,6 @@ func (h *TaskHandler) List(c *gin.Context) {
 			if roleName == "engineer" || roleName == "asutp_chief" {
 				query = query.Where(task.Or(
 					task.CreatedByEQ(userID),
-					task.AssignedToEQ(userID),
 					task.HasTaskAssigneesWith(
 						taskassignee.UserIDEQ(userID),
 						taskassignee.StatusEQ("approved"),
