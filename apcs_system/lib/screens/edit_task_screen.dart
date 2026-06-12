@@ -34,13 +34,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _priorityId = widget.task.priority?.id ?? 1;
     _statusId = widget.task.status?.id ?? 1;
     _progress = widget.task.progress.toDouble();
-    // Only pre-select pending assignees — approved/rejected stay as-is
-    _selectedAssignees.addAll(
-      widget.task.assignees
-          .where((a) => a.status == 'pending')
-          .map((a) => a.user?.id ?? 0)
-          .where((id) => id != 0),
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadAssignees());
   }
 
@@ -48,8 +41,15 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     setState(() => _loadingAssignees = true);
     final assignees = await context.read<TaskProvider>().getAssignees();
     if (mounted) {
+      final existingIds = widget.task.assignees
+          .map((a) => a.user?.id)
+          .where((id) => id != null)
+          .toSet();
       setState(() {
-        _availableAssignees = assignees;
+        _availableAssignees = assignees.where((u) {
+          final id = u['id'] as int?;
+          return id != null && !existingIds.contains(id);
+        }).toList();
         _loadingAssignees = false;
       });
     }

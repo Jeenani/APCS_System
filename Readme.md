@@ -118,6 +118,12 @@ docker compose -f docker-compose.prod.yml down -v
 docker compose -f docker-compose.prod.yml build --no-cache server
 docker compose -f docker-compose.prod.yml up -d
 docker ps
+
+git pull
+docker compose -f docker-compose.prod.yml down
+docker volume rm $(docker volume ls -q | grep pgdata)
+docker compose -f docker-compose.prod.yml up -d --build
+
 ```
 
 ```bash
