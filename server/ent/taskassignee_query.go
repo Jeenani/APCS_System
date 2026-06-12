@@ -8,7 +8,6 @@ import (
 	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/user"
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -29,7 +28,6 @@ type TaskAssigneeQuery struct {
 	withUser     *UserQuery
 	withProposer *UserQuery
 	withApprover *UserQuery
-	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -80,7 +78,7 @@ func (_q *TaskAssigneeQuery) QueryTask() *TaskQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.TaskTable, taskassignee.TaskColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.TaskTable, taskassignee.TaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -102,7 +100,7 @@ func (_q *TaskAssigneeQuery) QueryUser() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.UserTable, taskassignee.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.UserTable, taskassignee.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -124,7 +122,7 @@ func (_q *TaskAssigneeQuery) QueryProposer() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.ProposerTable, taskassignee.ProposerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.ProposerTable, taskassignee.ProposerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -146,7 +144,7 @@ func (_q *TaskAssigneeQuery) QueryApprover() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.ApproverTable, taskassignee.ApproverColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.ApproverTable, taskassignee.ApproverColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -477,7 +475,6 @@ func (_q *TaskAssigneeQuery) prepareQuery(ctx context.Context) error {
 func (_q *TaskAssigneeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TaskAssignee, error) {
 	var (
 		nodes       = []*TaskAssignee{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [4]bool{
 			_q.withTask != nil,
@@ -486,9 +483,6 @@ func (_q *TaskAssigneeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			_q.withApprover != nil,
 		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, taskassignee.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*TaskAssignee).scanValues(nil, columns)
 	}
@@ -508,30 +502,26 @@ func (_q *TaskAssigneeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		return nodes, nil
 	}
 	if query := _q.withTask; query != nil {
-		if err := _q.loadTask(ctx, query, nodes,
-			func(n *TaskAssignee) { n.Edges.Task = []*Task{} },
-			func(n *TaskAssignee, e *Task) { n.Edges.Task = append(n.Edges.Task, e) }); err != nil {
+		if err := _q.loadTask(ctx, query, nodes, nil,
+			func(n *TaskAssignee, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withUser; query != nil {
-		if err := _q.loadUser(ctx, query, nodes,
-			func(n *TaskAssignee) { n.Edges.User = []*User{} },
-			func(n *TaskAssignee, e *User) { n.Edges.User = append(n.Edges.User, e) }); err != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *TaskAssignee, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withProposer; query != nil {
-		if err := _q.loadProposer(ctx, query, nodes,
-			func(n *TaskAssignee) { n.Edges.Proposer = []*User{} },
-			func(n *TaskAssignee, e *User) { n.Edges.Proposer = append(n.Edges.Proposer, e) }); err != nil {
+		if err := _q.loadProposer(ctx, query, nodes, nil,
+			func(n *TaskAssignee, e *User) { n.Edges.Proposer = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withApprover; query != nil {
-		if err := _q.loadApprover(ctx, query, nodes,
-			func(n *TaskAssignee) { n.Edges.Approver = []*User{} },
-			func(n *TaskAssignee, e *User) { n.Edges.Approver = append(n.Edges.Approver, e) }); err != nil {
+		if err := _q.loadApprover(ctx, query, nodes, nil,
+			func(n *TaskAssignee, e *User) { n.Edges.Approver = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -539,126 +529,121 @@ func (_q *TaskAssigneeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 }
 
 func (_q *TaskAssigneeQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*TaskAssignee, init func(*TaskAssignee), assign func(*TaskAssignee, *Task)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*TaskAssignee)
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*TaskAssignee)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].TaskID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.Task(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(taskassignee.TaskColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(task.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_assignee_task
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_assignee_task" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_assignee_task" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "task_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 func (_q *TaskAssigneeQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*TaskAssignee, init func(*TaskAssignee), assign func(*TaskAssignee, *User)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*TaskAssignee)
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*TaskAssignee)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].UserID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.User(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(taskassignee.UserColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_assignee_user
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_assignee_user" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_assignee_user" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 func (_q *TaskAssigneeQuery) loadProposer(ctx context.Context, query *UserQuery, nodes []*TaskAssignee, init func(*TaskAssignee), assign func(*TaskAssignee, *User)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*TaskAssignee)
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*TaskAssignee)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].ProposerID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.User(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(taskassignee.ProposerColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_assignee_proposer
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_assignee_proposer" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_assignee_proposer" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "proposer_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 func (_q *TaskAssigneeQuery) loadApprover(ctx context.Context, query *UserQuery, nodes []*TaskAssignee, init func(*TaskAssignee), assign func(*TaskAssignee, *User)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*TaskAssignee)
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*TaskAssignee)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		if nodes[i].ApproverID == nil {
+			continue
 		}
+		fk := *nodes[i].ApproverID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.User(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(taskassignee.ApproverColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_assignee_approver
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_assignee_approver" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_assignee_approver" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "approver_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -687,6 +672,18 @@ func (_q *TaskAssigneeQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != taskassignee.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withTask != nil {
+			_spec.Node.AddColumnOnce(taskassignee.FieldTaskID)
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(taskassignee.FieldUserID)
+		}
+		if _q.withProposer != nil {
+			_spec.Node.AddColumnOnce(taskassignee.FieldProposerID)
+		}
+		if _q.withApprover != nil {
+			_spec.Node.AddColumnOnce(taskassignee.FieldApproverID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

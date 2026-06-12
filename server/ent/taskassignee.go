@@ -3,7 +3,9 @@
 package ent
 
 import (
+	"asutp-server/ent/task"
 	"asutp-server/ent/taskassignee"
+	"asutp-server/ent/user"
 	"fmt"
 	"strings"
 	"time"
@@ -23,63 +25,75 @@ type TaskAssignee struct {
 	ApprovedAt *time.Time `json:"approved_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// TaskID holds the value of the "task_id" field.
+	TaskID int `json:"task_id,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID int `json:"user_id,omitempty"`
+	// ProposerID holds the value of the "proposer_id" field.
+	ProposerID int `json:"proposer_id,omitempty"`
+	// ApproverID holds the value of the "approver_id" field.
+	ApproverID *int `json:"approver_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskAssigneeQuery when eager-loading is set.
-	Edges                      TaskAssigneeEdges `json:"edges"`
-	task_task_assignees        *int
-	user_task_assignee_entries *int
-	user_proposed_assignees    *int
-	user_approved_assignees    *int
-	selectValues               sql.SelectValues
+	Edges        TaskAssigneeEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // TaskAssigneeEdges holds the relations/edges for other nodes in the graph.
 type TaskAssigneeEdges struct {
 	// Task holds the value of the task edge.
-	Task []*Task `json:"task,omitempty"`
+	Task *Task `json:"task,omitempty"`
 	// User holds the value of the user edge.
-	User []*User `json:"user,omitempty"`
+	User *User `json:"user,omitempty"`
 	// Proposer holds the value of the proposer edge.
-	Proposer []*User `json:"proposer,omitempty"`
+	Proposer *User `json:"proposer,omitempty"`
 	// Approver holds the value of the approver edge.
-	Approver []*User `json:"approver,omitempty"`
+	Approver *User `json:"approver,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [4]bool
 }
 
 // TaskOrErr returns the Task value or an error if the edge
-// was not loaded in eager-loading.
-func (e TaskAssigneeEdges) TaskOrErr() ([]*Task, error) {
-	if e.loadedTypes[0] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskAssigneeEdges) TaskOrErr() (*Task, error) {
+	if e.Task != nil {
 		return e.Task, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: task.Label}
 	}
 	return nil, &NotLoadedError{edge: "task"}
 }
 
 // UserOrErr returns the User value or an error if the edge
-// was not loaded in eager-loading.
-func (e TaskAssigneeEdges) UserOrErr() ([]*User, error) {
-	if e.loadedTypes[1] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskAssigneeEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
 		return e.User, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "user"}
 }
 
 // ProposerOrErr returns the Proposer value or an error if the edge
-// was not loaded in eager-loading.
-func (e TaskAssigneeEdges) ProposerOrErr() ([]*User, error) {
-	if e.loadedTypes[2] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskAssigneeEdges) ProposerOrErr() (*User, error) {
+	if e.Proposer != nil {
 		return e.Proposer, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "proposer"}
 }
 
 // ApproverOrErr returns the Approver value or an error if the edge
-// was not loaded in eager-loading.
-func (e TaskAssigneeEdges) ApproverOrErr() ([]*User, error) {
-	if e.loadedTypes[3] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskAssigneeEdges) ApproverOrErr() (*User, error) {
+	if e.Approver != nil {
 		return e.Approver, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "approver"}
 }
@@ -89,20 +103,12 @@ func (*TaskAssignee) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case taskassignee.FieldID:
+		case taskassignee.FieldID, taskassignee.FieldTaskID, taskassignee.FieldUserID, taskassignee.FieldProposerID, taskassignee.FieldApproverID:
 			values[i] = new(sql.NullInt64)
 		case taskassignee.FieldStatus:
 			values[i] = new(sql.NullString)
 		case taskassignee.FieldApprovedAt, taskassignee.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case taskassignee.ForeignKeys[0]: // task_task_assignees
-			values[i] = new(sql.NullInt64)
-		case taskassignee.ForeignKeys[1]: // user_task_assignee_entries
-			values[i] = new(sql.NullInt64)
-		case taskassignee.ForeignKeys[2]: // user_proposed_assignees
-			values[i] = new(sql.NullInt64)
-		case taskassignee.ForeignKeys[3]: // user_approved_assignees
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -143,33 +149,30 @@ func (_m *TaskAssignee) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case taskassignee.ForeignKeys[0]:
+		case taskassignee.FieldTaskID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_task_assignees", value)
+				return fmt.Errorf("unexpected type %T for field task_id", values[i])
 			} else if value.Valid {
-				_m.task_task_assignees = new(int)
-				*_m.task_task_assignees = int(value.Int64)
+				_m.TaskID = int(value.Int64)
 			}
-		case taskassignee.ForeignKeys[1]:
+		case taskassignee.FieldUserID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field user_task_assignee_entries", value)
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value.Valid {
-				_m.user_task_assignee_entries = new(int)
-				*_m.user_task_assignee_entries = int(value.Int64)
+				_m.UserID = int(value.Int64)
 			}
-		case taskassignee.ForeignKeys[2]:
+		case taskassignee.FieldProposerID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field user_proposed_assignees", value)
+				return fmt.Errorf("unexpected type %T for field proposer_id", values[i])
 			} else if value.Valid {
-				_m.user_proposed_assignees = new(int)
-				*_m.user_proposed_assignees = int(value.Int64)
+				_m.ProposerID = int(value.Int64)
 			}
-		case taskassignee.ForeignKeys[3]:
+		case taskassignee.FieldApproverID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field user_approved_assignees", value)
+				return fmt.Errorf("unexpected type %T for field approver_id", values[i])
 			} else if value.Valid {
-				_m.user_approved_assignees = new(int)
-				*_m.user_approved_assignees = int(value.Int64)
+				_m.ApproverID = new(int)
+				*_m.ApproverID = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -237,6 +240,20 @@ func (_m *TaskAssignee) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("task_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TaskID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(", ")
+	builder.WriteString("proposer_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ProposerID))
+	builder.WriteString(", ")
+	if v := _m.ApproverID; v != nil {
+		builder.WriteString("approver_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

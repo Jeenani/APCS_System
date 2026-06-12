@@ -95,7 +95,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
 	TaskAssigneesInverseTable = "task_assignees"
 	// TaskAssigneesColumn is the table column denoting the task_assignees relation/edge.
-	TaskAssigneesColumn = "task_task_assignees"
+	TaskAssigneesColumn = "task_id"
 	// HistoriesTable is the table that holds the histories relation/edge.
 	HistoriesTable = "task_histories"
 	// HistoriesInverseTable is the table name for the TaskHistory entity.
@@ -128,21 +128,10 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "tasks"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"task_assignee_task",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}

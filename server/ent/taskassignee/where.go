@@ -70,6 +70,26 @@ func CreatedAt(v time.Time) predicate.TaskAssignee {
 	return predicate.TaskAssignee(sql.FieldEQ(FieldCreatedAt, v))
 }
 
+// TaskID applies equality check predicate on the "task_id" field. It's identical to TaskIDEQ.
+func TaskID(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldTaskID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldUserID, v))
+}
+
+// ProposerID applies equality check predicate on the "proposer_id" field. It's identical to ProposerIDEQ.
+func ProposerID(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldProposerID, v))
+}
+
+// ApproverID applies equality check predicate on the "approver_id" field. It's identical to ApproverIDEQ.
+func ApproverID(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldApproverID, v))
+}
+
 // StatusEQ applies the EQ predicate on the "status" field.
 func StatusEQ(v string) predicate.TaskAssignee {
 	return predicate.TaskAssignee(sql.FieldEQ(FieldStatus, v))
@@ -225,12 +245,102 @@ func CreatedAtLTE(v time.Time) predicate.TaskAssignee {
 	return predicate.TaskAssignee(sql.FieldLTE(FieldCreatedAt, v))
 }
 
+// TaskIDEQ applies the EQ predicate on the "task_id" field.
+func TaskIDEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldTaskID, v))
+}
+
+// TaskIDNEQ applies the NEQ predicate on the "task_id" field.
+func TaskIDNEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNEQ(FieldTaskID, v))
+}
+
+// TaskIDIn applies the In predicate on the "task_id" field.
+func TaskIDIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldIn(FieldTaskID, vs...))
+}
+
+// TaskIDNotIn applies the NotIn predicate on the "task_id" field.
+func TaskIDNotIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNotIn(FieldTaskID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// ProposerIDEQ applies the EQ predicate on the "proposer_id" field.
+func ProposerIDEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldProposerID, v))
+}
+
+// ProposerIDNEQ applies the NEQ predicate on the "proposer_id" field.
+func ProposerIDNEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNEQ(FieldProposerID, v))
+}
+
+// ProposerIDIn applies the In predicate on the "proposer_id" field.
+func ProposerIDIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldIn(FieldProposerID, vs...))
+}
+
+// ProposerIDNotIn applies the NotIn predicate on the "proposer_id" field.
+func ProposerIDNotIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNotIn(FieldProposerID, vs...))
+}
+
+// ApproverIDEQ applies the EQ predicate on the "approver_id" field.
+func ApproverIDEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldEQ(FieldApproverID, v))
+}
+
+// ApproverIDNEQ applies the NEQ predicate on the "approver_id" field.
+func ApproverIDNEQ(v int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNEQ(FieldApproverID, v))
+}
+
+// ApproverIDIn applies the In predicate on the "approver_id" field.
+func ApproverIDIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldIn(FieldApproverID, vs...))
+}
+
+// ApproverIDNotIn applies the NotIn predicate on the "approver_id" field.
+func ApproverIDNotIn(vs ...int) predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNotIn(FieldApproverID, vs...))
+}
+
+// ApproverIDIsNil applies the IsNil predicate on the "approver_id" field.
+func ApproverIDIsNil() predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldIsNull(FieldApproverID))
+}
+
+// ApproverIDNotNil applies the NotNil predicate on the "approver_id" field.
+func ApproverIDNotNil() predicate.TaskAssignee {
+	return predicate.TaskAssignee(sql.FieldNotNull(FieldApproverID))
+}
+
 // HasTask applies the HasEdge predicate on the "task" edge.
 func HasTask() predicate.TaskAssignee {
 	return predicate.TaskAssignee(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TaskTable, TaskColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -253,7 +363,7 @@ func HasUser() predicate.TaskAssignee {
 	return predicate.TaskAssignee(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -276,7 +386,7 @@ func HasProposer() predicate.TaskAssignee {
 	return predicate.TaskAssignee(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ProposerTable, ProposerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProposerTable, ProposerColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -299,7 +409,7 @@ func HasApprover() predicate.TaskAssignee {
 	return predicate.TaskAssignee(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ApproverTable, ApproverColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ApproverTable, ApproverColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

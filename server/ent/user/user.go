@@ -94,21 +94,21 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
 	TaskAssigneeEntriesInverseTable = "task_assignees"
 	// TaskAssigneeEntriesColumn is the table column denoting the task_assignee_entries relation/edge.
-	TaskAssigneeEntriesColumn = "user_task_assignee_entries"
+	TaskAssigneeEntriesColumn = "user_id"
 	// ProposedAssigneesTable is the table that holds the proposed_assignees relation/edge.
 	ProposedAssigneesTable = "task_assignees"
 	// ProposedAssigneesInverseTable is the table name for the TaskAssignee entity.
 	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
 	ProposedAssigneesInverseTable = "task_assignees"
 	// ProposedAssigneesColumn is the table column denoting the proposed_assignees relation/edge.
-	ProposedAssigneesColumn = "user_proposed_assignees"
+	ProposedAssigneesColumn = "proposer_id"
 	// ApprovedAssigneesTable is the table that holds the approved_assignees relation/edge.
 	ApprovedAssigneesTable = "task_assignees"
 	// ApprovedAssigneesInverseTable is the table name for the TaskAssignee entity.
 	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
 	ApprovedAssigneesInverseTable = "task_assignees"
 	// ApprovedAssigneesColumn is the table column denoting the approved_assignees relation/edge.
-	ApprovedAssigneesColumn = "user_approved_assignees"
+	ApprovedAssigneesColumn = "approver_id"
 	// TaskHistoriesTable is the table that holds the task_histories relation/edge.
 	TaskHistoriesTable = "task_histories"
 	// TaskHistoriesInverseTable is the table name for the TaskHistory entity.
@@ -161,23 +161,10 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"task_assignee_user",
-	"task_assignee_proposer",
-	"task_assignee_approver",
-}
-
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}

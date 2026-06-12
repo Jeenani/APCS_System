@@ -38,7 +38,6 @@ type TaskQuery struct {
 	withTaskAssignees *TaskAssigneeQuery
 	withHistories     *TaskHistoryQuery
 	withNotifications *NotificationQuery
-	withFKs           bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -622,7 +621,6 @@ func (_q *TaskQuery) prepareQuery(ctx context.Context) error {
 func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, error) {
 	var (
 		nodes       = []*Task{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [8]bool{
 			_q.withPriority != nil,
@@ -635,9 +633,6 @@ func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			_q.withNotifications != nil,
 		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, task.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Task).scanValues(nil, columns)
 	}
@@ -871,7 +866,9 @@ func (_q *TaskQuery) loadTaskAssignees(ctx context.Context, query *TaskAssigneeQ
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(taskassignee.FieldTaskID)
+	}
 	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(task.TaskAssigneesColumn), fks...))
 	}))
@@ -880,13 +877,10 @@ func (_q *TaskQuery) loadTaskAssignees(ctx context.Context, query *TaskAssigneeQ
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.task_task_assignees
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "task_task_assignees" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.TaskID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "task_task_assignees" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "task_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

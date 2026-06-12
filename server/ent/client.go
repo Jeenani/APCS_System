@@ -2468,7 +2468,7 @@ func (c *TaskAssigneeClient) QueryTask(_m *TaskAssignee) *TaskQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, id),
 			sqlgraph.To(task.Table, task.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.TaskTable, taskassignee.TaskColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.TaskTable, taskassignee.TaskColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2484,7 +2484,7 @@ func (c *TaskAssigneeClient) QueryUser(_m *TaskAssignee) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.UserTable, taskassignee.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.UserTable, taskassignee.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2500,7 +2500,7 @@ func (c *TaskAssigneeClient) QueryProposer(_m *TaskAssignee) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.ProposerTable, taskassignee.ProposerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.ProposerTable, taskassignee.ProposerColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2516,7 +2516,7 @@ func (c *TaskAssigneeClient) QueryApprover(_m *TaskAssignee) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, taskassignee.ApproverTable, taskassignee.ApproverColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.ApproverTable, taskassignee.ApproverColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

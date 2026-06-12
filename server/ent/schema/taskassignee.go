@@ -24,17 +24,35 @@ func (TaskAssignee) Fields() []ent.Field {
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
+		field.Int("task_id"),
+		field.Int("user_id"),
+		field.Int("proposer_id"),
+		field.Int("approver_id").
+			Optional().
+			Nillable(),
 	}
 }
 
 func (TaskAssignee) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("task", Task.Type).
-			Required(),
-		edge.To("user", User.Type).
-			Required(),
-		edge.To("proposer", User.Type).
-			Required(),
-		edge.To("approver", User.Type),
+		edge.From("task", Task.Type).
+			Ref("task_assignees").
+			Field("task_id").
+			Required().
+			Unique(),
+		edge.From("user", User.Type).
+			Ref("task_assignee_entries").
+			Field("user_id").
+			Required().
+			Unique(),
+		edge.From("proposer", User.Type).
+			Ref("proposed_assignees").
+			Field("proposer_id").
+			Required().
+			Unique(),
+		edge.From("approver", User.Type).
+			Ref("approved_assignees").
+			Field("approver_id").
+			Unique(),
 	}
 }

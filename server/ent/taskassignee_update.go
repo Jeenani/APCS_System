@@ -64,64 +64,86 @@ func (_u *TaskAssigneeUpdate) ClearApprovedAt() *TaskAssigneeUpdate {
 	return _u
 }
 
-// AddTaskIDs adds the "task" edge to the Task entity by IDs.
-func (_u *TaskAssigneeUpdate) AddTaskIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.AddTaskIDs(ids...)
+// SetTaskID sets the "task_id" field.
+func (_u *TaskAssigneeUpdate) SetTaskID(v int) *TaskAssigneeUpdate {
+	_u.mutation.SetTaskID(v)
 	return _u
 }
 
-// AddTask adds the "task" edges to the Task entity.
-func (_u *TaskAssigneeUpdate) AddTask(v ...*Task) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableTaskID sets the "task_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdate) SetNillableTaskID(v *int) *TaskAssigneeUpdate {
+	if v != nil {
+		_u.SetTaskID(*v)
 	}
-	return _u.AddTaskIDs(ids...)
-}
-
-// AddUserIDs adds the "user" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdate) AddUserIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.AddUserIDs(ids...)
 	return _u
 }
 
-// AddUser adds the "user" edges to the User entity.
-func (_u *TaskAssigneeUpdate) AddUser(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddUserIDs(ids...)
-}
-
-// AddProposerIDs adds the "proposer" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdate) AddProposerIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.AddProposerIDs(ids...)
+// SetUserID sets the "user_id" field.
+func (_u *TaskAssigneeUpdate) SetUserID(v int) *TaskAssigneeUpdate {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// AddProposer adds the "proposer" edges to the User entity.
-func (_u *TaskAssigneeUpdate) AddProposer(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdate) SetNillableUserID(v *int) *TaskAssigneeUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
 	}
-	return _u.AddProposerIDs(ids...)
-}
-
-// AddApproverIDs adds the "approver" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdate) AddApproverIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.AddApproverIDs(ids...)
 	return _u
 }
 
-// AddApprover adds the "approver" edges to the User entity.
-func (_u *TaskAssigneeUpdate) AddApprover(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetProposerID sets the "proposer_id" field.
+func (_u *TaskAssigneeUpdate) SetProposerID(v int) *TaskAssigneeUpdate {
+	_u.mutation.SetProposerID(v)
+	return _u
+}
+
+// SetNillableProposerID sets the "proposer_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdate) SetNillableProposerID(v *int) *TaskAssigneeUpdate {
+	if v != nil {
+		_u.SetProposerID(*v)
 	}
-	return _u.AddApproverIDs(ids...)
+	return _u
+}
+
+// SetApproverID sets the "approver_id" field.
+func (_u *TaskAssigneeUpdate) SetApproverID(v int) *TaskAssigneeUpdate {
+	_u.mutation.SetApproverID(v)
+	return _u
+}
+
+// SetNillableApproverID sets the "approver_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdate) SetNillableApproverID(v *int) *TaskAssigneeUpdate {
+	if v != nil {
+		_u.SetApproverID(*v)
+	}
+	return _u
+}
+
+// ClearApproverID clears the value of the "approver_id" field.
+func (_u *TaskAssigneeUpdate) ClearApproverID() *TaskAssigneeUpdate {
+	_u.mutation.ClearApproverID()
+	return _u
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (_u *TaskAssigneeUpdate) SetTask(v *Task) *TaskAssigneeUpdate {
+	return _u.SetTaskID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *TaskAssigneeUpdate) SetUser(v *User) *TaskAssigneeUpdate {
+	return _u.SetUserID(v.ID)
+}
+
+// SetProposer sets the "proposer" edge to the User entity.
+func (_u *TaskAssigneeUpdate) SetProposer(v *User) *TaskAssigneeUpdate {
+	return _u.SetProposerID(v.ID)
+}
+
+// SetApprover sets the "approver" edge to the User entity.
+func (_u *TaskAssigneeUpdate) SetApprover(v *User) *TaskAssigneeUpdate {
+	return _u.SetApproverID(v.ID)
 }
 
 // Mutation returns the TaskAssigneeMutation object of the builder.
@@ -129,88 +151,28 @@ func (_u *TaskAssigneeUpdate) Mutation() *TaskAssigneeMutation {
 	return _u.mutation
 }
 
-// ClearTask clears all "task" edges to the Task entity.
+// ClearTask clears the "task" edge to the Task entity.
 func (_u *TaskAssigneeUpdate) ClearTask() *TaskAssigneeUpdate {
 	_u.mutation.ClearTask()
 	return _u
 }
 
-// RemoveTaskIDs removes the "task" edge to Task entities by IDs.
-func (_u *TaskAssigneeUpdate) RemoveTaskIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.RemoveTaskIDs(ids...)
-	return _u
-}
-
-// RemoveTask removes "task" edges to Task entities.
-func (_u *TaskAssigneeUpdate) RemoveTask(v ...*Task) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTaskIDs(ids...)
-}
-
-// ClearUser clears all "user" edges to the User entity.
+// ClearUser clears the "user" edge to the User entity.
 func (_u *TaskAssigneeUpdate) ClearUser() *TaskAssigneeUpdate {
 	_u.mutation.ClearUser()
 	return _u
 }
 
-// RemoveUserIDs removes the "user" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdate) RemoveUserIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.RemoveUserIDs(ids...)
-	return _u
-}
-
-// RemoveUser removes "user" edges to User entities.
-func (_u *TaskAssigneeUpdate) RemoveUser(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveUserIDs(ids...)
-}
-
-// ClearProposer clears all "proposer" edges to the User entity.
+// ClearProposer clears the "proposer" edge to the User entity.
 func (_u *TaskAssigneeUpdate) ClearProposer() *TaskAssigneeUpdate {
 	_u.mutation.ClearProposer()
 	return _u
 }
 
-// RemoveProposerIDs removes the "proposer" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdate) RemoveProposerIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.RemoveProposerIDs(ids...)
-	return _u
-}
-
-// RemoveProposer removes "proposer" edges to User entities.
-func (_u *TaskAssigneeUpdate) RemoveProposer(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveProposerIDs(ids...)
-}
-
-// ClearApprover clears all "approver" edges to the User entity.
+// ClearApprover clears the "approver" edge to the User entity.
 func (_u *TaskAssigneeUpdate) ClearApprover() *TaskAssigneeUpdate {
 	_u.mutation.ClearApprover()
 	return _u
-}
-
-// RemoveApproverIDs removes the "approver" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdate) RemoveApproverIDs(ids ...int) *TaskAssigneeUpdate {
-	_u.mutation.RemoveApproverIDs(ids...)
-	return _u
-}
-
-// RemoveApprover removes "approver" edges to User entities.
-func (_u *TaskAssigneeUpdate) RemoveApprover(v ...*User) *TaskAssigneeUpdate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveApproverIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -247,6 +209,15 @@ func (_u *TaskAssigneeUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "TaskAssignee.status": %w`, err)}
 		}
 	}
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.task"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.user"`)
+	}
+	if _u.mutation.ProposerCleared() && len(_u.mutation.ProposerIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.proposer"`)
+	}
 	return nil
 }
 
@@ -273,37 +244,21 @@ func (_u *TaskAssigneeUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.TaskTable,
 			Columns: []string{taskassignee.TaskColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTaskIDs(); len(nodes) > 0 && !_u.mutation.TaskCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.TaskTable,
-			Columns: []string{taskassignee.TaskColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.TaskTable,
 			Columns: []string{taskassignee.TaskColumn},
 			Bidi:    false,
@@ -318,37 +273,21 @@ func (_u *TaskAssigneeUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.UserTable,
 			Columns: []string{taskassignee.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedUserIDs(); len(nodes) > 0 && !_u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.UserTable,
-			Columns: []string{taskassignee.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.UserTable,
 			Columns: []string{taskassignee.UserColumn},
 			Bidi:    false,
@@ -363,37 +302,21 @@ func (_u *TaskAssigneeUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.ProposerCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ProposerTable,
 			Columns: []string{taskassignee.ProposerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedProposerIDs(); len(nodes) > 0 && !_u.mutation.ProposerCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.ProposerTable,
-			Columns: []string{taskassignee.ProposerColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ProposerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ProposerTable,
 			Columns: []string{taskassignee.ProposerColumn},
 			Bidi:    false,
@@ -408,37 +331,21 @@ func (_u *TaskAssigneeUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.ApproverCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ApproverTable,
 			Columns: []string{taskassignee.ApproverColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedApproverIDs(); len(nodes) > 0 && !_u.mutation.ApproverCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.ApproverTable,
-			Columns: []string{taskassignee.ApproverColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ApproverIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ApproverTable,
 			Columns: []string{taskassignee.ApproverColumn},
 			Bidi:    false,
@@ -505,64 +412,86 @@ func (_u *TaskAssigneeUpdateOne) ClearApprovedAt() *TaskAssigneeUpdateOne {
 	return _u
 }
 
-// AddTaskIDs adds the "task" edge to the Task entity by IDs.
-func (_u *TaskAssigneeUpdateOne) AddTaskIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.AddTaskIDs(ids...)
+// SetTaskID sets the "task_id" field.
+func (_u *TaskAssigneeUpdateOne) SetTaskID(v int) *TaskAssigneeUpdateOne {
+	_u.mutation.SetTaskID(v)
 	return _u
 }
 
-// AddTask adds the "task" edges to the Task entity.
-func (_u *TaskAssigneeUpdateOne) AddTask(v ...*Task) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableTaskID sets the "task_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdateOne) SetNillableTaskID(v *int) *TaskAssigneeUpdateOne {
+	if v != nil {
+		_u.SetTaskID(*v)
 	}
-	return _u.AddTaskIDs(ids...)
-}
-
-// AddUserIDs adds the "user" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdateOne) AddUserIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.AddUserIDs(ids...)
 	return _u
 }
 
-// AddUser adds the "user" edges to the User entity.
-func (_u *TaskAssigneeUpdateOne) AddUser(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddUserIDs(ids...)
-}
-
-// AddProposerIDs adds the "proposer" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdateOne) AddProposerIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.AddProposerIDs(ids...)
+// SetUserID sets the "user_id" field.
+func (_u *TaskAssigneeUpdateOne) SetUserID(v int) *TaskAssigneeUpdateOne {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// AddProposer adds the "proposer" edges to the User entity.
-func (_u *TaskAssigneeUpdateOne) AddProposer(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdateOne) SetNillableUserID(v *int) *TaskAssigneeUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
 	}
-	return _u.AddProposerIDs(ids...)
-}
-
-// AddApproverIDs adds the "approver" edge to the User entity by IDs.
-func (_u *TaskAssigneeUpdateOne) AddApproverIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.AddApproverIDs(ids...)
 	return _u
 }
 
-// AddApprover adds the "approver" edges to the User entity.
-func (_u *TaskAssigneeUpdateOne) AddApprover(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetProposerID sets the "proposer_id" field.
+func (_u *TaskAssigneeUpdateOne) SetProposerID(v int) *TaskAssigneeUpdateOne {
+	_u.mutation.SetProposerID(v)
+	return _u
+}
+
+// SetNillableProposerID sets the "proposer_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdateOne) SetNillableProposerID(v *int) *TaskAssigneeUpdateOne {
+	if v != nil {
+		_u.SetProposerID(*v)
 	}
-	return _u.AddApproverIDs(ids...)
+	return _u
+}
+
+// SetApproverID sets the "approver_id" field.
+func (_u *TaskAssigneeUpdateOne) SetApproverID(v int) *TaskAssigneeUpdateOne {
+	_u.mutation.SetApproverID(v)
+	return _u
+}
+
+// SetNillableApproverID sets the "approver_id" field if the given value is not nil.
+func (_u *TaskAssigneeUpdateOne) SetNillableApproverID(v *int) *TaskAssigneeUpdateOne {
+	if v != nil {
+		_u.SetApproverID(*v)
+	}
+	return _u
+}
+
+// ClearApproverID clears the value of the "approver_id" field.
+func (_u *TaskAssigneeUpdateOne) ClearApproverID() *TaskAssigneeUpdateOne {
+	_u.mutation.ClearApproverID()
+	return _u
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (_u *TaskAssigneeUpdateOne) SetTask(v *Task) *TaskAssigneeUpdateOne {
+	return _u.SetTaskID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *TaskAssigneeUpdateOne) SetUser(v *User) *TaskAssigneeUpdateOne {
+	return _u.SetUserID(v.ID)
+}
+
+// SetProposer sets the "proposer" edge to the User entity.
+func (_u *TaskAssigneeUpdateOne) SetProposer(v *User) *TaskAssigneeUpdateOne {
+	return _u.SetProposerID(v.ID)
+}
+
+// SetApprover sets the "approver" edge to the User entity.
+func (_u *TaskAssigneeUpdateOne) SetApprover(v *User) *TaskAssigneeUpdateOne {
+	return _u.SetApproverID(v.ID)
 }
 
 // Mutation returns the TaskAssigneeMutation object of the builder.
@@ -570,88 +499,28 @@ func (_u *TaskAssigneeUpdateOne) Mutation() *TaskAssigneeMutation {
 	return _u.mutation
 }
 
-// ClearTask clears all "task" edges to the Task entity.
+// ClearTask clears the "task" edge to the Task entity.
 func (_u *TaskAssigneeUpdateOne) ClearTask() *TaskAssigneeUpdateOne {
 	_u.mutation.ClearTask()
 	return _u
 }
 
-// RemoveTaskIDs removes the "task" edge to Task entities by IDs.
-func (_u *TaskAssigneeUpdateOne) RemoveTaskIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.RemoveTaskIDs(ids...)
-	return _u
-}
-
-// RemoveTask removes "task" edges to Task entities.
-func (_u *TaskAssigneeUpdateOne) RemoveTask(v ...*Task) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveTaskIDs(ids...)
-}
-
-// ClearUser clears all "user" edges to the User entity.
+// ClearUser clears the "user" edge to the User entity.
 func (_u *TaskAssigneeUpdateOne) ClearUser() *TaskAssigneeUpdateOne {
 	_u.mutation.ClearUser()
 	return _u
 }
 
-// RemoveUserIDs removes the "user" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdateOne) RemoveUserIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.RemoveUserIDs(ids...)
-	return _u
-}
-
-// RemoveUser removes "user" edges to User entities.
-func (_u *TaskAssigneeUpdateOne) RemoveUser(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveUserIDs(ids...)
-}
-
-// ClearProposer clears all "proposer" edges to the User entity.
+// ClearProposer clears the "proposer" edge to the User entity.
 func (_u *TaskAssigneeUpdateOne) ClearProposer() *TaskAssigneeUpdateOne {
 	_u.mutation.ClearProposer()
 	return _u
 }
 
-// RemoveProposerIDs removes the "proposer" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdateOne) RemoveProposerIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.RemoveProposerIDs(ids...)
-	return _u
-}
-
-// RemoveProposer removes "proposer" edges to User entities.
-func (_u *TaskAssigneeUpdateOne) RemoveProposer(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveProposerIDs(ids...)
-}
-
-// ClearApprover clears all "approver" edges to the User entity.
+// ClearApprover clears the "approver" edge to the User entity.
 func (_u *TaskAssigneeUpdateOne) ClearApprover() *TaskAssigneeUpdateOne {
 	_u.mutation.ClearApprover()
 	return _u
-}
-
-// RemoveApproverIDs removes the "approver" edge to User entities by IDs.
-func (_u *TaskAssigneeUpdateOne) RemoveApproverIDs(ids ...int) *TaskAssigneeUpdateOne {
-	_u.mutation.RemoveApproverIDs(ids...)
-	return _u
-}
-
-// RemoveApprover removes "approver" edges to User entities.
-func (_u *TaskAssigneeUpdateOne) RemoveApprover(v ...*User) *TaskAssigneeUpdateOne {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveApproverIDs(ids...)
 }
 
 // Where appends a list predicates to the TaskAssigneeUpdate builder.
@@ -701,6 +570,15 @@ func (_u *TaskAssigneeUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "TaskAssignee.status": %w`, err)}
 		}
 	}
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.task"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.user"`)
+	}
+	if _u.mutation.ProposerCleared() && len(_u.mutation.ProposerIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "TaskAssignee.proposer"`)
+	}
 	return nil
 }
 
@@ -744,37 +622,21 @@ func (_u *TaskAssigneeUpdateOne) sqlSave(ctx context.Context) (_node *TaskAssign
 	}
 	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.TaskTable,
 			Columns: []string{taskassignee.TaskColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedTaskIDs(); len(nodes) > 0 && !_u.mutation.TaskCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.TaskTable,
-			Columns: []string{taskassignee.TaskColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.TaskTable,
 			Columns: []string{taskassignee.TaskColumn},
 			Bidi:    false,
@@ -789,37 +651,21 @@ func (_u *TaskAssigneeUpdateOne) sqlSave(ctx context.Context) (_node *TaskAssign
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.UserTable,
 			Columns: []string{taskassignee.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedUserIDs(); len(nodes) > 0 && !_u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.UserTable,
-			Columns: []string{taskassignee.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.UserTable,
 			Columns: []string{taskassignee.UserColumn},
 			Bidi:    false,
@@ -834,37 +680,21 @@ func (_u *TaskAssigneeUpdateOne) sqlSave(ctx context.Context) (_node *TaskAssign
 	}
 	if _u.mutation.ProposerCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ProposerTable,
 			Columns: []string{taskassignee.ProposerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedProposerIDs(); len(nodes) > 0 && !_u.mutation.ProposerCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.ProposerTable,
-			Columns: []string{taskassignee.ProposerColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ProposerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ProposerTable,
 			Columns: []string{taskassignee.ProposerColumn},
 			Bidi:    false,
@@ -879,37 +709,21 @@ func (_u *TaskAssigneeUpdateOne) sqlSave(ctx context.Context) (_node *TaskAssign
 	}
 	if _u.mutation.ApproverCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ApproverTable,
 			Columns: []string{taskassignee.ApproverColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedApproverIDs(); len(nodes) > 0 && !_u.mutation.ApproverCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   taskassignee.ApproverTable,
-			Columns: []string{taskassignee.ApproverColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := _u.mutation.ApproverIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ApproverTable,
 			Columns: []string{taskassignee.ApproverColumn},
 			Bidi:    false,

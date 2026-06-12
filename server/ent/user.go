@@ -41,11 +41,8 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges                  UserEdges `json:"edges"`
-	task_assignee_user     *int
-	task_assignee_proposer *int
-	task_assignee_approver *int
-	selectValues           sql.SelectValues
+	Edges        UserEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
@@ -204,12 +201,6 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case user.FieldLastLoginAt, user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case user.ForeignKeys[0]: // task_assignee_user
-			values[i] = new(sql.NullInt64)
-		case user.ForeignKeys[1]: // task_assignee_proposer
-			values[i] = new(sql.NullInt64)
-		case user.ForeignKeys[2]: // task_assignee_approver
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -291,27 +282,6 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
-			}
-		case user.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_assignee_user", value)
-			} else if value.Valid {
-				_m.task_assignee_user = new(int)
-				*_m.task_assignee_user = int(value.Int64)
-			}
-		case user.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_assignee_proposer", value)
-			} else if value.Valid {
-				_m.task_assignee_proposer = new(int)
-				*_m.task_assignee_proposer = int(value.Int64)
-			}
-		case user.ForeignKeys[2]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_assignee_approver", value)
-			} else if value.Valid {
-				_m.task_assignee_approver = new(int)
-				*_m.task_assignee_approver = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])

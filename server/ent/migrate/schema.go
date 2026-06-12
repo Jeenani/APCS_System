@@ -252,7 +252,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "priority_id", Type: field.TypeInt},
-		{Name: "task_assignee_task", Type: field.TypeInt, Nullable: true},
 		{Name: "category_id", Type: field.TypeInt, Nullable: true},
 		{Name: "status_id", Type: field.TypeInt},
 		{Name: "created_by", Type: field.TypeInt},
@@ -271,32 +270,26 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "tasks_task_assignees_task",
-				Columns:    []*schema.Column{TasksColumns[8]},
-				RefColumns: []*schema.Column{TaskAssigneesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
 				Symbol:     "tasks_task_categories_tasks",
-				Columns:    []*schema.Column{TasksColumns[9]},
+				Columns:    []*schema.Column{TasksColumns[8]},
 				RefColumns: []*schema.Column{TaskCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "tasks_task_status_tasks",
-				Columns:    []*schema.Column{TasksColumns[10]},
+				Columns:    []*schema.Column{TasksColumns[9]},
 				RefColumns: []*schema.Column{TaskStatusColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "tasks_users_created_tasks",
-				Columns:    []*schema.Column{TasksColumns[11]},
+				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "tasks_users_assigned_tasks",
-				Columns:    []*schema.Column{TasksColumns[12]},
+				Columns:    []*schema.Column{TasksColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -308,10 +301,10 @@ var (
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
 		{Name: "approved_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "task_task_assignees", Type: field.TypeInt, Nullable: true},
-		{Name: "user_task_assignee_entries", Type: field.TypeInt, Nullable: true},
-		{Name: "user_proposed_assignees", Type: field.TypeInt, Nullable: true},
-		{Name: "user_approved_assignees", Type: field.TypeInt, Nullable: true},
+		{Name: "task_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+		{Name: "proposer_id", Type: field.TypeInt},
+		{Name: "approver_id", Type: field.TypeInt, Nullable: true},
 	}
 	// TaskAssigneesTable holds the schema information for the "task_assignees" table.
 	TaskAssigneesTable = &schema.Table{
@@ -323,19 +316,19 @@ var (
 				Symbol:     "task_assignees_tasks_task_assignees",
 				Columns:    []*schema.Column{TaskAssigneesColumns[4]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "task_assignees_users_task_assignee_entries",
 				Columns:    []*schema.Column{TaskAssigneesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "task_assignees_users_proposed_assignees",
 				Columns:    []*schema.Column{TaskAssigneesColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "task_assignees_users_approved_assignees",
@@ -421,9 +414,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "role_id", Type: field.TypeInt},
-		{Name: "task_assignee_user", Type: field.TypeInt, Nullable: true},
-		{Name: "task_assignee_proposer", Type: field.TypeInt, Nullable: true},
-		{Name: "task_assignee_approver", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -436,24 +426,6 @@ var (
 				Columns:    []*schema.Column{UsersColumns[10]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.NoAction,
-			},
-			{
-				Symbol:     "users_task_assignees_user",
-				Columns:    []*schema.Column{UsersColumns[11]},
-				RefColumns: []*schema.Column{TaskAssigneesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "users_task_assignees_proposer",
-				Columns:    []*schema.Column{UsersColumns[12]},
-				RefColumns: []*schema.Column{TaskAssigneesColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "users_task_assignees_approver",
-				Columns:    []*schema.Column{UsersColumns[13]},
-				RefColumns: []*schema.Column{TaskAssigneesColumns[0]},
-				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -492,11 +464,10 @@ func init() {
 	PasswordResetTokensTable.ForeignKeys[0].RefTable = UsersTable
 	RefreshTokensTable.ForeignKeys[0].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = PrioritiesTable
-	TasksTable.ForeignKeys[1].RefTable = TaskAssigneesTable
-	TasksTable.ForeignKeys[2].RefTable = TaskCategoriesTable
-	TasksTable.ForeignKeys[3].RefTable = TaskStatusTable
+	TasksTable.ForeignKeys[1].RefTable = TaskCategoriesTable
+	TasksTable.ForeignKeys[2].RefTable = TaskStatusTable
+	TasksTable.ForeignKeys[3].RefTable = UsersTable
 	TasksTable.ForeignKeys[4].RefTable = UsersTable
-	TasksTable.ForeignKeys[5].RefTable = UsersTable
 	TaskAssigneesTable.ForeignKeys[0].RefTable = TasksTable
 	TaskAssigneesTable.ForeignKeys[1].RefTable = UsersTable
 	TaskAssigneesTable.ForeignKeys[2].RefTable = UsersTable
@@ -505,7 +476,4 @@ func init() {
 	TaskHistoriesTable.ForeignKeys[1].RefTable = TasksTable
 	TaskHistoriesTable.ForeignKeys[2].RefTable = UsersTable
 	UsersTable.ForeignKeys[0].RefTable = RolesTable
-	UsersTable.ForeignKeys[1].RefTable = TaskAssigneesTable
-	UsersTable.ForeignKeys[2].RefTable = TaskAssigneesTable
-	UsersTable.ForeignKeys[3].RefTable = TaskAssigneesTable
 }

@@ -45,9 +45,8 @@ type Task struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges              TaskEdges `json:"edges"`
-	task_assignee_task *int
-	selectValues       sql.SelectValues
+	Edges        TaskEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
@@ -166,8 +165,6 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case task.FieldDueDate, task.FieldCreatedAt, task.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case task.ForeignKeys[0]: // task_assignee_task
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -257,13 +254,6 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
-			}
-		case task.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field task_assignee_task", value)
-			} else if value.Valid {
-				_m.task_assignee_task = new(int)
-				*_m.task_assignee_task = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])

@@ -457,7 +457,6 @@ func (_q *PriorityQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes 
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldPriorityID)
 	}

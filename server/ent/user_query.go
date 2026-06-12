@@ -44,7 +44,6 @@ type UserQuery struct {
 	withExportLogs          *ExportLogQuery
 	withPasswordResetTokens *PasswordResetTokenQuery
 	withRefreshTokens       *RefreshTokenQuery
-	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -764,7 +763,6 @@ func (_q *UserQuery) prepareQuery(ctx context.Context) error {
 func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
 		nodes       = []*User{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [12]bool{
 			_q.withRole != nil,
@@ -781,9 +779,6 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withRefreshTokens != nil,
 		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
 	}
@@ -955,7 +950,6 @@ func (_q *UserQuery) loadCreatedTasks(ctx context.Context, query *TaskQuery, nod
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldCreatedBy)
 	}
@@ -986,7 +980,6 @@ func (_q *UserQuery) loadAssignedTasks(ctx context.Context, query *TaskQuery, no
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldAssignedTo)
 	}
@@ -1020,7 +1013,9 @@ func (_q *UserQuery) loadTaskAssigneeEntries(ctx context.Context, query *TaskAss
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(taskassignee.FieldUserID)
+	}
 	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.TaskAssigneeEntriesColumn), fks...))
 	}))
@@ -1029,13 +1024,10 @@ func (_q *UserQuery) loadTaskAssigneeEntries(ctx context.Context, query *TaskAss
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_task_assignee_entries
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_task_assignee_entries" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.UserID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_task_assignee_entries" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1051,7 +1043,9 @@ func (_q *UserQuery) loadProposedAssignees(ctx context.Context, query *TaskAssig
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(taskassignee.FieldProposerID)
+	}
 	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.ProposedAssigneesColumn), fks...))
 	}))
@@ -1060,13 +1054,10 @@ func (_q *UserQuery) loadProposedAssignees(ctx context.Context, query *TaskAssig
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_proposed_assignees
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_proposed_assignees" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.ProposerID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_proposed_assignees" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "proposer_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1082,7 +1073,9 @@ func (_q *UserQuery) loadApprovedAssignees(ctx context.Context, query *TaskAssig
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(taskassignee.FieldApproverID)
+	}
 	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.ApprovedAssigneesColumn), fks...))
 	}))
@@ -1091,13 +1084,13 @@ func (_q *UserQuery) loadApprovedAssignees(ctx context.Context, query *TaskAssig
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_approved_assignees
+		fk := n.ApproverID
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_approved_assignees" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "approver_id" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_approved_assignees" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "approver_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

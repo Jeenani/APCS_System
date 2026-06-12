@@ -64,64 +64,56 @@ func (_c *TaskAssigneeCreate) SetNillableCreatedAt(v *time.Time) *TaskAssigneeCr
 	return _c
 }
 
-// AddTaskIDs adds the "task" edge to the Task entity by IDs.
-func (_c *TaskAssigneeCreate) AddTaskIDs(ids ...int) *TaskAssigneeCreate {
-	_c.mutation.AddTaskIDs(ids...)
+// SetTaskID sets the "task_id" field.
+func (_c *TaskAssigneeCreate) SetTaskID(v int) *TaskAssigneeCreate {
+	_c.mutation.SetTaskID(v)
 	return _c
 }
 
-// AddTask adds the "task" edges to the Task entity.
-func (_c *TaskAssigneeCreate) AddTask(v ...*Task) *TaskAssigneeCreate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddTaskIDs(ids...)
-}
-
-// AddUserIDs adds the "user" edge to the User entity by IDs.
-func (_c *TaskAssigneeCreate) AddUserIDs(ids ...int) *TaskAssigneeCreate {
-	_c.mutation.AddUserIDs(ids...)
+// SetUserID sets the "user_id" field.
+func (_c *TaskAssigneeCreate) SetUserID(v int) *TaskAssigneeCreate {
+	_c.mutation.SetUserID(v)
 	return _c
 }
 
-// AddUser adds the "user" edges to the User entity.
-func (_c *TaskAssigneeCreate) AddUser(v ...*User) *TaskAssigneeCreate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddUserIDs(ids...)
-}
-
-// AddProposerIDs adds the "proposer" edge to the User entity by IDs.
-func (_c *TaskAssigneeCreate) AddProposerIDs(ids ...int) *TaskAssigneeCreate {
-	_c.mutation.AddProposerIDs(ids...)
+// SetProposerID sets the "proposer_id" field.
+func (_c *TaskAssigneeCreate) SetProposerID(v int) *TaskAssigneeCreate {
+	_c.mutation.SetProposerID(v)
 	return _c
 }
 
-// AddProposer adds the "proposer" edges to the User entity.
-func (_c *TaskAssigneeCreate) AddProposer(v ...*User) *TaskAssigneeCreate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddProposerIDs(ids...)
-}
-
-// AddApproverIDs adds the "approver" edge to the User entity by IDs.
-func (_c *TaskAssigneeCreate) AddApproverIDs(ids ...int) *TaskAssigneeCreate {
-	_c.mutation.AddApproverIDs(ids...)
+// SetApproverID sets the "approver_id" field.
+func (_c *TaskAssigneeCreate) SetApproverID(v int) *TaskAssigneeCreate {
+	_c.mutation.SetApproverID(v)
 	return _c
 }
 
-// AddApprover adds the "approver" edges to the User entity.
-func (_c *TaskAssigneeCreate) AddApprover(v ...*User) *TaskAssigneeCreate {
-	ids := make([]int, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+// SetNillableApproverID sets the "approver_id" field if the given value is not nil.
+func (_c *TaskAssigneeCreate) SetNillableApproverID(v *int) *TaskAssigneeCreate {
+	if v != nil {
+		_c.SetApproverID(*v)
 	}
-	return _c.AddApproverIDs(ids...)
+	return _c
+}
+
+// SetTask sets the "task" edge to the Task entity.
+func (_c *TaskAssigneeCreate) SetTask(v *Task) *TaskAssigneeCreate {
+	return _c.SetTaskID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_c *TaskAssigneeCreate) SetUser(v *User) *TaskAssigneeCreate {
+	return _c.SetUserID(v.ID)
+}
+
+// SetProposer sets the "proposer" edge to the User entity.
+func (_c *TaskAssigneeCreate) SetProposer(v *User) *TaskAssigneeCreate {
+	return _c.SetProposerID(v.ID)
+}
+
+// SetApprover sets the "approver" edge to the User entity.
+func (_c *TaskAssigneeCreate) SetApprover(v *User) *TaskAssigneeCreate {
+	return _c.SetApproverID(v.ID)
 }
 
 // Mutation returns the TaskAssigneeMutation object of the builder.
@@ -182,6 +174,15 @@ func (_c *TaskAssigneeCreate) check() error {
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TaskAssignee.created_at"`)}
 	}
+	if _, ok := _c.mutation.TaskID(); !ok {
+		return &ValidationError{Name: "task_id", err: errors.New(`ent: missing required field "TaskAssignee.task_id"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "TaskAssignee.user_id"`)}
+	}
+	if _, ok := _c.mutation.ProposerID(); !ok {
+		return &ValidationError{Name: "proposer_id", err: errors.New(`ent: missing required field "TaskAssignee.proposer_id"`)}
+	}
 	if len(_c.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "TaskAssignee.task"`)}
 	}
@@ -231,8 +232,8 @@ func (_c *TaskAssigneeCreate) createSpec() (*TaskAssignee, *sqlgraph.CreateSpec)
 	}
 	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.TaskTable,
 			Columns: []string{taskassignee.TaskColumn},
 			Bidi:    false,
@@ -243,12 +244,13 @@ func (_c *TaskAssigneeCreate) createSpec() (*TaskAssignee, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.TaskID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.UserTable,
 			Columns: []string{taskassignee.UserColumn},
 			Bidi:    false,
@@ -259,12 +261,13 @@ func (_c *TaskAssigneeCreate) createSpec() (*TaskAssignee, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ProposerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ProposerTable,
 			Columns: []string{taskassignee.ProposerColumn},
 			Bidi:    false,
@@ -275,12 +278,13 @@ func (_c *TaskAssigneeCreate) createSpec() (*TaskAssignee, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.ProposerID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ApproverIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
 			Table:   taskassignee.ApproverTable,
 			Columns: []string{taskassignee.ApproverColumn},
 			Bidi:    false,
@@ -291,6 +295,7 @@ func (_c *TaskAssigneeCreate) createSpec() (*TaskAssignee, *sqlgraph.CreateSpec)
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.ApproverID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -20,6 +20,14 @@ const (
 	FieldApprovedAt = "approved_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// FieldTaskID holds the string denoting the task_id field in the database.
+	FieldTaskID = "task_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
+	// FieldProposerID holds the string denoting the proposer_id field in the database.
+	FieldProposerID = "proposer_id"
+	// FieldApproverID holds the string denoting the approver_id field in the database.
+	FieldApproverID = "approver_id"
 	// EdgeTask holds the string denoting the task edge name in mutations.
 	EdgeTask = "task"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -31,33 +39,33 @@ const (
 	// Table holds the table name of the taskassignee in the database.
 	Table = "task_assignees"
 	// TaskTable is the table that holds the task relation/edge.
-	TaskTable = "tasks"
+	TaskTable = "task_assignees"
 	// TaskInverseTable is the table name for the Task entity.
 	// It exists in this package in order to avoid circular dependency with the "task" package.
 	TaskInverseTable = "tasks"
 	// TaskColumn is the table column denoting the task relation/edge.
-	TaskColumn = "task_assignee_task"
+	TaskColumn = "task_id"
 	// UserTable is the table that holds the user relation/edge.
-	UserTable = "users"
+	UserTable = "task_assignees"
 	// UserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "task_assignee_user"
+	UserColumn = "user_id"
 	// ProposerTable is the table that holds the proposer relation/edge.
-	ProposerTable = "users"
+	ProposerTable = "task_assignees"
 	// ProposerInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	ProposerInverseTable = "users"
 	// ProposerColumn is the table column denoting the proposer relation/edge.
-	ProposerColumn = "task_assignee_proposer"
+	ProposerColumn = "proposer_id"
 	// ApproverTable is the table that holds the approver relation/edge.
-	ApproverTable = "users"
+	ApproverTable = "task_assignees"
 	// ApproverInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	ApproverInverseTable = "users"
 	// ApproverColumn is the table column denoting the approver relation/edge.
-	ApproverColumn = "task_assignee_approver"
+	ApproverColumn = "approver_id"
 )
 
 // Columns holds all SQL columns for taskassignee fields.
@@ -66,26 +74,16 @@ var Columns = []string{
 	FieldStatus,
 	FieldApprovedAt,
 	FieldCreatedAt,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "task_assignees"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"task_task_assignees",
-	"user_task_assignee_entries",
-	"user_proposed_assignees",
-	"user_approved_assignees",
+	FieldTaskID,
+	FieldUserID,
+	FieldProposerID,
+	FieldApproverID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -124,86 +122,78 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
-// ByTaskCount orders the results by task count.
-func ByTaskCount(opts ...sql.OrderTermOption) OrderOption {
+// ByTaskID orders the results by the task_id field.
+func ByTaskID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaskID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByProposerID orders the results by the proposer_id field.
+func ByProposerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProposerID, opts...).ToFunc()
+}
+
+// ByApproverID orders the results by the approver_id field.
+func ByApproverID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApproverID, opts...).ToFunc()
+}
+
+// ByTaskField orders the results by task field.
+func ByTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newTaskStep(), opts...)
+		sqlgraph.OrderByNeighborTerms(s, newTaskStep(), sql.OrderByField(field, opts...))
 	}
 }
 
-// ByTask orders the results by task terms.
-func ByTask(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newTaskStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
 	}
 }
 
-// ByUserCount orders the results by user count.
-func ByUserCount(opts ...sql.OrderTermOption) OrderOption {
+// ByProposerField orders the results by proposer field.
+func ByProposerField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newUserStep(), opts...)
+		sqlgraph.OrderByNeighborTerms(s, newProposerStep(), sql.OrderByField(field, opts...))
 	}
 }
 
-// ByUser orders the results by user terms.
-func ByUser(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByApproverField orders the results by approver field.
+func ByApproverField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newUserStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByProposerCount orders the results by proposer count.
-func ByProposerCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newProposerStep(), opts...)
-	}
-}
-
-// ByProposer orders the results by proposer terms.
-func ByProposer(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newProposerStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByApproverCount orders the results by approver count.
-func ByApproverCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newApproverStep(), opts...)
-	}
-}
-
-// ByApprover orders the results by approver terms.
-func ByApprover(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newApproverStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newApproverStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newTaskStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TaskInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, TaskTable, TaskColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
 	)
 }
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, UserTable, UserColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }
 func newProposerStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProposerInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ProposerTable, ProposerColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, ProposerTable, ProposerColumn),
 	)
 }
 func newApproverStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ApproverInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ApproverTable, ApproverColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, ApproverTable, ApproverColumn),
 	)
 }

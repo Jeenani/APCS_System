@@ -201,13 +201,13 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	// Create assignees
 	for _, assigneeID := range req.Assignees {
 		builder := tx.TaskAssignee.Create().
-			AddTaskIDs(t.ID).
-			AddUserIDs(assigneeID).
-			AddProposerIDs(userID)
+			SetTaskID(t.ID).
+			SetUserID(assigneeID).
+			SetProposerID(userID)
 		if canDirectAssign {
 			builder = builder.
 				SetStatus("approved").
-				AddApproverIDs(userID).
+				SetApproverID(userID).
 				SetApprovedAt(time.Now())
 		}
 		_, err := builder.Save(c)
@@ -425,11 +425,11 @@ func (h *TaskHandler) Update(c *gin.Context) {
 
 		for _, assigneeID := range req.Assignees {
 			b := tx.TaskAssignee.Create().
-				AddTaskIDs(id).
-				AddUserIDs(assigneeID).
-				AddProposerIDs(userID)
+				SetTaskID(id).
+				SetUserID(assigneeID).
+				SetProposerID(userID)
 			if canDirectAssign {
-				b = b.SetStatus("approved").AddApproverIDs(userID).SetApprovedAt(time.Now())
+				b = b.SetStatus("approved").SetApproverID(userID).SetApprovedAt(time.Now())
 			}
 			_, err := b.Save(c)
 			if err != nil {
@@ -498,7 +498,7 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 
 	_, err = h.client.TaskAssignee.UpdateOneID(assigneeID).
 		SetStatus("approved").
-		AddApproverIDs(userID).
+		SetApproverID(userID).
 		SetApprovedAt(time.Now()).
 		Save(c)
 	if err != nil {
@@ -507,13 +507,13 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 	}
 
 	// Notify proposer
-	if len(ta.Edges.Proposer) > 0 {
+	if ta.Edges.Proposer != nil {
 		ntID, _ := getNotificationTypeID(h.client, c, "system")
 		if ntID == 0 {
 			ntID = 4
 		}
 		_, err := h.client.Notification.Create().
-			SetUserID(ta.Edges.Proposer[0].ID).
+			SetUserID(ta.Edges.Proposer.ID).
 			SetTaskID(id).
 			SetTitle("Исполнитель одобрен").
 			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи одобрен")).
@@ -563,13 +563,13 @@ func (h *TaskHandler) RejectAssignee(c *gin.Context) {
 	}
 
 	// Notify proposer
-	if len(ta.Edges.Proposer) > 0 {
+	if ta.Edges.Proposer != nil {
 		ntID, _ := getNotificationTypeID(h.client, c, "system")
 		if ntID == 0 {
 			ntID = 4
 		}
 		_, err := h.client.Notification.Create().
-			SetUserID(ta.Edges.Proposer[0].ID).
+			SetUserID(ta.Edges.Proposer.ID).
 			SetTaskID(id).
 			SetTitle("Исполнитель отклонён").
 			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи отклонён")).
@@ -764,23 +764,23 @@ func taskToJSON(t *ent.Task) gin.H {
 			"id":     ta.ID,
 			"status": ta.Status,
 		}
-		if len(ta.Edges.User) > 0 {
+		if ta.Edges.User != nil {
 			item["user"] = gin.H{
-				"id":        ta.Edges.User[0].ID,
-				"full_name": ta.Edges.User[0].FullName,
-				"initials":  ta.Edges.User[0].Initials,
+				"id":        ta.Edges.User.ID,
+				"full_name": ta.Edges.User.FullName,
+				"initials":  ta.Edges.User.Initials,
 			}
 		}
-		if len(ta.Edges.Proposer) > 0 {
+		if ta.Edges.Proposer != nil {
 			item["proposed_by"] = gin.H{
-				"id":        ta.Edges.Proposer[0].ID,
-				"full_name": ta.Edges.Proposer[0].FullName,
+				"id":        ta.Edges.Proposer.ID,
+				"full_name": ta.Edges.Proposer.FullName,
 			}
 		}
-		if len(ta.Edges.Approver) > 0 {
+		if ta.Edges.Approver != nil {
 			item["approved_by"] = gin.H{
-				"id":        ta.Edges.Approver[0].ID,
-				"full_name": ta.Edges.Approver[0].FullName,
+				"id":        ta.Edges.Approver.ID,
+				"full_name": ta.Edges.Approver.FullName,
 			}
 			item["approved_at"] = ta.ApprovedAt.Format(time.RFC3339)
 		}

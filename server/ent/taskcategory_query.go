@@ -413,7 +413,6 @@ func (_q *TaskCategoryQuery) loadTasks(ctx context.Context, query *TaskQuery, no
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldCategoryID)
 	}

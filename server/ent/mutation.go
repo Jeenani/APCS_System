@@ -8513,17 +8513,13 @@ type TaskAssigneeMutation struct {
 	approved_at     *time.Time
 	created_at      *time.Time
 	clearedFields   map[string]struct{}
-	task            map[int]struct{}
-	removedtask     map[int]struct{}
+	task            *int
 	clearedtask     bool
-	user            map[int]struct{}
-	removeduser     map[int]struct{}
+	user            *int
 	cleareduser     bool
-	proposer        map[int]struct{}
-	removedproposer map[int]struct{}
+	proposer        *int
 	clearedproposer bool
-	approver        map[int]struct{}
-	removedapprover map[int]struct{}
+	approver        *int
 	clearedapprover bool
 	done            bool
 	oldValue        func(context.Context) (*TaskAssignee, error)
@@ -8749,19 +8745,167 @@ func (m *TaskAssigneeMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// AddTaskIDs adds the "task" edge to the Task entity by ids.
-func (m *TaskAssigneeMutation) AddTaskIDs(ids ...int) {
-	if m.task == nil {
-		m.task = make(map[int]struct{})
+// SetTaskID sets the "task_id" field.
+func (m *TaskAssigneeMutation) SetTaskID(i int) {
+	m.task = &i
+}
+
+// TaskID returns the value of the "task_id" field in the mutation.
+func (m *TaskAssigneeMutation) TaskID() (r int, exists bool) {
+	v := m.task
+	if v == nil {
+		return
 	}
-	for i := range ids {
-		m.task[ids[i]] = struct{}{}
+	return *v, true
+}
+
+// OldTaskID returns the old "task_id" field's value of the TaskAssignee entity.
+// If the TaskAssignee object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskAssigneeMutation) OldTaskID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaskID is only allowed on UpdateOne operations")
 	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaskID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaskID: %w", err)
+	}
+	return oldValue.TaskID, nil
+}
+
+// ResetTaskID resets all changes to the "task_id" field.
+func (m *TaskAssigneeMutation) ResetTaskID() {
+	m.task = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *TaskAssigneeMutation) SetUserID(i int) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *TaskAssigneeMutation) UserID() (r int, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the TaskAssignee entity.
+// If the TaskAssignee object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskAssigneeMutation) OldUserID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *TaskAssigneeMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetProposerID sets the "proposer_id" field.
+func (m *TaskAssigneeMutation) SetProposerID(i int) {
+	m.proposer = &i
+}
+
+// ProposerID returns the value of the "proposer_id" field in the mutation.
+func (m *TaskAssigneeMutation) ProposerID() (r int, exists bool) {
+	v := m.proposer
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProposerID returns the old "proposer_id" field's value of the TaskAssignee entity.
+// If the TaskAssignee object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskAssigneeMutation) OldProposerID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProposerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProposerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProposerID: %w", err)
+	}
+	return oldValue.ProposerID, nil
+}
+
+// ResetProposerID resets all changes to the "proposer_id" field.
+func (m *TaskAssigneeMutation) ResetProposerID() {
+	m.proposer = nil
+}
+
+// SetApproverID sets the "approver_id" field.
+func (m *TaskAssigneeMutation) SetApproverID(i int) {
+	m.approver = &i
+}
+
+// ApproverID returns the value of the "approver_id" field in the mutation.
+func (m *TaskAssigneeMutation) ApproverID() (r int, exists bool) {
+	v := m.approver
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApproverID returns the old "approver_id" field's value of the TaskAssignee entity.
+// If the TaskAssignee object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskAssigneeMutation) OldApproverID(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApproverID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApproverID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApproverID: %w", err)
+	}
+	return oldValue.ApproverID, nil
+}
+
+// ClearApproverID clears the value of the "approver_id" field.
+func (m *TaskAssigneeMutation) ClearApproverID() {
+	m.approver = nil
+	m.clearedFields[taskassignee.FieldApproverID] = struct{}{}
+}
+
+// ApproverIDCleared returns if the "approver_id" field was cleared in this mutation.
+func (m *TaskAssigneeMutation) ApproverIDCleared() bool {
+	_, ok := m.clearedFields[taskassignee.FieldApproverID]
+	return ok
+}
+
+// ResetApproverID resets all changes to the "approver_id" field.
+func (m *TaskAssigneeMutation) ResetApproverID() {
+	m.approver = nil
+	delete(m.clearedFields, taskassignee.FieldApproverID)
 }
 
 // ClearTask clears the "task" edge to the Task entity.
 func (m *TaskAssigneeMutation) ClearTask() {
 	m.clearedtask = true
+	m.clearedFields[taskassignee.FieldTaskID] = struct{}{}
 }
 
 // TaskCleared reports if the "task" edge to the Task entity was cleared.
@@ -8769,29 +8913,12 @@ func (m *TaskAssigneeMutation) TaskCleared() bool {
 	return m.clearedtask
 }
 
-// RemoveTaskIDs removes the "task" edge to the Task entity by IDs.
-func (m *TaskAssigneeMutation) RemoveTaskIDs(ids ...int) {
-	if m.removedtask == nil {
-		m.removedtask = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.task, ids[i])
-		m.removedtask[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTask returns the removed IDs of the "task" edge to the Task entity.
-func (m *TaskAssigneeMutation) RemovedTaskIDs() (ids []int) {
-	for id := range m.removedtask {
-		ids = append(ids, id)
-	}
-	return
-}
-
 // TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
 func (m *TaskAssigneeMutation) TaskIDs() (ids []int) {
-	for id := range m.task {
-		ids = append(ids, id)
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -8800,22 +8927,12 @@ func (m *TaskAssigneeMutation) TaskIDs() (ids []int) {
 func (m *TaskAssigneeMutation) ResetTask() {
 	m.task = nil
 	m.clearedtask = false
-	m.removedtask = nil
-}
-
-// AddUserIDs adds the "user" edge to the User entity by ids.
-func (m *TaskAssigneeMutation) AddUserIDs(ids ...int) {
-	if m.user == nil {
-		m.user = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.user[ids[i]] = struct{}{}
-	}
 }
 
 // ClearUser clears the "user" edge to the User entity.
 func (m *TaskAssigneeMutation) ClearUser() {
 	m.cleareduser = true
+	m.clearedFields[taskassignee.FieldUserID] = struct{}{}
 }
 
 // UserCleared reports if the "user" edge to the User entity was cleared.
@@ -8823,29 +8940,12 @@ func (m *TaskAssigneeMutation) UserCleared() bool {
 	return m.cleareduser
 }
 
-// RemoveUserIDs removes the "user" edge to the User entity by IDs.
-func (m *TaskAssigneeMutation) RemoveUserIDs(ids ...int) {
-	if m.removeduser == nil {
-		m.removeduser = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.user, ids[i])
-		m.removeduser[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedUser returns the removed IDs of the "user" edge to the User entity.
-func (m *TaskAssigneeMutation) RemovedUserIDs() (ids []int) {
-	for id := range m.removeduser {
-		ids = append(ids, id)
-	}
-	return
-}
-
 // UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
 func (m *TaskAssigneeMutation) UserIDs() (ids []int) {
-	for id := range m.user {
-		ids = append(ids, id)
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -8854,22 +8954,12 @@ func (m *TaskAssigneeMutation) UserIDs() (ids []int) {
 func (m *TaskAssigneeMutation) ResetUser() {
 	m.user = nil
 	m.cleareduser = false
-	m.removeduser = nil
-}
-
-// AddProposerIDs adds the "proposer" edge to the User entity by ids.
-func (m *TaskAssigneeMutation) AddProposerIDs(ids ...int) {
-	if m.proposer == nil {
-		m.proposer = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.proposer[ids[i]] = struct{}{}
-	}
 }
 
 // ClearProposer clears the "proposer" edge to the User entity.
 func (m *TaskAssigneeMutation) ClearProposer() {
 	m.clearedproposer = true
+	m.clearedFields[taskassignee.FieldProposerID] = struct{}{}
 }
 
 // ProposerCleared reports if the "proposer" edge to the User entity was cleared.
@@ -8877,29 +8967,12 @@ func (m *TaskAssigneeMutation) ProposerCleared() bool {
 	return m.clearedproposer
 }
 
-// RemoveProposerIDs removes the "proposer" edge to the User entity by IDs.
-func (m *TaskAssigneeMutation) RemoveProposerIDs(ids ...int) {
-	if m.removedproposer == nil {
-		m.removedproposer = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.proposer, ids[i])
-		m.removedproposer[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedProposer returns the removed IDs of the "proposer" edge to the User entity.
-func (m *TaskAssigneeMutation) RemovedProposerIDs() (ids []int) {
-	for id := range m.removedproposer {
-		ids = append(ids, id)
-	}
-	return
-}
-
 // ProposerIDs returns the "proposer" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProposerID instead. It exists only for internal usage by the builders.
 func (m *TaskAssigneeMutation) ProposerIDs() (ids []int) {
-	for id := range m.proposer {
-		ids = append(ids, id)
+	if id := m.proposer; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -8908,52 +8981,25 @@ func (m *TaskAssigneeMutation) ProposerIDs() (ids []int) {
 func (m *TaskAssigneeMutation) ResetProposer() {
 	m.proposer = nil
 	m.clearedproposer = false
-	m.removedproposer = nil
-}
-
-// AddApproverIDs adds the "approver" edge to the User entity by ids.
-func (m *TaskAssigneeMutation) AddApproverIDs(ids ...int) {
-	if m.approver == nil {
-		m.approver = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.approver[ids[i]] = struct{}{}
-	}
 }
 
 // ClearApprover clears the "approver" edge to the User entity.
 func (m *TaskAssigneeMutation) ClearApprover() {
 	m.clearedapprover = true
+	m.clearedFields[taskassignee.FieldApproverID] = struct{}{}
 }
 
 // ApproverCleared reports if the "approver" edge to the User entity was cleared.
 func (m *TaskAssigneeMutation) ApproverCleared() bool {
-	return m.clearedapprover
-}
-
-// RemoveApproverIDs removes the "approver" edge to the User entity by IDs.
-func (m *TaskAssigneeMutation) RemoveApproverIDs(ids ...int) {
-	if m.removedapprover == nil {
-		m.removedapprover = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.approver, ids[i])
-		m.removedapprover[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedApprover returns the removed IDs of the "approver" edge to the User entity.
-func (m *TaskAssigneeMutation) RemovedApproverIDs() (ids []int) {
-	for id := range m.removedapprover {
-		ids = append(ids, id)
-	}
-	return
+	return m.ApproverIDCleared() || m.clearedapprover
 }
 
 // ApproverIDs returns the "approver" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ApproverID instead. It exists only for internal usage by the builders.
 func (m *TaskAssigneeMutation) ApproverIDs() (ids []int) {
-	for id := range m.approver {
-		ids = append(ids, id)
+	if id := m.approver; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -8962,7 +9008,6 @@ func (m *TaskAssigneeMutation) ApproverIDs() (ids []int) {
 func (m *TaskAssigneeMutation) ResetApprover() {
 	m.approver = nil
 	m.clearedapprover = false
-	m.removedapprover = nil
 }
 
 // Where appends a list predicates to the TaskAssigneeMutation builder.
@@ -8999,7 +9044,7 @@ func (m *TaskAssigneeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TaskAssigneeMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 7)
 	if m.status != nil {
 		fields = append(fields, taskassignee.FieldStatus)
 	}
@@ -9008,6 +9053,18 @@ func (m *TaskAssigneeMutation) Fields() []string {
 	}
 	if m.created_at != nil {
 		fields = append(fields, taskassignee.FieldCreatedAt)
+	}
+	if m.task != nil {
+		fields = append(fields, taskassignee.FieldTaskID)
+	}
+	if m.user != nil {
+		fields = append(fields, taskassignee.FieldUserID)
+	}
+	if m.proposer != nil {
+		fields = append(fields, taskassignee.FieldProposerID)
+	}
+	if m.approver != nil {
+		fields = append(fields, taskassignee.FieldApproverID)
 	}
 	return fields
 }
@@ -9023,6 +9080,14 @@ func (m *TaskAssigneeMutation) Field(name string) (ent.Value, bool) {
 		return m.ApprovedAt()
 	case taskassignee.FieldCreatedAt:
 		return m.CreatedAt()
+	case taskassignee.FieldTaskID:
+		return m.TaskID()
+	case taskassignee.FieldUserID:
+		return m.UserID()
+	case taskassignee.FieldProposerID:
+		return m.ProposerID()
+	case taskassignee.FieldApproverID:
+		return m.ApproverID()
 	}
 	return nil, false
 }
@@ -9038,6 +9103,14 @@ func (m *TaskAssigneeMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldApprovedAt(ctx)
 	case taskassignee.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
+	case taskassignee.FieldTaskID:
+		return m.OldTaskID(ctx)
+	case taskassignee.FieldUserID:
+		return m.OldUserID(ctx)
+	case taskassignee.FieldProposerID:
+		return m.OldProposerID(ctx)
+	case taskassignee.FieldApproverID:
+		return m.OldApproverID(ctx)
 	}
 	return nil, fmt.Errorf("unknown TaskAssignee field %s", name)
 }
@@ -9068,6 +9141,34 @@ func (m *TaskAssigneeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreatedAt(v)
 		return nil
+	case taskassignee.FieldTaskID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaskID(v)
+		return nil
+	case taskassignee.FieldUserID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case taskassignee.FieldProposerID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProposerID(v)
+		return nil
+	case taskassignee.FieldApproverID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApproverID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TaskAssignee field %s", name)
 }
@@ -9075,13 +9176,16 @@ func (m *TaskAssigneeMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *TaskAssigneeMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *TaskAssigneeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -9101,6 +9205,9 @@ func (m *TaskAssigneeMutation) ClearedFields() []string {
 	if m.FieldCleared(taskassignee.FieldApprovedAt) {
 		fields = append(fields, taskassignee.FieldApprovedAt)
 	}
+	if m.FieldCleared(taskassignee.FieldApproverID) {
+		fields = append(fields, taskassignee.FieldApproverID)
+	}
 	return fields
 }
 
@@ -9118,6 +9225,9 @@ func (m *TaskAssigneeMutation) ClearField(name string) error {
 	case taskassignee.FieldApprovedAt:
 		m.ClearApprovedAt()
 		return nil
+	case taskassignee.FieldApproverID:
+		m.ClearApproverID()
+		return nil
 	}
 	return fmt.Errorf("unknown TaskAssignee nullable field %s", name)
 }
@@ -9134,6 +9244,18 @@ func (m *TaskAssigneeMutation) ResetField(name string) error {
 		return nil
 	case taskassignee.FieldCreatedAt:
 		m.ResetCreatedAt()
+		return nil
+	case taskassignee.FieldTaskID:
+		m.ResetTaskID()
+		return nil
+	case taskassignee.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case taskassignee.FieldProposerID:
+		m.ResetProposerID()
+		return nil
+	case taskassignee.FieldApproverID:
+		m.ResetApproverID()
 		return nil
 	}
 	return fmt.Errorf("unknown TaskAssignee field %s", name)
@@ -9162,29 +9284,21 @@ func (m *TaskAssigneeMutation) AddedEdges() []string {
 func (m *TaskAssigneeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case taskassignee.EdgeTask:
-		ids := make([]ent.Value, 0, len(m.task))
-		for id := range m.task {
-			ids = append(ids, id)
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case taskassignee.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.user))
-		for id := range m.user {
-			ids = append(ids, id)
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case taskassignee.EdgeProposer:
-		ids := make([]ent.Value, 0, len(m.proposer))
-		for id := range m.proposer {
-			ids = append(ids, id)
+		if id := m.proposer; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case taskassignee.EdgeApprover:
-		ids := make([]ent.Value, 0, len(m.approver))
-		for id := range m.approver {
-			ids = append(ids, id)
+		if id := m.approver; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -9192,50 +9306,12 @@ func (m *TaskAssigneeMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskAssigneeMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 4)
-	if m.removedtask != nil {
-		edges = append(edges, taskassignee.EdgeTask)
-	}
-	if m.removeduser != nil {
-		edges = append(edges, taskassignee.EdgeUser)
-	}
-	if m.removedproposer != nil {
-		edges = append(edges, taskassignee.EdgeProposer)
-	}
-	if m.removedapprover != nil {
-		edges = append(edges, taskassignee.EdgeApprover)
-	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *TaskAssigneeMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case taskassignee.EdgeTask:
-		ids := make([]ent.Value, 0, len(m.removedtask))
-		for id := range m.removedtask {
-			ids = append(ids, id)
-		}
-		return ids
-	case taskassignee.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.removeduser))
-		for id := range m.removeduser {
-			ids = append(ids, id)
-		}
-		return ids
-	case taskassignee.EdgeProposer:
-		ids := make([]ent.Value, 0, len(m.removedproposer))
-		for id := range m.removedproposer {
-			ids = append(ids, id)
-		}
-		return ids
-	case taskassignee.EdgeApprover:
-		ids := make([]ent.Value, 0, len(m.removedapprover))
-		for id := range m.removedapprover {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
@@ -9277,6 +9353,18 @@ func (m *TaskAssigneeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TaskAssigneeMutation) ClearEdge(name string) error {
 	switch name {
+	case taskassignee.EdgeTask:
+		m.ClearTask()
+		return nil
+	case taskassignee.EdgeUser:
+		m.ClearUser()
+		return nil
+	case taskassignee.EdgeProposer:
+		m.ClearProposer()
+		return nil
+	case taskassignee.EdgeApprover:
+		m.ClearApprover()
+		return nil
 	}
 	return fmt.Errorf("unknown TaskAssignee unique edge %s", name)
 }
