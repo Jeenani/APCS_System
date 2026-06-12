@@ -9398,6 +9398,7 @@ type TaskCategoryMutation struct {
 	name            *string
 	icon_identifier *string
 	description     *string
+	is_active       *bool
 	clearedFields   map[string]struct{}
 	tasks           map[int]struct{}
 	removedtasks    map[int]struct{}
@@ -9626,6 +9627,42 @@ func (m *TaskCategoryMutation) ResetDescription() {
 	delete(m.clearedFields, taskcategory.FieldDescription)
 }
 
+// SetIsActive sets the "is_active" field.
+func (m *TaskCategoryMutation) SetIsActive(b bool) {
+	m.is_active = &b
+}
+
+// IsActive returns the value of the "is_active" field in the mutation.
+func (m *TaskCategoryMutation) IsActive() (r bool, exists bool) {
+	v := m.is_active
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsActive returns the old "is_active" field's value of the TaskCategory entity.
+// If the TaskCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskCategoryMutation) OldIsActive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsActive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsActive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
+	}
+	return oldValue.IsActive, nil
+}
+
+// ResetIsActive resets all changes to the "is_active" field.
+func (m *TaskCategoryMutation) ResetIsActive() {
+	m.is_active = nil
+}
+
 // AddTaskIDs adds the "tasks" edge to the Task entity by ids.
 func (m *TaskCategoryMutation) AddTaskIDs(ids ...int) {
 	if m.tasks == nil {
@@ -9714,7 +9751,7 @@ func (m *TaskCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TaskCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.name != nil {
 		fields = append(fields, taskcategory.FieldName)
 	}
@@ -9723,6 +9760,9 @@ func (m *TaskCategoryMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, taskcategory.FieldDescription)
+	}
+	if m.is_active != nil {
+		fields = append(fields, taskcategory.FieldIsActive)
 	}
 	return fields
 }
@@ -9738,6 +9778,8 @@ func (m *TaskCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.IconIdentifier()
 	case taskcategory.FieldDescription:
 		return m.Description()
+	case taskcategory.FieldIsActive:
+		return m.IsActive()
 	}
 	return nil, false
 }
@@ -9753,6 +9795,8 @@ func (m *TaskCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldIconIdentifier(ctx)
 	case taskcategory.FieldDescription:
 		return m.OldDescription(ctx)
+	case taskcategory.FieldIsActive:
+		return m.OldIsActive(ctx)
 	}
 	return nil, fmt.Errorf("unknown TaskCategory field %s", name)
 }
@@ -9782,6 +9826,13 @@ func (m *TaskCategoryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
+		return nil
+	case taskcategory.FieldIsActive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsActive(v)
 		return nil
 	}
 	return fmt.Errorf("unknown TaskCategory field %s", name)
@@ -9849,6 +9900,9 @@ func (m *TaskCategoryMutation) ResetField(name string) error {
 		return nil
 	case taskcategory.FieldDescription:
 		m.ResetDescription()
+		return nil
+	case taskcategory.FieldIsActive:
+		m.ResetIsActive()
 		return nil
 	}
 	return fmt.Errorf("unknown TaskCategory field %s", name)

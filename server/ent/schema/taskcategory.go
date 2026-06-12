@@ -22,6 +22,8 @@ func (TaskCategory) Fields() []ent.Field {
 		field.Text("description").
 			Optional().
 			Nillable(),
+		field.Bool("is_active").
+			Default(true),
 	}
 }
 

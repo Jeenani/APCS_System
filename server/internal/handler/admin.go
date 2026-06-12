@@ -183,6 +183,7 @@ func (h *AdminHandler) UpdateCategory(c *gin.Context) {
 		Name           *string `json:"name"`
 		IconIdentifier *string `json:"icon_identifier"`
 		Description    *string `json:"description"`
+		IsActive       *bool   `json:"is_active"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Проверьте данные"})
@@ -198,6 +199,9 @@ func (h *AdminHandler) UpdateCategory(c *gin.Context) {
 	}
 	if req.Description != nil {
 		builder = builder.SetDescription(*req.Description)
+	}
+	if req.IsActive != nil {
+		builder = builder.SetIsActive(*req.IsActive)
 	}
 
 	if _, err := builder.Save(c); err != nil {

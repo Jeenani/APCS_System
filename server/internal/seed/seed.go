@@ -96,7 +96,7 @@ func getOrCreateExportType(ctx context.Context, client *ent.Client, code string)
 func getOrCreateTaskCategory(ctx context.Context, client *ent.Client, name, icon, desc string) (*ent.TaskCategory, error) {
 	c, err := client.TaskCategory.Query().Where(taskcategory.NameEQ(name)).Only(ctx)
 	if ent.IsNotFound(err) {
-		c, err = client.TaskCategory.Create().SetName(name).SetIconIdentifier(icon).SetDescription(desc).Save(ctx)
+		c, err = client.TaskCategory.Create().SetName(name).SetIconIdentifier(icon).SetDescription(desc).SetIsActive(true).Save(ctx)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("category %s: %w", name, err)

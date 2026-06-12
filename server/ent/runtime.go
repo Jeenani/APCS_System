@@ -400,6 +400,10 @@ func init() {
 			return nil
 		}
 	}()
+	// taskcategoryDescIsActive is the schema descriptor for is_active field.
+	taskcategoryDescIsActive := taskcategoryFields[3].Descriptor()
+	// taskcategory.DefaultIsActive holds the default value on creation for the is_active field.
+	taskcategory.DefaultIsActive = taskcategoryDescIsActive.Default.(bool)
 	taskhistoryFields := schema.TaskHistory{}.Fields()
 	_ = taskhistoryFields
 	// taskhistoryDescFieldName is the schema descriptor for field_name field.

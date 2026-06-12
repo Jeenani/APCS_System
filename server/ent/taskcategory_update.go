@@ -76,6 +76,20 @@ func (_u *TaskCategoryUpdate) ClearDescription() *TaskCategoryUpdate {
 	return _u
 }
 
+// SetIsActive sets the "is_active" field.
+func (_u *TaskCategoryUpdate) SetIsActive(v bool) *TaskCategoryUpdate {
+	_u.mutation.SetIsActive(v)
+	return _u
+}
+
+// SetNillableIsActive sets the "is_active" field if the given value is not nil.
+func (_u *TaskCategoryUpdate) SetNillableIsActive(v *bool) *TaskCategoryUpdate {
+	if v != nil {
+		_u.SetIsActive(*v)
+	}
+	return _u
+}
+
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
 func (_u *TaskCategoryUpdate) AddTaskIDs(ids ...int) *TaskCategoryUpdate {
 	_u.mutation.AddTaskIDs(ids...)
@@ -182,6 +196,9 @@ func (_u *TaskCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(taskcategory.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsActive(); ok {
+		_spec.SetField(taskcategory.FieldIsActive, field.TypeBool, value)
 	}
 	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -293,6 +310,20 @@ func (_u *TaskCategoryUpdateOne) SetNillableDescription(v *string) *TaskCategory
 // ClearDescription clears the value of the "description" field.
 func (_u *TaskCategoryUpdateOne) ClearDescription() *TaskCategoryUpdateOne {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetIsActive sets the "is_active" field.
+func (_u *TaskCategoryUpdateOne) SetIsActive(v bool) *TaskCategoryUpdateOne {
+	_u.mutation.SetIsActive(v)
+	return _u
+}
+
+// SetNillableIsActive sets the "is_active" field if the given value is not nil.
+func (_u *TaskCategoryUpdateOne) SetNillableIsActive(v *bool) *TaskCategoryUpdateOne {
+	if v != nil {
+		_u.SetIsActive(*v)
+	}
 	return _u
 }
 
@@ -432,6 +463,9 @@ func (_u *TaskCategoryUpdateOne) sqlSave(ctx context.Context) (_node *TaskCatego
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(taskcategory.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsActive(); ok {
+		_spec.SetField(taskcategory.FieldIsActive, field.TypeBool, value)
 	}
 	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{

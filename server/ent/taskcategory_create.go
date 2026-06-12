@@ -46,6 +46,20 @@ func (_c *TaskCategoryCreate) SetNillableDescription(v *string) *TaskCategoryCre
 	return _c
 }
 
+// SetIsActive sets the "is_active" field.
+func (_c *TaskCategoryCreate) SetIsActive(v bool) *TaskCategoryCreate {
+	_c.mutation.SetIsActive(v)
+	return _c
+}
+
+// SetNillableIsActive sets the "is_active" field if the given value is not nil.
+func (_c *TaskCategoryCreate) SetNillableIsActive(v *bool) *TaskCategoryCreate {
+	if v != nil {
+		_c.SetIsActive(*v)
+	}
+	return _c
+}
+
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
 func (_c *TaskCategoryCreate) AddTaskIDs(ids ...int) *TaskCategoryCreate {
 	_c.mutation.AddTaskIDs(ids...)
@@ -68,6 +82,7 @@ func (_c *TaskCategoryCreate) Mutation() *TaskCategoryMutation {
 
 // Save creates the TaskCategory in the database.
 func (_c *TaskCategoryCreate) Save(ctx context.Context) (*TaskCategory, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -93,6 +108,14 @@ func (_c *TaskCategoryCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *TaskCategoryCreate) defaults() {
+	if _, ok := _c.mutation.IsActive(); !ok {
+		v := taskcategory.DefaultIsActive
+		_c.mutation.SetIsActive(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *TaskCategoryCreate) check() error {
 	if _, ok := _c.mutation.Name(); !ok {
@@ -110,6 +133,9 @@ func (_c *TaskCategoryCreate) check() error {
 		if err := taskcategory.IconIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "icon_identifier", err: fmt.Errorf(`ent: validator failed for field "TaskCategory.icon_identifier": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.IsActive(); !ok {
+		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "TaskCategory.is_active"`)}
 	}
 	return nil
 }
@@ -149,6 +175,10 @@ func (_c *TaskCategoryCreate) createSpec() (*TaskCategory, *sqlgraph.CreateSpec)
 		_spec.SetField(taskcategory.FieldDescription, field.TypeString, value)
 		_node.Description = &value
 	}
+	if value, ok := _c.mutation.IsActive(); ok {
+		_spec.SetField(taskcategory.FieldIsActive, field.TypeBool, value)
+		_node.IsActive = value
+	}
 	if nodes := _c.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -186,6 +216,7 @@ func (_c *TaskCategoryCreateBulk) Save(ctx context.Context) ([]*TaskCategory, er
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TaskCategoryMutation)
 				if !ok {

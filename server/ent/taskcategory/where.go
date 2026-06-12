@@ -69,6 +69,11 @@ func Description(v string) predicate.TaskCategory {
 	return predicate.TaskCategory(sql.FieldEQ(FieldDescription, v))
 }
 
+// IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
+func IsActive(v bool) predicate.TaskCategory {
+	return predicate.TaskCategory(sql.FieldEQ(FieldIsActive, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.TaskCategory {
 	return predicate.TaskCategory(sql.FieldEQ(FieldName, v))
@@ -272,6 +277,16 @@ func DescriptionEqualFold(v string) predicate.TaskCategory {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.TaskCategory {
 	return predicate.TaskCategory(sql.FieldContainsFold(FieldDescription, v))
+}
+
+// IsActiveEQ applies the EQ predicate on the "is_active" field.
+func IsActiveEQ(v bool) predicate.TaskCategory {
+	return predicate.TaskCategory(sql.FieldEQ(FieldIsActive, v))
+}
+
+// IsActiveNEQ applies the NEQ predicate on the "is_active" field.
+func IsActiveNEQ(v bool) predicate.TaskCategory {
+	return predicate.TaskCategory(sql.FieldNEQ(FieldIsActive, v))
 }
 
 // HasTasks applies the HasEdge predicate on the "tasks" edge.

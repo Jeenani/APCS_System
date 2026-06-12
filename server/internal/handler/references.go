@@ -70,6 +70,7 @@ func (h *ReferenceHandler) GetCategories(c *gin.Context) {
 			"id":              cat.ID,
 			"name":            cat.Name,
 			"icon_identifier": cat.IconIdentifier,
+			"is_active":       cat.IsActive,
 		}
 		if cat.Description != nil {
 			item["description"] = *cat.Description

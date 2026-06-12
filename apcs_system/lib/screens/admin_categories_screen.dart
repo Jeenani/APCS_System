@@ -54,6 +54,15 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     'icon_equipment': Icons.build,
   };
 
+  Future<void> _toggleActive(int id, bool current) async {
+    try {
+      await ApiClient.put('/admin/categories/$id', {'is_active': !current});
+      _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   Future<void> _showCreateDialog() async {
     final nameC = TextEditingController();
     String selectedIcon = 'icon_sensor';
@@ -106,6 +115,73 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                 }
               },
               child: const Text('Создать'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditDialog(Map<String, dynamic> c) async {
+    final nameC = TextEditingController(text: c['name'] ?? '');
+    String selectedIcon = c['icon_identifier'] ?? 'icon_sensor';
+    final descC = TextEditingController(text: c['description'] ?? '');
+    bool isActive = c['is_active'] ?? true;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Редактировать категорию'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Название')),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedIcon,
+                decoration: const InputDecoration(labelText: 'Иконка'),
+                items: _iconOptions.entries.map((e) {
+                  return DropdownMenuItem(
+                    value: e.key,
+                    child: Row(
+                      children: [
+                        Icon(e.value, size: 20, color: AppColors.primary),
+                        const SizedBox(width: 10),
+                        Text(e.key),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (v) => setS(() => selectedIcon = v!),
+              ),
+              const SizedBox(height: 16),
+              TextField(controller: descC, decoration: const InputDecoration(labelText: 'Описание')),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Активна'),
+                value: isActive,
+                onChanged: (v) => setS(() => isActive = v),
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await ApiClient.put('/admin/categories/${c['id']}', {
+                    'name': nameC.text.trim(),
+                    'icon_identifier': selectedIcon,
+                    'description': descC.text.trim(),
+                    'is_active': isActive,
+                  });
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  _load();
+                } catch (e) {
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('$e')));
+                }
+              },
+              child: const Text('Сохранить'),
             ),
           ],
         ),
@@ -167,21 +243,48 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
               itemCount: _categories.length,
               itemBuilder: (_, i) {
                 final c = _categories[i];
+                final isActive = c['is_active'] ?? true;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Icon(_getIcon(c['icon_identifier']), color: AppColors.primary),
+                      decoration: BoxDecoration(
+                        color: isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(_getIcon(c['icon_identifier']), color: isActive ? AppColors.primary : Colors.grey),
                     ),
-                    title: Text(c['name'] ?? ''),
-                    subtitle: Text(c['description'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                      onPressed: () => _delete(c['id']),
+                    title: Text(
+                      c['name'] ?? '',
+                      style: TextStyle(decoration: isActive ? null : TextDecoration.lineThrough),
                     ),
+                    subtitle: Text(
+                      c['description'] ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: isActive ? null : Colors.grey),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: AppColors.primary),
+                          onPressed: () => _showEditDialog(c),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                          onPressed: () => _delete(c['id']),
+                        ),
+                        Switch(
+                          value: isActive,
+                          activeColor: AppColors.primary,
+                          onChanged: (_) => _toggleActive(c['id'], isActive),
+                        ),
+                      ],
+                    ),
+                    onTap: () => _showEditDialog(c),
                   ),
                 );
               },

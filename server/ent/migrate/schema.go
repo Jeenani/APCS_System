@@ -344,6 +344,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true, Size: 100},
 		{Name: "icon_identifier", Type: field.TypeString, Size: 100},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
 	}
 	// TaskCategoriesTable holds the schema information for the "task_categories" table.
 	TaskCategoriesTable = &schema.Table{

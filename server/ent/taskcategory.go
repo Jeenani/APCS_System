@@ -22,6 +22,8 @@ type TaskCategory struct {
 	IconIdentifier string `json:"icon_identifier,omitempty"`
 	// Description holds the value of the "description" field.
 	Description *string `json:"description,omitempty"`
+	// IsActive holds the value of the "is_active" field.
+	IsActive bool `json:"is_active,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskCategoryQuery when eager-loading is set.
 	Edges        TaskCategoryEdges `json:"edges"`
@@ -51,6 +53,8 @@ func (*TaskCategory) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case taskcategory.FieldIsActive:
+			values[i] = new(sql.NullBool)
 		case taskcategory.FieldID:
 			values[i] = new(sql.NullInt64)
 		case taskcategory.FieldName, taskcategory.FieldIconIdentifier, taskcategory.FieldDescription:
@@ -94,6 +98,12 @@ func (_m *TaskCategory) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Description = new(string)
 				*_m.Description = value.String
+			}
+		case taskcategory.FieldIsActive:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_active", values[i])
+			} else if value.Valid {
+				_m.IsActive = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -146,6 +156,9 @@ func (_m *TaskCategory) String() string {
 		builder.WriteString("description=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("is_active=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
 	builder.WriteByte(')')
 	return builder.String()
 }

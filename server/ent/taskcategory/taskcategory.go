@@ -18,6 +18,8 @@ const (
 	FieldIconIdentifier = "icon_identifier"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
+	// FieldIsActive holds the string denoting the is_active field in the database.
+	FieldIsActive = "is_active"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
 	// Table holds the table name of the taskcategory in the database.
@@ -37,6 +39,7 @@ var Columns = []string{
 	FieldName,
 	FieldIconIdentifier,
 	FieldDescription,
+	FieldIsActive,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -54,6 +57,8 @@ var (
 	NameValidator func(string) error
 	// IconIdentifierValidator is a validator for the "icon_identifier" field. It is called by the builders before save.
 	IconIdentifierValidator func(string) error
+	// DefaultIsActive holds the default value on creation for the "is_active" field.
+	DefaultIsActive bool
 )
 
 // OrderOption defines the ordering options for the TaskCategory queries.
@@ -77,6 +82,11 @@ func ByIconIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByIsActive orders the results by the is_active field.
+func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
 }
 
 // ByTasksCount orders the results by tasks count.
