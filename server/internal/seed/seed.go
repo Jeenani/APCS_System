@@ -7,71 +7,183 @@ import (
 	"time"
 
 	"asutp-server/ent"
+	"asutp-server/ent/changetype"
+	"asutp-server/ent/exporttype"
+	"asutp-server/ent/notificationsetting"
+	"asutp-server/ent/notificationtype"
+	"asutp-server/ent/priority"
+	"asutp-server/ent/role"
+	"asutp-server/ent/taskcategory"
+	"asutp-server/ent/taskstatus"
+	"asutp-server/ent/user"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Run(ctx context.Context, client *ent.Client) error {
-	count, err := client.Role.Query().Count(ctx)
-	if err != nil {
-		return fmt.Errorf("ошибка проверки ролей: %w", err)
+// getOrCreateRole возвращает роль по имени, создавая при необходимости
+func getOrCreateRole(ctx context.Context, client *ent.Client, name string) (*ent.Role, error) {
+	r, err := client.Role.Query().Where(role.NameEQ(name)).Only(ctx)
+	if ent.IsNotFound(err) {
+		r, err = client.Role.Create().SetName(name).Save(ctx)
 	}
-	if count > 0 {
-		log.Println("Seed: данные уже существуют, пропускаем")
+	if err != nil {
+		return nil, fmt.Errorf("role %s: %w", name, err)
+	}
+	return r, nil
+}
+
+// getOrCreatePriority возвращает приоритет по имени, создавая при необходимости
+func getOrCreatePriority(ctx context.Context, client *ent.Client, name, color string, order int) (*ent.Priority, error) {
+	p, err := client.Priority.Query().Where(priority.NameEQ(name)).Only(ctx)
+	if ent.IsNotFound(err) {
+		p, err = client.Priority.Create().SetName(name).SetColorHex(color).SetSortOrder(order).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("priority %s: %w", name, err)
+	}
+	return p, nil
+}
+
+// getOrCreateTaskStatus возвращает статус по коду, создавая при необходимости
+func getOrCreateTaskStatus(ctx context.Context, client *ent.Client, code string, terminal bool) (*ent.TaskStatus, error) {
+	s, err := client.TaskStatus.Query().Where(taskstatus.CodeEQ(code)).Only(ctx)
+	if ent.IsNotFound(err) {
+		s, err = client.TaskStatus.Create().SetCode(code).SetIsTerminal(terminal).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("status %s: %w", code, err)
+	}
+	return s, nil
+}
+
+// getOrCreateChangeType возвращает тип изменения по коду, создавая при необходимости
+func getOrCreateChangeType(ctx context.Context, client *ent.Client, code string) (*ent.ChangeType, error) {
+	ct, err := client.ChangeType.Query().Where(changetype.CodeEQ(code)).Only(ctx)
+	if ent.IsNotFound(err) {
+		ct, err = client.ChangeType.Create().SetCode(code).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("change_type %s: %w", code, err)
+	}
+	return ct, nil
+}
+
+// getOrCreateNotificationType возвращает тип уведомления по коду, создавая при необходимости
+func getOrCreateNotificationType(ctx context.Context, client *ent.Client, code string) (*ent.NotificationType, error) {
+	nt, err := client.NotificationType.Query().Where(notificationtype.CodeEQ(code)).Only(ctx)
+	if ent.IsNotFound(err) {
+		nt, err = client.NotificationType.Create().SetCode(code).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("notification_type %s: %w", code, err)
+	}
+	return nt, nil
+}
+
+// getOrCreateExportType возвращает тип экспорта по коду, создавая при необходимости
+func getOrCreateExportType(ctx context.Context, client *ent.Client, code string) (*ent.ExportType, error) {
+	et, err := client.ExportType.Query().Where(exporttype.CodeEQ(code)).Only(ctx)
+	if ent.IsNotFound(err) {
+		et, err = client.ExportType.Create().SetCode(code).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("export_type %s: %w", code, err)
+	}
+	return et, nil
+}
+
+// getOrCreateTaskCategory возвращает категорию по имени, создавая при необходимости
+func getOrCreateTaskCategory(ctx context.Context, client *ent.Client, name, icon, desc string) (*ent.TaskCategory, error) {
+	c, err := client.TaskCategory.Query().Where(taskcategory.NameEQ(name)).Only(ctx)
+	if ent.IsNotFound(err) {
+		c, err = client.TaskCategory.Create().SetName(name).SetIconIdentifier(icon).SetDescription(desc).Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("category %s: %w", name, err)
+	}
+	return c, nil
+}
+
+// getOrCreateUser возвращает пользователя по логину, создавая при необходимости
+func getOrCreateUser(ctx context.Context, client *ent.Client, login, fullName, initials string, roleID int, passwordHash string) (*ent.User, error) {
+	u, err := client.User.Query().Where(user.LoginEQ(login)).Only(ctx)
+	if ent.IsNotFound(err) {
+		u, err = client.User.Create().
+			SetLogin(login).
+			SetPasswordHash(passwordHash).
+			SetFullName(fullName).
+			SetInitials(initials).
+			SetRoleID(roleID).
+			Save(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("user %s: %w", login, err)
+	}
+	return u, nil
+}
+
+func Run(ctx context.Context, client *ent.Client) error {
+	// Если задачи уже есть — пропускаем (остальные справочники уже на месте)
+	taskCount, err := client.Task.Query().Count(ctx)
+	if err != nil {
+		return fmt.Errorf("ошибка проверки задач: %w", err)
+	}
+	if taskCount > 0 {
+		log.Println("Seed: задачи уже существуют, пропускаем")
 		return nil
 	}
 
-	log.Println("Seed: заполняем справочники...")
+	log.Println("Seed: заполняем справочники и задачи...")
 
-	// Roles (5 ролей АСУТП)
-	roleAdmin, err := client.Role.Create().SetName("admin").Save(ctx)
+	// Roles
+	roleAdmin, err := getOrCreateRole(ctx, client, "admin")
 	if err != nil {
-		return fmt.Errorf("seed role admin: %w", err)
+		return err
 	}
-	roleChiefEng, err := client.Role.Create().SetName("chief_engineer").Save(ctx)
+	roleChiefEng, err := getOrCreateRole(ctx, client, "chief_engineer")
 	if err != nil {
-		return fmt.Errorf("seed role chief_engineer: %w", err)
+		return err
 	}
-	roleAsutpChief, err := client.Role.Create().SetName("asutp_chief").Save(ctx)
+	roleAsutpChief, err := getOrCreateRole(ctx, client, "asutp_chief")
 	if err != nil {
-		return fmt.Errorf("seed role asutp_chief: %w", err)
+		return err
 	}
-	roleEngineer, err := client.Role.Create().SetName("engineer").Save(ctx)
+	roleEngineer, err := getOrCreateRole(ctx, client, "engineer")
 	if err != nil {
-		return fmt.Errorf("seed role engineer: %w", err)
+		return err
 	}
-	roleOperator, err := client.Role.Create().SetName("operator").Save(ctx)
+	roleOperator, err := getOrCreateRole(ctx, client, "operator")
 	if err != nil {
-		return fmt.Errorf("seed role operator: %w", err)
+		return err
 	}
 
 	// Priorities
-	prioHigh, err := client.Priority.Create().SetName("high").SetColorHex("#E53935").SetSortOrder(1).Save(ctx)
+	prioHigh, err := getOrCreatePriority(ctx, client, "high", "#E53935", 1)
 	if err != nil {
-		return fmt.Errorf("seed priority high: %w", err)
+		return err
 	}
-	prioMedium, err := client.Priority.Create().SetName("medium").SetColorHex("#F9A825").SetSortOrder(2).Save(ctx)
+	prioMedium, err := getOrCreatePriority(ctx, client, "medium", "#F9A825", 2)
 	if err != nil {
-		return fmt.Errorf("seed priority medium: %w", err)
+		return err
 	}
-	if _, err := client.Priority.Create().SetName("low").SetColorHex("#2E7D32").SetSortOrder(3).Save(ctx); err != nil {
-		return fmt.Errorf("seed priority low: %w", err)
+	if _, err := getOrCreatePriority(ctx, client, "low", "#2E7D32", 3); err != nil {
+		return err
 	}
 
 	// Task Statuses
-	statusNew, err := client.TaskStatus.Create().SetCode("new").SetIsTerminal(false).Save(ctx)
+	statusNew, err := getOrCreateTaskStatus(ctx, client, "new", false)
 	if err != nil {
-		return fmt.Errorf("seed status new: %w", err)
+		return err
 	}
-	statusInProgress, err := client.TaskStatus.Create().SetCode("in_progress").SetIsTerminal(false).Save(ctx)
+	statusInProgress, err := getOrCreateTaskStatus(ctx, client, "in_progress", false)
 	if err != nil {
-		return fmt.Errorf("seed status in_progress: %w", err)
+		return err
 	}
-	if _, err := client.TaskStatus.Create().SetCode("completed").SetIsTerminal(true).Save(ctx); err != nil {
-		return fmt.Errorf("seed status completed: %w", err)
+	if _, err := getOrCreateTaskStatus(ctx, client, "completed", true); err != nil {
+		return err
 	}
-	if _, err := client.TaskStatus.Create().SetCode("cancelled").SetIsTerminal(true).Save(ctx); err != nil {
-		return fmt.Errorf("seed status cancelled: %w", err)
+	if _, err := getOrCreateTaskStatus(ctx, client, "cancelled", true); err != nil {
+		return err
 	}
 
 	// Change Types
@@ -80,22 +192,22 @@ func Run(ctx context.Context, client *ent.Client) error {
 		"due_date_changed", "priority_changed", "progress_changed",
 		"status_changed", "assignee_changed",
 	} {
-		if _, err := client.ChangeType.Create().SetCode(code).Save(ctx); err != nil {
-			return fmt.Errorf("seed change_type %s: %w", code, err)
+		if _, err := getOrCreateChangeType(ctx, client, code); err != nil {
+			return err
 		}
 	}
 
 	// Notification Types
 	for _, code := range []string{"reminder", "deadline", "update", "system"} {
-		if _, err := client.NotificationType.Create().SetCode(code).Save(ctx); err != nil {
-			return fmt.Errorf("seed notification_type %s: %w", code, err)
+		if _, err := getOrCreateNotificationType(ctx, client, code); err != nil {
+			return err
 		}
 	}
 
 	// Export Types
 	for _, code := range []string{"all", "completed", "selected"} {
-		if _, err := client.ExportType.Create().SetCode(code).Save(ctx); err != nil {
-			return fmt.Errorf("seed export_type %s: %w", code, err)
+		if _, err := getOrCreateExportType(ctx, client, code); err != nil {
+			return err
 		}
 	}
 
@@ -113,10 +225,9 @@ func Run(ctx context.Context, client *ent.Client) error {
 	}
 	catMap := make(map[string]*ent.TaskCategory)
 	for _, cat := range categories {
-		c, err := client.TaskCategory.Create().
-			SetName(cat.name).SetIconIdentifier(cat.icon).SetDescription(cat.desc).Save(ctx)
+		c, err := getOrCreateTaskCategory(ctx, client, cat.name, cat.icon, cat.desc)
 		if err != nil {
-			return fmt.Errorf("seed category %s: %w", cat.name, err)
+			return err
 		}
 		catMap[cat.name] = c
 	}
@@ -126,70 +237,35 @@ func Run(ctx context.Context, client *ent.Client) error {
 		return fmt.Errorf("seed bcrypt: %w", err)
 	}
 
-	// Главный инженер — ставит задачи
-	userChiefEng, err := client.User.Create().
-		SetLogin("chief.engineer").
-		SetPasswordHash(string(hash)).
-		SetFullName("Сергей Волков").
-		SetInitials("СВ").
-		SetRoleID(roleChiefEng.ID).
-		Save(ctx)
+	// Users (GetOrCreate — не пересоздаём если уже есть)
+	userChiefEng, err := getOrCreateUser(ctx, client, "chief.engineer", "Сергей Волков", "СВ", roleChiefEng.ID, string(hash))
 	if err != nil {
-		return fmt.Errorf("seed user chief.engineer: %w", err)
+		return err
+	}
+	userAsutpChief, err := getOrCreateUser(ctx, client, "asutp.chief", "Иван Петров", "ИП", roleAsutpChief.ID, string(hash))
+	if err != nil {
+		return err
+	}
+	userEngineer, err := getOrCreateUser(ctx, client, "ivan.engineer", "Алексей Сидоров", "АС", roleEngineer.ID, string(hash))
+	if err != nil {
+		return err
+	}
+	userOperator, err := getOrCreateUser(ctx, client, "operator1", "Мария Козлова", "МК", roleOperator.ID, string(hash))
+	if err != nil {
+		return err
+	}
+	userAdmin, err := getOrCreateUser(ctx, client, "admin", "Администратор Системы", "АС", roleAdmin.ID, string(hash))
+	if err != nil {
+		return err
 	}
 
-	// Начальник службы АСУТП — управляет выполнением
-	userAsutpChief, err := client.User.Create().
-		SetLogin("asutp.chief").
-		SetPasswordHash(string(hash)).
-		SetFullName("Иван Петров").
-		SetInitials("ИП").
-		SetRoleID(roleAsutpChief.ID).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("seed user asutp.chief: %w", err)
-	}
-
-	// Инженер — только просмотр
-	userEngineer, err := client.User.Create().
-		SetLogin("ivan.engineer").
-		SetPasswordHash(string(hash)).
-		SetFullName("Алексей Сидоров").
-		SetInitials("АС").
-		SetRoleID(roleEngineer.ID).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("seed user ivan.engineer: %w", err)
-	}
-
-	// Оператор — эксплуатация
-	userOperator, err := client.User.Create().
-		SetLogin("operator1").
-		SetPasswordHash(string(hash)).
-		SetFullName("Мария Козлова").
-		SetInitials("МК").
-		SetRoleID(roleOperator.ID).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("seed user operator1: %w", err)
-	}
-
-	// Администратор
-	userAdmin, err := client.User.Create().
-		SetLogin("admin").
-		SetPasswordHash(string(hash)).
-		SetFullName("Администратор Системы").
-		SetInitials("АС").
-		SetRoleID(roleAdmin.ID).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("seed user admin: %w", err)
-	}
-
-	// Notification Settings
+	// Notification Settings (только если ещё нет)
 	for _, u := range []*ent.User{userChiefEng, userAsutpChief, userEngineer, userOperator, userAdmin} {
-		if _, err := client.NotificationSetting.Create().SetUserID(u.ID).Save(ctx); err != nil {
-			return fmt.Errorf("seed notification_setting user %d: %w", u.ID, err)
+		exists, _ := client.NotificationSetting.Query().Where(notificationsetting.UserIDEQ(u.ID)).Exist(ctx)
+		if !exists {
+			if _, err := client.NotificationSetting.Create().SetUserID(u.ID).Save(ctx); err != nil {
+				return fmt.Errorf("seed notification_setting user %d: %w", u.ID, err)
+			}
 		}
 	}
 
@@ -235,8 +311,8 @@ func Run(ctx context.Context, client *ent.Client) error {
 			SetTitle(td.title).SetDescription(td.desc).SetDueDate(dueDate).
 			SetPriorityID(td.priority.ID).SetStatusID(td.status.ID).
 			SetProgress(td.progress).
-			SetCreatedBy(userChiefEng.ID). // Главный инженер создаёт
-			SetAssignedTo(td.assignedTo)   // Начальник службы АСУТП исполняет
+			SetCreatedBy(userChiefEng.ID).
+			SetAssignedTo(td.assignedTo)
 		if cat, ok := catMap[td.category]; ok {
 			builder = builder.SetCategoryID(cat.ID)
 		}
@@ -247,15 +323,11 @@ func Run(ctx context.Context, client *ent.Client) error {
 
 	log.Println("Seed: данные успешно загружены")
 	log.Println("Seed: Тестовые пользователи (пароль: __seed_pass__):")
-	log.Println("  chief.engineer   — Главный инженер (создаёт задачи)")
-	log.Println("  asutp.chief      — Нач. службы АСУТП (управляет выполнением)")
-	log.Println("  ivan.engineer    — Инженер (только просмотр)")
-	log.Println("  operator1        — Оператор (только просмотр)")
-	log.Println("  admin            — Администратор (конфигурация системы)")
-	_ = roleOperator
-	_ = userEngineer
-	_ = userOperator
-	_ = userAdmin
+	log.Println("  chief.engineer   — Главный инженер")
+	log.Println("  asutp.chief      — Нач. службы АСУТП")
+	log.Println("  ivan.engineer    — Инженер")
+	log.Println("  operator1        — Оператор")
+	log.Println("  admin            — Администратор")
 
 	return nil
 }
