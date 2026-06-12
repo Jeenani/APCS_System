@@ -165,7 +165,7 @@ Images/temp/
 Images/cache/
 
 # Файлы окружения и конфигурации с секретами
-.env
+#.env
 *.env.local
 *.key
 *.pem
