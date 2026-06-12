@@ -98,8 +98,25 @@ func (h *ReferenceHandler) GetRoles(c *gin.Context) {
 }
 
 func (h *ReferenceHandler) GetAssignees(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	requesterRole := ""
+	if r, ok := roleVal.(string); ok {
+		requesterRole = r
+	}
+
+	var allowedRoles []string
+	switch requesterRole {
+	case "chief_engineer":
+		allowedRoles = []string{"asutp_chief"}
+	case "asutp_chief":
+		allowedRoles = []string{"engineer"}
+	default:
+		// admin and anyone else can see all assignable roles
+		allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer"}
+	}
+
 	items, err := h.client.User.Query().
-		Where(user.HasRoleWith(role.NameIn("chief_engineer", "engineer", "asutp_chief"))).
+		Where(user.HasRoleWith(role.NameIn(allowedRoles...))).
 		Where(user.IsActiveEQ(true)).
 		WithRole().
 		All(c)
