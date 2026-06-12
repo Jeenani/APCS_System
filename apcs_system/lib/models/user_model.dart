@@ -51,6 +51,10 @@ class UserModel {
   bool get canExport =>
       role == 'admin' || role == 'chief_engineer' || role == 'asutp_chief';
 
+  /// Может одобрять/отклонять назначения исполнителей
+  bool get canApproveAssignees =>
+      role == 'admin' || role == 'asutp_chief';
+
   /// Администратор системы
   bool get isAdmin => role == 'admin';
 }

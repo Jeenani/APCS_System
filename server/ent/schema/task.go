@@ -68,6 +68,7 @@ func (Task) Edges() []ent.Edge {
 			Ref("assigned_tasks").
 			Field("assigned_to").
 			Unique(),
+		edge.To("task_assignees", TaskAssignee.Type),
 		edge.To("histories", TaskHistory.Type),
 		edge.To("notifications", Notification.Type),
 	}

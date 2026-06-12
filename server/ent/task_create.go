@@ -6,6 +6,7 @@ import (
 	"asutp-server/ent/notification"
 	"asutp-server/ent/priority"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskcategory"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/taskstatus"
@@ -183,6 +184,21 @@ func (_c *TaskCreate) SetNillableAssigneeID(id *int) *TaskCreate {
 // SetAssignee sets the "assignee" edge to the User entity.
 func (_c *TaskCreate) SetAssignee(v *User) *TaskCreate {
 	return _c.SetAssigneeID(v.ID)
+}
+
+// AddTaskAssigneeIDs adds the "task_assignees" edge to the TaskAssignee entity by IDs.
+func (_c *TaskCreate) AddTaskAssigneeIDs(ids ...int) *TaskCreate {
+	_c.mutation.AddTaskAssigneeIDs(ids...)
+	return _c
+}
+
+// AddTaskAssignees adds the "task_assignees" edges to the TaskAssignee entity.
+func (_c *TaskCreate) AddTaskAssignees(v ...*TaskAssignee) *TaskCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTaskAssigneeIDs(ids...)
 }
 
 // AddHistoryIDs adds the "histories" edge to the TaskHistory entity by IDs.
@@ -442,6 +458,22 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AssignedTo = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TaskAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.TaskAssigneesTable,
+			Columns: []string{task.TaskAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.HistoriesIDs(); len(nodes) > 0 {

@@ -682,6 +682,75 @@ func HasAssignedTasksWith(preds ...predicate.Task) predicate.User {
 	})
 }
 
+// HasTaskAssigneeEntries applies the HasEdge predicate on the "task_assignee_entries" edge.
+func HasTaskAssigneeEntries() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TaskAssigneeEntriesTable, TaskAssigneeEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTaskAssigneeEntriesWith applies the HasEdge predicate on the "task_assignee_entries" edge with a given conditions (other predicates).
+func HasTaskAssigneeEntriesWith(preds ...predicate.TaskAssignee) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newTaskAssigneeEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProposedAssignees applies the HasEdge predicate on the "proposed_assignees" edge.
+func HasProposedAssignees() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProposedAssigneesTable, ProposedAssigneesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProposedAssigneesWith applies the HasEdge predicate on the "proposed_assignees" edge with a given conditions (other predicates).
+func HasProposedAssigneesWith(preds ...predicate.TaskAssignee) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newProposedAssigneesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasApprovedAssignees applies the HasEdge predicate on the "approved_assignees" edge.
+func HasApprovedAssignees() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ApprovedAssigneesTable, ApprovedAssigneesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasApprovedAssigneesWith applies the HasEdge predicate on the "approved_assignees" edge with a given conditions (other predicates).
+func HasApprovedAssigneesWith(preds ...predicate.TaskAssignee) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newApprovedAssigneesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTaskHistories applies the HasEdge predicate on the "task_histories" edge.
 func HasTaskHistories() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

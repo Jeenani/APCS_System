@@ -42,6 +42,12 @@ const (
 	EdgeCreatedTasks = "created_tasks"
 	// EdgeAssignedTasks holds the string denoting the assigned_tasks edge name in mutations.
 	EdgeAssignedTasks = "assigned_tasks"
+	// EdgeTaskAssigneeEntries holds the string denoting the task_assignee_entries edge name in mutations.
+	EdgeTaskAssigneeEntries = "task_assignee_entries"
+	// EdgeProposedAssignees holds the string denoting the proposed_assignees edge name in mutations.
+	EdgeProposedAssignees = "proposed_assignees"
+	// EdgeApprovedAssignees holds the string denoting the approved_assignees edge name in mutations.
+	EdgeApprovedAssignees = "approved_assignees"
 	// EdgeTaskHistories holds the string denoting the task_histories edge name in mutations.
 	EdgeTaskHistories = "task_histories"
 	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
@@ -82,6 +88,27 @@ const (
 	AssignedTasksInverseTable = "tasks"
 	// AssignedTasksColumn is the table column denoting the assigned_tasks relation/edge.
 	AssignedTasksColumn = "assigned_to"
+	// TaskAssigneeEntriesTable is the table that holds the task_assignee_entries relation/edge.
+	TaskAssigneeEntriesTable = "task_assignees"
+	// TaskAssigneeEntriesInverseTable is the table name for the TaskAssignee entity.
+	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
+	TaskAssigneeEntriesInverseTable = "task_assignees"
+	// TaskAssigneeEntriesColumn is the table column denoting the task_assignee_entries relation/edge.
+	TaskAssigneeEntriesColumn = "user_task_assignee_entries"
+	// ProposedAssigneesTable is the table that holds the proposed_assignees relation/edge.
+	ProposedAssigneesTable = "task_assignees"
+	// ProposedAssigneesInverseTable is the table name for the TaskAssignee entity.
+	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
+	ProposedAssigneesInverseTable = "task_assignees"
+	// ProposedAssigneesColumn is the table column denoting the proposed_assignees relation/edge.
+	ProposedAssigneesColumn = "user_proposed_assignees"
+	// ApprovedAssigneesTable is the table that holds the approved_assignees relation/edge.
+	ApprovedAssigneesTable = "task_assignees"
+	// ApprovedAssigneesInverseTable is the table name for the TaskAssignee entity.
+	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
+	ApprovedAssigneesInverseTable = "task_assignees"
+	// ApprovedAssigneesColumn is the table column denoting the approved_assignees relation/edge.
+	ApprovedAssigneesColumn = "user_approved_assignees"
 	// TaskHistoriesTable is the table that holds the task_histories relation/edge.
 	TaskHistoriesTable = "task_histories"
 	// TaskHistoriesInverseTable is the table name for the TaskHistory entity.
@@ -134,10 +161,23 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"task_assignee_user",
+	"task_assignee_proposer",
+	"task_assignee_approver",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -267,6 +307,48 @@ func ByAssignedTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByTaskAssigneeEntriesCount orders the results by task_assignee_entries count.
+func ByTaskAssigneeEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTaskAssigneeEntriesStep(), opts...)
+	}
+}
+
+// ByTaskAssigneeEntries orders the results by task_assignee_entries terms.
+func ByTaskAssigneeEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTaskAssigneeEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByProposedAssigneesCount orders the results by proposed_assignees count.
+func ByProposedAssigneesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProposedAssigneesStep(), opts...)
+	}
+}
+
+// ByProposedAssignees orders the results by proposed_assignees terms.
+func ByProposedAssignees(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProposedAssigneesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByApprovedAssigneesCount orders the results by approved_assignees count.
+func ByApprovedAssigneesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newApprovedAssigneesStep(), opts...)
+	}
+}
+
+// ByApprovedAssignees orders the results by approved_assignees terms.
+func ByApprovedAssignees(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newApprovedAssigneesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTaskHistoriesCount orders the results by task_histories count.
 func ByTaskHistoriesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -362,6 +444,27 @@ func newAssignedTasksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AssignedTasksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AssignedTasksTable, AssignedTasksColumn),
+	)
+}
+func newTaskAssigneeEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TaskAssigneeEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TaskAssigneeEntriesTable, TaskAssigneeEntriesColumn),
+	)
+}
+func newProposedAssigneesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProposedAssigneesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProposedAssigneesTable, ProposedAssigneesColumn),
+	)
+}
+func newApprovedAssigneesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ApprovedAssigneesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ApprovedAssigneesTable, ApprovedAssigneesColumn),
 	)
 }
 func newTaskHistoriesStep() *sqlgraph.Step {

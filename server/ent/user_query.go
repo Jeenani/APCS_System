@@ -11,6 +11,7 @@ import (
 	"asutp-server/ent/refreshtoken"
 	"asutp-server/ent/role"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/user"
 	"context"
@@ -35,11 +36,15 @@ type UserQuery struct {
 	withNotificationSetting *NotificationSettingQuery
 	withCreatedTasks        *TaskQuery
 	withAssignedTasks       *TaskQuery
+	withTaskAssigneeEntries *TaskAssigneeQuery
+	withProposedAssignees   *TaskAssigneeQuery
+	withApprovedAssignees   *TaskAssigneeQuery
 	withTaskHistories       *TaskHistoryQuery
 	withNotifications       *NotificationQuery
 	withExportLogs          *ExportLogQuery
 	withPasswordResetTokens *PasswordResetTokenQuery
 	withRefreshTokens       *RefreshTokenQuery
+	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -157,6 +162,72 @@ func (_q *UserQuery) QueryAssignedTasks() *TaskQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.AssignedTasksTable, user.AssignedTasksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTaskAssigneeEntries chains the current query on the "task_assignee_entries" edge.
+func (_q *UserQuery) QueryTaskAssigneeEntries() *TaskAssigneeQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(taskassignee.Table, taskassignee.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.TaskAssigneeEntriesTable, user.TaskAssigneeEntriesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProposedAssignees chains the current query on the "proposed_assignees" edge.
+func (_q *UserQuery) QueryProposedAssignees() *TaskAssigneeQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(taskassignee.Table, taskassignee.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ProposedAssigneesTable, user.ProposedAssigneesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryApprovedAssignees chains the current query on the "approved_assignees" edge.
+func (_q *UserQuery) QueryApprovedAssignees() *TaskAssigneeQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(taskassignee.Table, taskassignee.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ApprovedAssigneesTable, user.ApprovedAssigneesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -470,6 +541,9 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withNotificationSetting: _q.withNotificationSetting.Clone(),
 		withCreatedTasks:        _q.withCreatedTasks.Clone(),
 		withAssignedTasks:       _q.withAssignedTasks.Clone(),
+		withTaskAssigneeEntries: _q.withTaskAssigneeEntries.Clone(),
+		withProposedAssignees:   _q.withProposedAssignees.Clone(),
+		withApprovedAssignees:   _q.withApprovedAssignees.Clone(),
 		withTaskHistories:       _q.withTaskHistories.Clone(),
 		withNotifications:       _q.withNotifications.Clone(),
 		withExportLogs:          _q.withExportLogs.Clone(),
@@ -522,6 +596,39 @@ func (_q *UserQuery) WithAssignedTasks(opts ...func(*TaskQuery)) *UserQuery {
 		opt(query)
 	}
 	_q.withAssignedTasks = query
+	return _q
+}
+
+// WithTaskAssigneeEntries tells the query-builder to eager-load the nodes that are connected to
+// the "task_assignee_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithTaskAssigneeEntries(opts ...func(*TaskAssigneeQuery)) *UserQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTaskAssigneeEntries = query
+	return _q
+}
+
+// WithProposedAssignees tells the query-builder to eager-load the nodes that are connected to
+// the "proposed_assignees" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithProposedAssignees(opts ...func(*TaskAssigneeQuery)) *UserQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProposedAssignees = query
+	return _q
+}
+
+// WithApprovedAssignees tells the query-builder to eager-load the nodes that are connected to
+// the "approved_assignees" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithApprovedAssignees(opts ...func(*TaskAssigneeQuery)) *UserQuery {
+	query := (&TaskAssigneeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withApprovedAssignees = query
 	return _q
 }
 
@@ -657,12 +764,16 @@ func (_q *UserQuery) prepareQuery(ctx context.Context) error {
 func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
 		nodes       = []*User{}
+		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [12]bool{
 			_q.withRole != nil,
 			_q.withNotificationSetting != nil,
 			_q.withCreatedTasks != nil,
 			_q.withAssignedTasks != nil,
+			_q.withTaskAssigneeEntries != nil,
+			_q.withProposedAssignees != nil,
+			_q.withApprovedAssignees != nil,
 			_q.withTaskHistories != nil,
 			_q.withNotifications != nil,
 			_q.withExportLogs != nil,
@@ -670,6 +781,9 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withRefreshTokens != nil,
 		}
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
 	}
@@ -711,6 +825,27 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadAssignedTasks(ctx, query, nodes,
 			func(n *User) { n.Edges.AssignedTasks = []*Task{} },
 			func(n *User, e *Task) { n.Edges.AssignedTasks = append(n.Edges.AssignedTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTaskAssigneeEntries; query != nil {
+		if err := _q.loadTaskAssigneeEntries(ctx, query, nodes,
+			func(n *User) { n.Edges.TaskAssigneeEntries = []*TaskAssignee{} },
+			func(n *User, e *TaskAssignee) { n.Edges.TaskAssigneeEntries = append(n.Edges.TaskAssigneeEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProposedAssignees; query != nil {
+		if err := _q.loadProposedAssignees(ctx, query, nodes,
+			func(n *User) { n.Edges.ProposedAssignees = []*TaskAssignee{} },
+			func(n *User, e *TaskAssignee) { n.Edges.ProposedAssignees = append(n.Edges.ProposedAssignees, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withApprovedAssignees; query != nil {
+		if err := _q.loadApprovedAssignees(ctx, query, nodes,
+			func(n *User) { n.Edges.ApprovedAssignees = []*TaskAssignee{} },
+			func(n *User, e *TaskAssignee) { n.Edges.ApprovedAssignees = append(n.Edges.ApprovedAssignees, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -820,6 +955,7 @@ func (_q *UserQuery) loadCreatedTasks(ctx context.Context, query *TaskQuery, nod
 			init(nodes[i])
 		}
 	}
+	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldCreatedBy)
 	}
@@ -850,6 +986,7 @@ func (_q *UserQuery) loadAssignedTasks(ctx context.Context, query *TaskQuery, no
 			init(nodes[i])
 		}
 	}
+	query.withFKs = true
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(task.FieldAssignedTo)
 	}
@@ -868,6 +1005,99 @@ func (_q *UserQuery) loadAssignedTasks(ctx context.Context, query *TaskQuery, no
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "assigned_to" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadTaskAssigneeEntries(ctx context.Context, query *TaskAssigneeQuery, nodes []*User, init func(*User), assign func(*User, *TaskAssignee)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.TaskAssigneeEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_task_assignee_entries
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_task_assignee_entries" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_task_assignee_entries" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadProposedAssignees(ctx context.Context, query *TaskAssigneeQuery, nodes []*User, init func(*User), assign func(*User, *TaskAssignee)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ProposedAssigneesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_proposed_assignees
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_proposed_assignees" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_proposed_assignees" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadApprovedAssignees(ctx context.Context, query *TaskAssigneeQuery, nodes []*User, init func(*User), assign func(*User, *TaskAssignee)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ApprovedAssigneesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_approved_assignees
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_approved_assignees" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_approved_assignees" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

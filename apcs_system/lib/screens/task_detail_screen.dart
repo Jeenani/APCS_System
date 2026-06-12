@@ -246,7 +246,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       const SizedBox(height: 12),
 
-                      // Assignee
+                      // Assignees
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
@@ -254,21 +254,83 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primary,
-                              child: Text(_task!.assignee?.initials ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Исполнитель', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                Text(_task!.assignee?.fullName ?? 'Не назначен', style: const TextStyle(fontWeight: FontWeight.w600)),
-                              ],
-                            ),
+                            const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 12),
+                            if (_task!.assignees.isEmpty)
+                              Text('Не назначены', style: TextStyle(color: Colors.grey[600]))
+                            else
+                              ..._task!.assignees.map((ta) {
+                                final canApprove = context.read<AuthProvider>().user?.canApproveAssignees ?? false;
+                                final isPending = ta.status == 'pending';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 18,
+                                        backgroundColor: isPending
+                                            ? Colors.orange
+                                            : ta.status == 'approved'
+                                                ? Colors.green
+                                                : Colors.red,
+                                        child: Text(
+                                          ta.user?.initials ?? '?',
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              ta.user?.fullName ?? 'Неизвестно',
+                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                            ),
+                                            Text(
+                                              ta.statusLabel,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: isPending
+                                                    ? Colors.orange[700]
+                                                    : ta.status == 'approved'
+                                                        ? Colors.green[700]
+                                                        : Colors.red[700],
+                                              ),
+                                            ),
+                                            if (ta.proposedBy != null)
+                                              Text(
+                                                'Предложил: ${ta.proposedBy!.fullName}',
+                                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (canApprove && isPending) ...[
+                                        IconButton(
+                                          icon: const Icon(Icons.check_circle, color: Colors.green),
+                                          tooltip: 'Одобрить',
+                                          onPressed: () async {
+                                            final ok = await context.read<TaskProvider>().approveAssignee(_task!.id, ta.id);
+                                            if (ok && mounted) _loadTask();
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.cancel, color: Colors.red),
+                                          tooltip: 'Отклонить',
+                                          onPressed: () async {
+                                            final ok = await context.read<TaskProvider>().rejectAssignee(_task!.id, ta.id);
+                                            if (ok && mounted) _loadTask();
+                                          },
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              }),
                           ],
                         ),
                       ),

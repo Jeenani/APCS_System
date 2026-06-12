@@ -18,14 +18,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _fullNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  int _selectedRoleId = 3;
+  int _selectedRoleId = 4;
 
   final Map<int, String> _roles = const {
-    1: 'Главный инженер',
-    2: 'Нач. службы АСУТП',
-    3: 'Инженер',
-    4: 'Оператор',
-    5: 'Администратор',
+    1: 'Администратор',
+    2: 'Главный инженер',
+    3: 'Нач. службы АСУТП',
+    4: 'Инженер',
+    5: 'Оператор',
   };
 
   @override

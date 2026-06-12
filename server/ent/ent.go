@@ -15,6 +15,7 @@ import (
 	"asutp-server/ent/refreshtoken"
 	"asutp-server/ent/role"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskcategory"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/taskstatus"
@@ -100,6 +101,7 @@ func checkColumn(t, c string) error {
 			refreshtoken.Table:        refreshtoken.ValidColumn,
 			role.Table:                role.ValidColumn,
 			task.Table:                task.ValidColumn,
+			taskassignee.Table:        taskassignee.ValidColumn,
 			taskcategory.Table:        taskcategory.ValidColumn,
 			taskhistory.Table:         taskhistory.ValidColumn,
 			taskstatus.Table:          taskstatus.ValidColumn,

@@ -10,6 +10,7 @@ import (
 	"asutp-server/ent/refreshtoken"
 	"asutp-server/ent/role"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/user"
 	"context"
@@ -180,6 +181,51 @@ func (_c *UserCreate) AddAssignedTasks(v ...*Task) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAssignedTaskIDs(ids...)
+}
+
+// AddTaskAssigneeEntryIDs adds the "task_assignee_entries" edge to the TaskAssignee entity by IDs.
+func (_c *UserCreate) AddTaskAssigneeEntryIDs(ids ...int) *UserCreate {
+	_c.mutation.AddTaskAssigneeEntryIDs(ids...)
+	return _c
+}
+
+// AddTaskAssigneeEntries adds the "task_assignee_entries" edges to the TaskAssignee entity.
+func (_c *UserCreate) AddTaskAssigneeEntries(v ...*TaskAssignee) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTaskAssigneeEntryIDs(ids...)
+}
+
+// AddProposedAssigneeIDs adds the "proposed_assignees" edge to the TaskAssignee entity by IDs.
+func (_c *UserCreate) AddProposedAssigneeIDs(ids ...int) *UserCreate {
+	_c.mutation.AddProposedAssigneeIDs(ids...)
+	return _c
+}
+
+// AddProposedAssignees adds the "proposed_assignees" edges to the TaskAssignee entity.
+func (_c *UserCreate) AddProposedAssignees(v ...*TaskAssignee) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddProposedAssigneeIDs(ids...)
+}
+
+// AddApprovedAssigneeIDs adds the "approved_assignees" edge to the TaskAssignee entity by IDs.
+func (_c *UserCreate) AddApprovedAssigneeIDs(ids ...int) *UserCreate {
+	_c.mutation.AddApprovedAssigneeIDs(ids...)
+	return _c
+}
+
+// AddApprovedAssignees adds the "approved_assignees" edges to the TaskAssignee entity.
+func (_c *UserCreate) AddApprovedAssignees(v ...*TaskAssignee) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddApprovedAssigneeIDs(ids...)
 }
 
 // AddTaskHistoryIDs adds the "task_histories" edge to the TaskHistory entity by IDs.
@@ -487,6 +533,54 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TaskAssigneeEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProposedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ApprovedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

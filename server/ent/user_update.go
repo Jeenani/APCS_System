@@ -11,6 +11,7 @@ import (
 	"asutp-server/ent/refreshtoken"
 	"asutp-server/ent/role"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/user"
 	"context"
@@ -214,6 +215,51 @@ func (_u *UserUpdate) AddAssignedTasks(v ...*Task) *UserUpdate {
 	return _u.AddAssignedTaskIDs(ids...)
 }
 
+// AddTaskAssigneeEntryIDs adds the "task_assignee_entries" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdate) AddTaskAssigneeEntryIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddTaskAssigneeEntryIDs(ids...)
+	return _u
+}
+
+// AddTaskAssigneeEntries adds the "task_assignee_entries" edges to the TaskAssignee entity.
+func (_u *UserUpdate) AddTaskAssigneeEntries(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTaskAssigneeEntryIDs(ids...)
+}
+
+// AddProposedAssigneeIDs adds the "proposed_assignees" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdate) AddProposedAssigneeIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddProposedAssigneeIDs(ids...)
+	return _u
+}
+
+// AddProposedAssignees adds the "proposed_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdate) AddProposedAssignees(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProposedAssigneeIDs(ids...)
+}
+
+// AddApprovedAssigneeIDs adds the "approved_assignees" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdate) AddApprovedAssigneeIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddApprovedAssigneeIDs(ids...)
+	return _u
+}
+
+// AddApprovedAssignees adds the "approved_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdate) AddApprovedAssignees(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddApprovedAssigneeIDs(ids...)
+}
+
 // AddTaskHistoryIDs adds the "task_histories" edge to the TaskHistory entity by IDs.
 func (_u *UserUpdate) AddTaskHistoryIDs(ids ...int) *UserUpdate {
 	_u.mutation.AddTaskHistoryIDs(ids...)
@@ -346,6 +392,69 @@ func (_u *UserUpdate) RemoveAssignedTasks(v ...*Task) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAssignedTaskIDs(ids...)
+}
+
+// ClearTaskAssigneeEntries clears all "task_assignee_entries" edges to the TaskAssignee entity.
+func (_u *UserUpdate) ClearTaskAssigneeEntries() *UserUpdate {
+	_u.mutation.ClearTaskAssigneeEntries()
+	return _u
+}
+
+// RemoveTaskAssigneeEntryIDs removes the "task_assignee_entries" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdate) RemoveTaskAssigneeEntryIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveTaskAssigneeEntryIDs(ids...)
+	return _u
+}
+
+// RemoveTaskAssigneeEntries removes "task_assignee_entries" edges to TaskAssignee entities.
+func (_u *UserUpdate) RemoveTaskAssigneeEntries(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTaskAssigneeEntryIDs(ids...)
+}
+
+// ClearProposedAssignees clears all "proposed_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdate) ClearProposedAssignees() *UserUpdate {
+	_u.mutation.ClearProposedAssignees()
+	return _u
+}
+
+// RemoveProposedAssigneeIDs removes the "proposed_assignees" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdate) RemoveProposedAssigneeIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveProposedAssigneeIDs(ids...)
+	return _u
+}
+
+// RemoveProposedAssignees removes "proposed_assignees" edges to TaskAssignee entities.
+func (_u *UserUpdate) RemoveProposedAssignees(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProposedAssigneeIDs(ids...)
+}
+
+// ClearApprovedAssignees clears all "approved_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdate) ClearApprovedAssignees() *UserUpdate {
+	_u.mutation.ClearApprovedAssignees()
+	return _u
+}
+
+// RemoveApprovedAssigneeIDs removes the "approved_assignees" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdate) RemoveApprovedAssigneeIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveApprovedAssigneeIDs(ids...)
+	return _u
+}
+
+// RemoveApprovedAssignees removes "approved_assignees" edges to TaskAssignee entities.
+func (_u *UserUpdate) RemoveApprovedAssignees(v ...*TaskAssignee) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveApprovedAssigneeIDs(ids...)
 }
 
 // ClearTaskHistories clears all "task_histories" edges to the TaskHistory entity.
@@ -702,6 +811,141 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TaskAssigneeEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTaskAssigneeEntriesIDs(); len(nodes) > 0 && !_u.mutation.TaskAssigneeEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TaskAssigneeEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProposedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProposedAssigneesIDs(); len(nodes) > 0 && !_u.mutation.ProposedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProposedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ApprovedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedApprovedAssigneesIDs(); len(nodes) > 0 && !_u.mutation.ApprovedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ApprovedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1132,6 +1376,51 @@ func (_u *UserUpdateOne) AddAssignedTasks(v ...*Task) *UserUpdateOne {
 	return _u.AddAssignedTaskIDs(ids...)
 }
 
+// AddTaskAssigneeEntryIDs adds the "task_assignee_entries" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdateOne) AddTaskAssigneeEntryIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddTaskAssigneeEntryIDs(ids...)
+	return _u
+}
+
+// AddTaskAssigneeEntries adds the "task_assignee_entries" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) AddTaskAssigneeEntries(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTaskAssigneeEntryIDs(ids...)
+}
+
+// AddProposedAssigneeIDs adds the "proposed_assignees" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdateOne) AddProposedAssigneeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddProposedAssigneeIDs(ids...)
+	return _u
+}
+
+// AddProposedAssignees adds the "proposed_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) AddProposedAssignees(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProposedAssigneeIDs(ids...)
+}
+
+// AddApprovedAssigneeIDs adds the "approved_assignees" edge to the TaskAssignee entity by IDs.
+func (_u *UserUpdateOne) AddApprovedAssigneeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddApprovedAssigneeIDs(ids...)
+	return _u
+}
+
+// AddApprovedAssignees adds the "approved_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) AddApprovedAssignees(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddApprovedAssigneeIDs(ids...)
+}
+
 // AddTaskHistoryIDs adds the "task_histories" edge to the TaskHistory entity by IDs.
 func (_u *UserUpdateOne) AddTaskHistoryIDs(ids ...int) *UserUpdateOne {
 	_u.mutation.AddTaskHistoryIDs(ids...)
@@ -1264,6 +1553,69 @@ func (_u *UserUpdateOne) RemoveAssignedTasks(v ...*Task) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAssignedTaskIDs(ids...)
+}
+
+// ClearTaskAssigneeEntries clears all "task_assignee_entries" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) ClearTaskAssigneeEntries() *UserUpdateOne {
+	_u.mutation.ClearTaskAssigneeEntries()
+	return _u
+}
+
+// RemoveTaskAssigneeEntryIDs removes the "task_assignee_entries" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdateOne) RemoveTaskAssigneeEntryIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveTaskAssigneeEntryIDs(ids...)
+	return _u
+}
+
+// RemoveTaskAssigneeEntries removes "task_assignee_entries" edges to TaskAssignee entities.
+func (_u *UserUpdateOne) RemoveTaskAssigneeEntries(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTaskAssigneeEntryIDs(ids...)
+}
+
+// ClearProposedAssignees clears all "proposed_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) ClearProposedAssignees() *UserUpdateOne {
+	_u.mutation.ClearProposedAssignees()
+	return _u
+}
+
+// RemoveProposedAssigneeIDs removes the "proposed_assignees" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdateOne) RemoveProposedAssigneeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveProposedAssigneeIDs(ids...)
+	return _u
+}
+
+// RemoveProposedAssignees removes "proposed_assignees" edges to TaskAssignee entities.
+func (_u *UserUpdateOne) RemoveProposedAssignees(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProposedAssigneeIDs(ids...)
+}
+
+// ClearApprovedAssignees clears all "approved_assignees" edges to the TaskAssignee entity.
+func (_u *UserUpdateOne) ClearApprovedAssignees() *UserUpdateOne {
+	_u.mutation.ClearApprovedAssignees()
+	return _u
+}
+
+// RemoveApprovedAssigneeIDs removes the "approved_assignees" edge to TaskAssignee entities by IDs.
+func (_u *UserUpdateOne) RemoveApprovedAssigneeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveApprovedAssigneeIDs(ids...)
+	return _u
+}
+
+// RemoveApprovedAssignees removes "approved_assignees" edges to TaskAssignee entities.
+func (_u *UserUpdateOne) RemoveApprovedAssignees(v ...*TaskAssignee) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveApprovedAssigneeIDs(ids...)
 }
 
 // ClearTaskHistories clears all "task_histories" edges to the TaskHistory entity.
@@ -1650,6 +2002,141 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TaskAssigneeEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTaskAssigneeEntriesIDs(); len(nodes) > 0 && !_u.mutation.TaskAssigneeEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TaskAssigneeEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.TaskAssigneeEntriesTable,
+			Columns: []string{user.TaskAssigneeEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProposedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProposedAssigneesIDs(); len(nodes) > 0 && !_u.mutation.ProposedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProposedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProposedAssigneesTable,
+			Columns: []string{user.ProposedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ApprovedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedApprovedAssigneesIDs(); len(nodes) > 0 && !_u.mutation.ApprovedAssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ApprovedAssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ApprovedAssigneesTable,
+			Columns: []string{user.ApprovedAssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

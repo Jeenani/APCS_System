@@ -45,8 +45,9 @@ type Task struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges        TaskEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges              TaskEdges `json:"edges"`
+	task_assignee_task *int
+	selectValues       sql.SelectValues
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
@@ -61,13 +62,15 @@ type TaskEdges struct {
 	Creator *User `json:"creator,omitempty"`
 	// Assignee holds the value of the assignee edge.
 	Assignee *User `json:"assignee,omitempty"`
+	// TaskAssignees holds the value of the task_assignees edge.
+	TaskAssignees []*TaskAssignee `json:"task_assignees,omitempty"`
 	// Histories holds the value of the histories edge.
 	Histories []*TaskHistory `json:"histories,omitempty"`
 	// Notifications holds the value of the notifications edge.
 	Notifications []*Notification `json:"notifications,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // PriorityOrErr returns the Priority value or an error if the edge
@@ -125,10 +128,19 @@ func (e TaskEdges) AssigneeOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "assignee"}
 }
 
+// TaskAssigneesOrErr returns the TaskAssignees value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) TaskAssigneesOrErr() ([]*TaskAssignee, error) {
+	if e.loadedTypes[5] {
+		return e.TaskAssignees, nil
+	}
+	return nil, &NotLoadedError{edge: "task_assignees"}
+}
+
 // HistoriesOrErr returns the Histories value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) HistoriesOrErr() ([]*TaskHistory, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Histories, nil
 	}
 	return nil, &NotLoadedError{edge: "histories"}
@@ -137,7 +149,7 @@ func (e TaskEdges) HistoriesOrErr() ([]*TaskHistory, error) {
 // NotificationsOrErr returns the Notifications value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) NotificationsOrErr() ([]*Notification, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.Notifications, nil
 	}
 	return nil, &NotLoadedError{edge: "notifications"}
@@ -154,6 +166,8 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case task.FieldDueDate, task.FieldCreatedAt, task.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case task.ForeignKeys[0]: // task_assignee_task
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -244,6 +258,13 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case task.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_assignee_task", value)
+			} else if value.Valid {
+				_m.task_assignee_task = new(int)
+				*_m.task_assignee_task = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -280,6 +301,11 @@ func (_m *Task) QueryCreator() *UserQuery {
 // QueryAssignee queries the "assignee" edge of the Task entity.
 func (_m *Task) QueryAssignee() *UserQuery {
 	return NewTaskClient(_m.config).QueryAssignee(_m)
+}
+
+// QueryTaskAssignees queries the "task_assignees" edge of the Task entity.
+func (_m *Task) QueryTaskAssignees() *TaskAssigneeQuery {
+	return NewTaskClient(_m.config).QueryTaskAssignees(_m)
 }
 
 // QueryHistories queries the "histories" edge of the Task entity.

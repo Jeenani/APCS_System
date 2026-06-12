@@ -50,7 +50,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final loginC = TextEditingController();
     final passC = TextEditingController();
     final nameC = TextEditingController();
-    int roleId = 2;
+    int roleId = 4;
 
     await showDialog(
       context: context,
@@ -70,8 +70,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 decoration: const InputDecoration(labelText: 'Роль'),
                 items: const [
                   DropdownMenuItem(value: 1, child: Text('Администратор')),
-                  DropdownMenuItem(value: 2, child: Text('Инженер')),
-                  DropdownMenuItem(value: 3, child: Text('Оператор')),
+                  DropdownMenuItem(value: 2, child: Text('Главный инженер')),
+                  DropdownMenuItem(value: 3, child: Text('Нач. службы АСУТП')),
+                  DropdownMenuItem(value: 4, child: Text('Инженер')),
+                  DropdownMenuItem(value: 5, child: Text('Оператор')),
                 ],
                 onChanged: (v) => setS(() => roleId = v!),
               ),

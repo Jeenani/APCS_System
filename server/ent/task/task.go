@@ -46,6 +46,8 @@ const (
 	EdgeCreator = "creator"
 	// EdgeAssignee holds the string denoting the assignee edge name in mutations.
 	EdgeAssignee = "assignee"
+	// EdgeTaskAssignees holds the string denoting the task_assignees edge name in mutations.
+	EdgeTaskAssignees = "task_assignees"
 	// EdgeHistories holds the string denoting the histories edge name in mutations.
 	EdgeHistories = "histories"
 	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
@@ -87,6 +89,13 @@ const (
 	AssigneeInverseTable = "users"
 	// AssigneeColumn is the table column denoting the assignee relation/edge.
 	AssigneeColumn = "assigned_to"
+	// TaskAssigneesTable is the table that holds the task_assignees relation/edge.
+	TaskAssigneesTable = "task_assignees"
+	// TaskAssigneesInverseTable is the table name for the TaskAssignee entity.
+	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
+	TaskAssigneesInverseTable = "task_assignees"
+	// TaskAssigneesColumn is the table column denoting the task_assignees relation/edge.
+	TaskAssigneesColumn = "task_task_assignees"
 	// HistoriesTable is the table that holds the histories relation/edge.
 	HistoriesTable = "task_histories"
 	// HistoriesInverseTable is the table name for the TaskHistory entity.
@@ -119,10 +128,21 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "tasks"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"task_assignee_task",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -242,6 +262,20 @@ func ByAssigneeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByTaskAssigneesCount orders the results by task_assignees count.
+func ByTaskAssigneesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTaskAssigneesStep(), opts...)
+	}
+}
+
+// ByTaskAssignees orders the results by task_assignees terms.
+func ByTaskAssignees(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTaskAssigneesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByHistoriesCount orders the results by histories count.
 func ByHistoriesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -302,6 +336,13 @@ func newAssigneeStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AssigneeInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, AssigneeTable, AssigneeColumn),
+	)
+}
+func newTaskAssigneesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TaskAssigneesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TaskAssigneesTable, TaskAssigneesColumn),
 	)
 }
 func newHistoriesStep() *sqlgraph.Step {

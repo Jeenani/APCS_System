@@ -42,6 +42,9 @@ type Role func(*sql.Selector)
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 
+// TaskAssignee is the predicate function for taskassignee builders.
+type TaskAssignee func(*sql.Selector)
+
 // TaskCategory is the predicate function for taskcategory builders.
 type TaskCategory func(*sql.Selector)
 

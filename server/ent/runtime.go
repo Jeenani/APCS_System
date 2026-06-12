@@ -15,6 +15,7 @@ import (
 	"asutp-server/ent/role"
 	"asutp-server/ent/schema"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskcategory"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/taskstatus"
@@ -335,6 +336,32 @@ func init() {
 	task.DefaultUpdatedAt = taskDescUpdatedAt.Default.(func() time.Time)
 	// task.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	task.UpdateDefaultUpdatedAt = taskDescUpdatedAt.UpdateDefault.(func() time.Time)
+	taskassigneeFields := schema.TaskAssignee{}.Fields()
+	_ = taskassigneeFields
+	// taskassigneeDescStatus is the schema descriptor for status field.
+	taskassigneeDescStatus := taskassigneeFields[0].Descriptor()
+	// taskassignee.DefaultStatus holds the default value on creation for the status field.
+	taskassignee.DefaultStatus = taskassigneeDescStatus.Default.(string)
+	// taskassignee.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	taskassignee.StatusValidator = func() func(string) error {
+		validators := taskassigneeDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// taskassigneeDescCreatedAt is the schema descriptor for created_at field.
+	taskassigneeDescCreatedAt := taskassigneeFields[2].Descriptor()
+	// taskassignee.DefaultCreatedAt holds the default value on creation for the created_at field.
+	taskassignee.DefaultCreatedAt = taskassigneeDescCreatedAt.Default.(func() time.Time)
 	taskcategoryFields := schema.TaskCategory{}.Fields()
 	_ = taskcategoryFields
 	// taskcategoryDescName is the schema descriptor for name field.

@@ -41,8 +41,11 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges        UserEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges                  UserEdges `json:"edges"`
+	task_assignee_user     *int
+	task_assignee_proposer *int
+	task_assignee_approver *int
+	selectValues           sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
@@ -55,6 +58,12 @@ type UserEdges struct {
 	CreatedTasks []*Task `json:"created_tasks,omitempty"`
 	// AssignedTasks holds the value of the assigned_tasks edge.
 	AssignedTasks []*Task `json:"assigned_tasks,omitempty"`
+	// TaskAssigneeEntries holds the value of the task_assignee_entries edge.
+	TaskAssigneeEntries []*TaskAssignee `json:"task_assignee_entries,omitempty"`
+	// ProposedAssignees holds the value of the proposed_assignees edge.
+	ProposedAssignees []*TaskAssignee `json:"proposed_assignees,omitempty"`
+	// ApprovedAssignees holds the value of the approved_assignees edge.
+	ApprovedAssignees []*TaskAssignee `json:"approved_assignees,omitempty"`
 	// TaskHistories holds the value of the task_histories edge.
 	TaskHistories []*TaskHistory `json:"task_histories,omitempty"`
 	// Notifications holds the value of the notifications edge.
@@ -67,7 +76,7 @@ type UserEdges struct {
 	RefreshTokens []*RefreshToken `json:"refresh_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [12]bool
 }
 
 // RoleOrErr returns the Role value or an error if the edge
@@ -110,10 +119,37 @@ func (e UserEdges) AssignedTasksOrErr() ([]*Task, error) {
 	return nil, &NotLoadedError{edge: "assigned_tasks"}
 }
 
+// TaskAssigneeEntriesOrErr returns the TaskAssigneeEntries value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) TaskAssigneeEntriesOrErr() ([]*TaskAssignee, error) {
+	if e.loadedTypes[4] {
+		return e.TaskAssigneeEntries, nil
+	}
+	return nil, &NotLoadedError{edge: "task_assignee_entries"}
+}
+
+// ProposedAssigneesOrErr returns the ProposedAssignees value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ProposedAssigneesOrErr() ([]*TaskAssignee, error) {
+	if e.loadedTypes[5] {
+		return e.ProposedAssignees, nil
+	}
+	return nil, &NotLoadedError{edge: "proposed_assignees"}
+}
+
+// ApprovedAssigneesOrErr returns the ApprovedAssignees value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ApprovedAssigneesOrErr() ([]*TaskAssignee, error) {
+	if e.loadedTypes[6] {
+		return e.ApprovedAssignees, nil
+	}
+	return nil, &NotLoadedError{edge: "approved_assignees"}
+}
+
 // TaskHistoriesOrErr returns the TaskHistories value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) TaskHistoriesOrErr() ([]*TaskHistory, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[7] {
 		return e.TaskHistories, nil
 	}
 	return nil, &NotLoadedError{edge: "task_histories"}
@@ -122,7 +158,7 @@ func (e UserEdges) TaskHistoriesOrErr() ([]*TaskHistory, error) {
 // NotificationsOrErr returns the Notifications value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) NotificationsOrErr() ([]*Notification, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[8] {
 		return e.Notifications, nil
 	}
 	return nil, &NotLoadedError{edge: "notifications"}
@@ -131,7 +167,7 @@ func (e UserEdges) NotificationsOrErr() ([]*Notification, error) {
 // ExportLogsOrErr returns the ExportLogs value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ExportLogsOrErr() ([]*ExportLog, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[9] {
 		return e.ExportLogs, nil
 	}
 	return nil, &NotLoadedError{edge: "export_logs"}
@@ -140,7 +176,7 @@ func (e UserEdges) ExportLogsOrErr() ([]*ExportLog, error) {
 // PasswordResetTokensOrErr returns the PasswordResetTokens value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PasswordResetTokensOrErr() ([]*PasswordResetToken, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[10] {
 		return e.PasswordResetTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "password_reset_tokens"}
@@ -149,7 +185,7 @@ func (e UserEdges) PasswordResetTokensOrErr() ([]*PasswordResetToken, error) {
 // RefreshTokensOrErr returns the RefreshTokens value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) RefreshTokensOrErr() ([]*RefreshToken, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[11] {
 		return e.RefreshTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "refresh_tokens"}
@@ -168,6 +204,12 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case user.FieldLastLoginAt, user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case user.ForeignKeys[0]: // task_assignee_user
+			values[i] = new(sql.NullInt64)
+		case user.ForeignKeys[1]: // task_assignee_proposer
+			values[i] = new(sql.NullInt64)
+		case user.ForeignKeys[2]: // task_assignee_approver
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -250,6 +292,27 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_assignee_user", value)
+			} else if value.Valid {
+				_m.task_assignee_user = new(int)
+				*_m.task_assignee_user = int(value.Int64)
+			}
+		case user.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_assignee_proposer", value)
+			} else if value.Valid {
+				_m.task_assignee_proposer = new(int)
+				*_m.task_assignee_proposer = int(value.Int64)
+			}
+		case user.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_assignee_approver", value)
+			} else if value.Valid {
+				_m.task_assignee_approver = new(int)
+				*_m.task_assignee_approver = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -281,6 +344,21 @@ func (_m *User) QueryCreatedTasks() *TaskQuery {
 // QueryAssignedTasks queries the "assigned_tasks" edge of the User entity.
 func (_m *User) QueryAssignedTasks() *TaskQuery {
 	return NewUserClient(_m.config).QueryAssignedTasks(_m)
+}
+
+// QueryTaskAssigneeEntries queries the "task_assignee_entries" edge of the User entity.
+func (_m *User) QueryTaskAssigneeEntries() *TaskAssigneeQuery {
+	return NewUserClient(_m.config).QueryTaskAssigneeEntries(_m)
+}
+
+// QueryProposedAssignees queries the "proposed_assignees" edge of the User entity.
+func (_m *User) QueryProposedAssignees() *TaskAssigneeQuery {
+	return NewUserClient(_m.config).QueryProposedAssignees(_m)
+}
+
+// QueryApprovedAssignees queries the "approved_assignees" edge of the User entity.
+func (_m *User) QueryApprovedAssignees() *TaskAssigneeQuery {
+	return NewUserClient(_m.config).QueryApprovedAssignees(_m)
 }
 
 // QueryTaskHistories queries the "task_histories" edge of the User entity.

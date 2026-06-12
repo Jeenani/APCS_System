@@ -36,6 +36,8 @@ type Tx struct {
 	Role *RoleClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskAssignee is the client for interacting with the TaskAssignee builders.
+	TaskAssignee *TaskAssigneeClient
 	// TaskCategory is the client for interacting with the TaskCategory builders.
 	TaskCategory *TaskCategoryClient
 	// TaskHistory is the client for interacting with the TaskHistory builders.
@@ -187,6 +189,7 @@ func (tx *Tx) init() {
 	tx.RefreshToken = NewRefreshTokenClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
+	tx.TaskAssignee = NewTaskAssigneeClient(tx.config)
 	tx.TaskCategory = NewTaskCategoryClient(tx.config)
 	tx.TaskHistory = NewTaskHistoryClient(tx.config)
 	tx.TaskStatus = NewTaskStatusClient(tx.config)

@@ -165,16 +165,43 @@ CREATE TABLE tasks (
     priority_id SMALLINT     NOT NULL REFERENCES priorities(id),
     status_id   SMALLINT     NOT NULL REFERENCES task_status(id),
     category_id SMALLINT              REFERENCES task_categories(id) ON DELETE SET NULL,
-    progress    SMALLINT     NOT NULL DEFAULT 0,
-    created_by  INTEGER      NOT NULL REFERENCES users(id),
-    assigned_to INTEGER               REFERENCES users(id) ON DELETE SET NULL,
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    progress           SMALLINT     NOT NULL DEFAULT 0,
+    created_by         INTEGER      NOT NULL REFERENCES users(id),
+    assigned_to        INTEGER               REFERENCES users(id) ON DELETE SET NULL,
+    task_assignee_task INTEGER               REFERENCES task_assignees(id) ON DELETE SET NULL,
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_tasks_progress CHECK (progress >= 0 AND progress <= 100)
 );
 
 COMMENT ON COLUMN tasks.progress IS '0–100 %; авто-смена status_id на completed — в ent Validator';
+
+-- ---------------------------------------------------------
+-- task_assignees: назначение исполнителя на задачу
+-- chief_engineer / admin предлагают → asutp_chief утверждает
+-- ---------------------------------------------------------
+CREATE TABLE task_assignees (
+    id                         SERIAL       PRIMARY KEY,
+    status                     VARCHAR(20)  NOT NULL DEFAULT 'pending',
+    approved_at                TIMESTAMPTZ,
+    created_at                 TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    task_task_assignees        INTEGER      REFERENCES tasks(id) ON DELETE SET NULL,
+    user_task_assignee_entries INTEGER      REFERENCES users(id) ON DELETE SET NULL,
+    user_proposed_assignees    INTEGER      REFERENCES users(id) ON DELETE SET NULL,
+    user_approved_assignees    INTEGER      REFERENCES users(id) ON DELETE SET NULL,
+
+    CONSTRAINT chk_task_assignees_status
+        CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
+COMMENT ON TABLE task_assignees IS 'Статус назначения исполнителя: pending | approved | rejected';
+
+CREATE INDEX idx_task_assignees_task ON task_assignees(task_task_assignees);
+CREATE INDEX idx_task_assignees_user ON task_assignees(user_task_assignee_entries);
+CREATE INDEX idx_task_assignees_proposed ON task_assignees(user_proposed_assignees);
+CREATE INDEX idx_task_assignees_approved ON task_assignees(user_approved_assignees);
+CREATE INDEX idx_task_assignees_status ON task_assignees(status);
 
 
 -- ============================================================
@@ -281,6 +308,12 @@ CREATE INDEX idx_tasks_status_id        ON tasks(status_id);
 CREATE INDEX idx_tasks_priority_id      ON tasks(priority_id);
 CREATE INDEX idx_tasks_due_date         ON tasks(due_date);
 CREATE INDEX idx_tasks_category_id      ON tasks(category_id);
+
+CREATE INDEX idx_task_assignees_task        ON task_assignees(task_task_assignees);
+CREATE INDEX idx_task_assignees_user        ON task_assignees(user_task_assignee_entries);
+CREATE INDEX idx_task_assignees_proposed    ON task_assignees(user_proposed_assignees);
+CREATE INDEX idx_task_assignees_approved    ON task_assignees(user_approved_assignees);
+CREATE INDEX idx_task_assignees_status      ON task_assignees(status);
 
 CREATE INDEX idx_tasks_title_fts ON tasks
     USING GIN (to_tsvector('russian', title));

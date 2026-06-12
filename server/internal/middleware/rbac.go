@@ -57,6 +57,12 @@ func RequireExport() gin.HandlerFunc {
 	return RequireRole("admin", "chief_engineer", "asutp_chief")
 }
 
+// RequireApprover — может одобрять/отклонять назначения
+// Нач. службы АСУТП, Администратор
+func RequireApprover() gin.HandlerFunc {
+	return RequireRole("admin", "asutp_chief")
+}
+
 // CanManageTasks проверяет может ли роль управлять задачами
 func CanManageTasks(role string) bool {
 	return role == "admin" || role == "chief_engineer" || role == "asutp_chief"

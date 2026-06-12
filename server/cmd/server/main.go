@@ -78,6 +78,7 @@ func main() {
 	allAuth.PUT("/notifications/read-all", notifH.MarkAllRead)
 	allAuth.GET("/profile", profileH.GetProfile)
 	allAuth.PUT("/profile/notification-settings", profileH.UpdateNotificationSettings)
+	allAuth.GET("/references/assignees", refH.GetAssignees)
 
 	// ========== TASK MANAGERS (chief_engineer, asutp_chief, admin) ==========
 	taskMgr := api.Group("")
@@ -87,6 +88,13 @@ func main() {
 	taskMgr.PUT("/tasks/:id", taskH.Update)
 	taskMgr.DELETE("/tasks/:id", taskH.Delete)
 	taskMgr.GET("/export/csv", taskH.ExportCSV)
+
+	// ========== APPROVER (asutp_chief, admin) ==========
+	approver := api.Group("")
+	approver.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
+	approver.Use(middleware.RequireApprover())
+	approver.POST("/tasks/:id/assignees/:assignee_id/approve", taskH.ApproveAssignee)
+	approver.POST("/tasks/:id/assignees/:assignee_id/reject", taskH.RejectAssignee)
 
 	// ========== ТОЛЬКО ADMIN ==========
 	adminApi := api.Group("/admin")

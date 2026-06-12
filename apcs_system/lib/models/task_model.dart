@@ -11,6 +11,7 @@ class TaskModel {
   final CategoryModel? category;
   final CreatorModel? creator;
   final CreatorModel? assignee;
+  final List<TaskAssigneeModel> assignees;
 
   TaskModel({
     required this.id,
@@ -25,6 +26,7 @@ class TaskModel {
     this.category,
     this.creator,
     this.assignee,
+    this.assignees = const [],
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,9 @@ class TaskModel {
       assignee: json['assignee'] != null
           ? CreatorModel.fromJson(json['assignee'])
           : null,
+      assignees: (json['assignees'] as List<dynamic>? ?? [])
+          .map((a) => TaskAssigneeModel.fromJson(a as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -151,5 +156,51 @@ class CreatorModel {
       fullName: json['full_name'] ?? '',
       initials: json['initials'] ?? '',
     );
+  }
+}
+
+class TaskAssigneeModel {
+  final int id;
+  final String status;
+  final CreatorModel? user;
+  final CreatorModel? proposedBy;
+  final CreatorModel? approvedBy;
+  final String? approvedAt;
+
+  TaskAssigneeModel({
+    required this.id,
+    required this.status,
+    this.user,
+    this.proposedBy,
+    this.approvedBy,
+    this.approvedAt,
+  });
+
+  factory TaskAssigneeModel.fromJson(Map<String, dynamic> json) {
+    return TaskAssigneeModel(
+      id: json['id'] ?? 0,
+      status: json['status'] ?? 'pending',
+      user: json['user'] != null ? CreatorModel.fromJson(json['user']) : null,
+      proposedBy: json['proposed_by'] != null
+          ? CreatorModel.fromJson(json['proposed_by'])
+          : null,
+      approvedBy: json['approved_by'] != null
+          ? CreatorModel.fromJson(json['approved_by'])
+          : null,
+      approvedAt: json['approved_at'],
+    );
+  }
+
+  String get statusLabel {
+    switch (status) {
+      case 'pending':
+        return 'На рассмотрении';
+      case 'approved':
+        return 'Одобрен';
+      case 'rejected':
+        return 'Отклонён';
+      default:
+        return status;
+    }
   }
 }

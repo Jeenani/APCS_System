@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"asutp-server/ent"
+	"asutp-server/ent/role"
+	"asutp-server/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -90,6 +92,31 @@ func (h *ReferenceHandler) GetRoles(c *gin.Context) {
 			"id":   r.ID,
 			"name": r.Name,
 		})
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *ReferenceHandler) GetAssignees(c *gin.Context) {
+	items, err := h.client.User.Query().
+		Where(user.HasRoleWith(role.NameIn("chief_engineer", "engineer"))).
+		Where(user.IsActiveEQ(true)).
+		WithRole().
+		All(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка"})
+		return
+	}
+
+	result := make([]gin.H, 0, len(items))
+	for _, u := range items {
+		item := gin.H{
+			"id":         u.ID,
+			"full_name":  u.FullName,
+			"initials":   u.Initials,
+			"role_id":    u.RoleID,
+			"role_name":  u.Edges.Role.Name,
+		}
+		result = append(result, item)
 	}
 	c.JSON(http.StatusOK, result)
 }

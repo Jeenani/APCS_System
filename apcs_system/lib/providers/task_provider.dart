@@ -86,4 +86,33 @@ class TaskProvider extends ChangeNotifier {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>> getAssignees() async {
+    try {
+      final response = await ApiClient.get('/references/assignees');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> approveAssignee(int taskId, int assigneeId) async {
+    try {
+      await ApiClient.post('/tasks/$taskId/assignees/$assigneeId/approve', {});
+      await loadTasks();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> rejectAssignee(int taskId, int assigneeId) async {
+    try {
+      await ApiClient.post('/tasks/$taskId/assignees/$assigneeId/reject', {});
+      await loadTasks();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }

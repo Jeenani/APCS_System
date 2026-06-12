@@ -1,0 +1,57 @@
+APCS System - Assignee Workflow Implementation
+==============================================
+
+STATUS: Server compiles. Flutter UI updated. Ready for testing.
+
+IMPLEMENTED:
+1. Database (schema.sql)
+   - task_assignees table with FK columns (task_task_assignees, user_task_assignee_entries, user_proposed_assignees, user_approved_assignees)
+   - Indexes for all FK columns
+   - Compatible with Ent ORM generated schema
+
+2. Server (Go)
+   - ent/schema/taskassignee.go - new entity for task assignees
+   - ent/schema/task.go - edge to task_assignees
+   - ent/schema/user.go - edges to task_assignees
+   - internal/handler/task.go:
+     * Create task with multiple assignees (assignees[] field)
+     * List/Get tasks with eager-loaded assignees
+     * ApproveAssignee endpoint (POST /tasks/:id/assignees/:assignee_id/approve)
+     * RejectAssignee endpoint (POST /tasks/:id/assignees/:assignee_id/reject)
+     * Notifications to asutp_chief on propose, to proposer on approve/reject
+   - internal/handler/references.go: GetAssignees endpoint (/references/assignees)
+   - internal/middleware/rbac.go: RequireApprover() middleware (admin, asutp_chief)
+   - cmd/server/main.go: New routes registered
+
+3. Flutter (Dart)
+   - models/task_model.dart: TaskAssigneeModel added, assignees field in TaskModel
+   - models/user_model.dart: canApproveAssignees getter
+   - providers/task_provider.dart: getAssignees(), approveAssignee(), rejectAssignee()
+   - screens/create_task_screen.dart: Multi-select assignee chips
+   - screens/task_detail_screen.dart: Assignee list with status badges, approve/reject buttons
+
+ROLES:
+- chief_engineer, asutp_chief, admin can CREATE tasks and propose assignees
+- asutp_chief, admin can APPROVE/REJECT proposed assignees
+- Notifications sent to approvers on propose, to proposer on decision
+
+DEPLOY STEPS:
+1. Drop existing DB and recreate with updated schema.sql
+2. Rebuild server Docker image
+3. Run server (seed will populate default data)
+4. Build Flutter APK
+
+FILES CHANGED:
+- database/schema.sql
+- server/ent/schema/taskassignee.go (new)
+- server/ent/schema/task.go
+- server/ent/schema/user.go
+- server/internal/handler/task.go
+- server/internal/handler/references.go
+- server/internal/middleware/rbac.go
+- server/cmd/server/main.go
+- apcs_system/lib/models/task_model.dart
+- apcs_system/lib/models/user_model.dart
+- apcs_system/lib/providers/task_provider.dart
+- apcs_system/lib/screens/create_task_screen.dart
+- apcs_system/lib/screens/task_detail_screen.dart

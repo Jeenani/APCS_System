@@ -9,9 +9,13 @@ import (
 
 	"asutp-server/ent"
 	"asutp-server/ent/changetype"
+	"asutp-server/ent/notificationtype"
+	"asutp-server/ent/role"
 	"asutp-server/ent/task"
+	"asutp-server/ent/taskassignee"
 	"asutp-server/ent/taskhistory"
 	"asutp-server/ent/taskstatus"
+	"asutp-server/ent/user"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +35,7 @@ type createTaskRequest struct {
 	PriorityID  int    `json:"priority_id" binding:"required"`
 	CategoryID  *int   `json:"category_id"`
 	AssignedTo  *int   `json:"assigned_to"`
+	Assignees   []int  `json:"assignees"`
 }
 
 type updateTaskRequest struct {
@@ -51,6 +56,9 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithCategory().
 		WithCreator().
 		WithAssignee().
+		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
+			q.WithUser().WithProposer().WithApprover()
+		}).
 		Order(ent.Desc(task.FieldCreatedAt))
 
 	// Filters
@@ -114,6 +122,9 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		WithCategory().
 		WithCreator().
 		WithAssignee().
+		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
+			q.WithUser().WithProposer().WithApprover()
+		}).
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
@@ -177,6 +188,25 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Create proposed assignees
+	for _, assigneeID := range req.Assignees {
+		_, err := tx.TaskAssignee.Create().
+			AddTaskIDs(t.ID).
+			AddUserIDs(assigneeID).
+			AddProposerIDs(userID).
+			Save(c)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка назначения исполнителей"})
+			return
+		}
+	}
+
+	// Notify asutp_chief about new proposals
+	if len(req.Assignees) > 0 {
+		_ = h.notifyApprovers(c, t.ID, t.Title, userID)
+	}
+
 	// Create history entry
 	taskCreatedType, _ := getChangeTypeID(tx.Client(), c, "task_created")
 	if taskCreatedType > 0 {
@@ -201,6 +231,9 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		WithCategory().
 		WithCreator().
 		WithAssignee().
+		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
+			q.WithUser()
+		}).
 		Only(c)
 
 	c.JSON(http.StatusCreated, taskToJSON(t))
@@ -361,9 +394,120 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	t, _ := h.client.Task.Query().
 		Where(task.IDEQ(id)).
 		WithPriority().WithStatus().WithCategory().WithCreator().WithAssignee().
+		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
+			q.WithUser().WithProposer().WithApprover()
+		}).
 		Only(c)
 
 	c.JSON(http.StatusOK, taskToJSON(t))
+}
+
+func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID задачи"})
+		return
+	}
+	assigneeID, err := strconv.Atoi(c.Param("assignee_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID назначения"})
+		return
+	}
+
+	userID := c.GetInt("user_id")
+
+	ta, err := h.client.TaskAssignee.Query().
+		Where(taskassignee.IDEQ(assigneeID), taskassignee.HasTaskWith(task.IDEQ(id))).
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Назначение не найдено"})
+		return
+	}
+
+	if ta.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Назначение уже обработано"})
+		return
+	}
+
+	_, err = h.client.TaskAssignee.UpdateOneID(assigneeID).
+		SetStatus("approved").
+		AddApproverIDs(userID).
+		SetApprovedAt(time.Now()).
+		Save(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка одобрения"})
+		return
+	}
+
+	// Notify proposer
+	if len(ta.Edges.Proposer) > 0 {
+		ntID, _ := getNotificationTypeID(h.client, c, "system")
+		if ntID == 0 {
+			ntID = 4
+		}
+		h.client.Notification.Create().
+			SetUserID(ta.Edges.Proposer[0].ID).
+			SetTaskID(id).
+			SetTitle("Исполнитель одобрен").
+			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи одобрен")).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Exec(c)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Исполнитель одобрен"})
+}
+
+func (h *TaskHandler) RejectAssignee(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID задачи"})
+		return
+	}
+	assigneeID, err := strconv.Atoi(c.Param("assignee_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID назначения"})
+		return
+	}
+
+	ta, err := h.client.TaskAssignee.Query().
+		Where(taskassignee.IDEQ(assigneeID), taskassignee.HasTaskWith(task.IDEQ(id))).
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Назначение не найдено"})
+		return
+	}
+
+	if ta.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Назначение уже обработано"})
+		return
+	}
+
+	_, err = h.client.TaskAssignee.UpdateOneID(assigneeID).
+		SetStatus("rejected").
+		Save(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка отклонения"})
+		return
+	}
+
+	// Notify proposer
+	if len(ta.Edges.Proposer) > 0 {
+		ntID, _ := getNotificationTypeID(h.client, c, "system")
+		if ntID == 0 {
+			ntID = 4
+		}
+		h.client.Notification.Create().
+			SetUserID(ta.Edges.Proposer[0].ID).
+			SetTaskID(id).
+			SetTitle("Исполнитель отклонён").
+			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи отклонён")).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Exec(c)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Исполнитель отклонён"})
 }
 
 func (h *TaskHandler) Delete(c *gin.Context) {
@@ -539,7 +683,68 @@ func taskToJSON(t *ent.Task) gin.H {
 		}
 	}
 
+	// New: proposed/approved assignees
+	assignees := make([]gin.H, 0, len(t.Edges.TaskAssignees))
+	for _, ta := range t.Edges.TaskAssignees {
+		item := gin.H{
+			"id":     ta.ID,
+			"status": ta.Status,
+		}
+		if len(ta.Edges.User) > 0 {
+			item["user"] = gin.H{
+				"id":        ta.Edges.User[0].ID,
+				"full_name": ta.Edges.User[0].FullName,
+				"initials":  ta.Edges.User[0].Initials,
+			}
+		}
+		if len(ta.Edges.Proposer) > 0 {
+			item["proposed_by"] = gin.H{
+				"id":        ta.Edges.Proposer[0].ID,
+				"full_name": ta.Edges.Proposer[0].FullName,
+			}
+		}
+		if len(ta.Edges.Approver) > 0 {
+			item["approved_by"] = gin.H{
+				"id":        ta.Edges.Approver[0].ID,
+				"full_name": ta.Edges.Approver[0].FullName,
+			}
+			item["approved_at"] = ta.ApprovedAt.Format(time.RFC3339)
+		}
+		assignees = append(assignees, item)
+	}
+	result["assignees"] = assignees
+
 	return result
+}
+
+func (h *TaskHandler) notifyApprovers(c *gin.Context, taskID int, taskTitle string, proposerID int) error {
+	// Find asutp_chief and admin users
+	approvers, err := h.client.User.Query().
+		Where(user.HasRoleWith(role.NameIn("asutp_chief", "admin"))).
+		All(c)
+	if err != nil {
+		return err
+	}
+
+	ntID, _ := getNotificationTypeID(h.client, c, "system")
+	if ntID == 0 {
+		ntID = 4 // fallback
+	}
+
+	for _, u := range approvers {
+		if u.ID == proposerID {
+			continue // Don't notify self
+		}
+		h.client.Notification.Create().
+			SetUserID(u.ID).
+			SetTaskID(taskID).
+			SetTitle("Новое назначение на задачу").
+			SetBody(fmt.Sprintf("Задача \"%s\" — предложены исполнители", taskTitle)).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Exec(c)
+	}
+	return nil
 }
 
 func getChangeTypeID(client *ent.Client, c *gin.Context, code string) (int, error) {
@@ -550,4 +755,14 @@ func getChangeTypeID(client *ent.Client, c *gin.Context, code string) (int, erro
 		return 0, err
 	}
 	return ct.ID, nil
+}
+
+func getNotificationTypeID(client *ent.Client, c *gin.Context, code string) (int, error) {
+	nt, err := client.NotificationType.Query().
+		Where(notificationtype.CodeEQ(code)).
+		Only(c)
+	if err != nil {
+		return 0, err
+	}
+	return nt.ID, nil
 }
