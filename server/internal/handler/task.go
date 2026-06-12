@@ -210,7 +210,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
 		return
 	}
-	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "asutp_chief" || proposer.Edges.Role.Name == "admin")
+	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "chief_engineer" || proposer.Edges.Role.Name == "admin")
 
 	// Create assignees
 	for _, assigneeID := range req.Assignees {
@@ -232,7 +232,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		}
 	}
 
-	// Notify asutp_chief about new proposals only from chief_engineer
+	// Notify chief_engineer about new proposals only from non-direct assigners
 	if len(req.Assignees) > 0 && !canDirectAssign {
 		_ = h.notifyApprovers(c, t.ID, t.Title, userID)
 	}
@@ -428,7 +428,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
 			return
 		}
-		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
+		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "chief_engineer" || updater.Edges.Role.Name == "admin")
 
 		// Load existing assignees for this task
 		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
@@ -834,9 +834,9 @@ func taskToJSON(t *ent.Task) gin.H {
 }
 
 func (h *TaskHandler) notifyApprovers(c *gin.Context, taskID int, taskTitle string, proposerID int) error {
-	// Find asutp_chief and admin users
+	// Find chief_engineer and admin users to notify
 	approvers, err := h.client.User.Query().
-		Where(user.HasRoleWith(role.NameIn("asutp_chief", "admin"))).
+		Where(user.HasRoleWith(role.NameIn("chief_engineer", "admin"))).
 		All(c)
 	if err != nil {
 		return err

@@ -47,23 +47,24 @@ func RequireAdmin() gin.HandlerFunc {
 }
 
 // RequireTaskManager — может создавать/редактировать задачи и менять прогресс
-// Главный инженер, Нач. службы АСУТП, Администратор
+// Главный инженер, Администратор
 func RequireTaskManager() gin.HandlerFunc {
-	return RequireRole("admin", "chief_engineer", "asutp_chief")
+	return RequireRole("admin", "chief_engineer")
 }
 
 // RequireExport — может экспортировать данные
+// Главный инженер, Администратор
 func RequireExport() gin.HandlerFunc {
-	return RequireRole("admin", "chief_engineer", "asutp_chief")
+	return RequireRole("admin", "chief_engineer")
 }
 
 // RequireApprover — может одобрять/отклонять назначения
-// Нач. службы АСУТП, Администратор
+// Главный инженер, Администратор
 func RequireApprover() gin.HandlerFunc {
-	return RequireRole("admin", "asutp_chief")
+	return RequireRole("admin", "chief_engineer")
 }
 
 // CanManageTasks проверяет может ли роль управлять задачами
 func CanManageTasks(role string) bool {
-	return role == "admin" || role == "chief_engineer" || role == "asutp_chief"
+	return role == "admin" || role == "chief_engineer"
 }

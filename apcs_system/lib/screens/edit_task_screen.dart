@@ -105,10 +105,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     final hadAssignees = _selectedAssignees.isNotEmpty;
     String message;
     if (hadAssignees) {
-      if (userRole == 'asutp_chief' || userRole == 'admin') {
+      if (userRole == 'chief_engineer' || userRole == 'admin') {
         message = 'Исполнители назначены';
       } else {
-        message = 'Запрос на назначение отправлен начальнику АСУТП';
+        message = 'Запрос на назначение отправлен главному инженеру';
       }
     } else {
       message = 'Задача обновлена';
