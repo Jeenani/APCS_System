@@ -11,6 +11,5 @@ RUN apk --no-cache add ca-certificates tzdata
 ENV TZ=Europe/Moscow
 WORKDIR /app
 COPY --from=builder /asutp-server .
-COPY .env .env
 EXPOSE 8080
 CMD ["./asutp-server"]
