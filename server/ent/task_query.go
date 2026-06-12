@@ -35,6 +35,8 @@ type TaskQuery struct {
 	withCategory      *TaskCategoryQuery
 	withCreator       *UserQuery
 	withAssignee      *UserQuery
+	withParent        *TaskQuery
+	withChildren      *TaskQuery
 	withTaskAssignees *TaskAssigneeQuery
 	withHistories     *TaskHistoryQuery
 	withNotifications *NotificationQuery
@@ -177,6 +179,50 @@ func (_q *TaskQuery) QueryAssignee() *UserQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, task.AssigneeTable, task.AssigneeColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (_q *TaskQuery) QueryParent() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.ParentTable, task.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChildren chains the current query on the "children" edge.
+func (_q *TaskQuery) QueryChildren() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ChildrenTable, task.ChildrenColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -447,6 +493,8 @@ func (_q *TaskQuery) Clone() *TaskQuery {
 		withCategory:      _q.withCategory.Clone(),
 		withCreator:       _q.withCreator.Clone(),
 		withAssignee:      _q.withAssignee.Clone(),
+		withParent:        _q.withParent.Clone(),
+		withChildren:      _q.withChildren.Clone(),
 		withTaskAssignees: _q.withTaskAssignees.Clone(),
 		withHistories:     _q.withHistories.Clone(),
 		withNotifications: _q.withNotifications.Clone(),
@@ -508,6 +556,28 @@ func (_q *TaskQuery) WithAssignee(opts ...func(*UserQuery)) *TaskQuery {
 		opt(query)
 	}
 	_q.withAssignee = query
+	return _q
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TaskQuery) WithParent(opts ...func(*TaskQuery)) *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withParent = query
+	return _q
+}
+
+// WithChildren tells the query-builder to eager-load the nodes that are connected to
+// the "children" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TaskQuery) WithChildren(opts ...func(*TaskQuery)) *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChildren = query
 	return _q
 }
 
@@ -622,12 +692,14 @@ func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 	var (
 		nodes       = []*Task{}
 		_spec       = _q.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [10]bool{
 			_q.withPriority != nil,
 			_q.withStatus != nil,
 			_q.withCategory != nil,
 			_q.withCreator != nil,
 			_q.withAssignee != nil,
+			_q.withParent != nil,
+			_q.withChildren != nil,
 			_q.withTaskAssignees != nil,
 			_q.withHistories != nil,
 			_q.withNotifications != nil,
@@ -678,6 +750,19 @@ func (_q *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 	if query := _q.withAssignee; query != nil {
 		if err := _q.loadAssignee(ctx, query, nodes, nil,
 			func(n *Task, e *User) { n.Edges.Assignee = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withParent; query != nil {
+		if err := _q.loadParent(ctx, query, nodes, nil,
+			func(n *Task, e *Task) { n.Edges.Parent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChildren; query != nil {
+		if err := _q.loadChildren(ctx, query, nodes,
+			func(n *Task) { n.Edges.Children = []*Task{} },
+			func(n *Task, e *Task) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -856,6 +941,71 @@ func (_q *TaskQuery) loadAssignee(ctx context.Context, query *UserQuery, nodes [
 	}
 	return nil
 }
+func (_q *TaskQuery) loadParent(ctx context.Context, query *TaskQuery, nodes []*Task, init func(*Task), assign func(*Task, *Task)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Task)
+	for i := range nodes {
+		if nodes[i].ParentID == nil {
+			continue
+		}
+		fk := *nodes[i].ParentID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(task.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "parent_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *TaskQuery) loadChildren(ctx context.Context, query *TaskQuery, nodes []*Task, init func(*Task), assign func(*Task, *Task)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(task.FieldParentID)
+	}
+	query.Where(predicate.Task(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ChildrenColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ParentID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "parent_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "parent_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (_q *TaskQuery) loadTaskAssignees(ctx context.Context, query *TaskAssigneeQuery, nodes []*Task, init func(*Task), assign func(*Task, *TaskAssignee)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Task)
@@ -989,6 +1139,9 @@ func (_q *TaskQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withAssignee != nil {
 			_spec.Node.AddColumnOnce(task.FieldAssignedTo)
+		}
+		if _q.withParent != nil {
+			_spec.Node.AddColumnOnce(task.FieldParentID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

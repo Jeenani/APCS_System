@@ -39,6 +39,8 @@ type Task struct {
 	CreatedBy int `json:"created_by,omitempty"`
 	// AssignedTo holds the value of the "assigned_to" field.
 	AssignedTo *int `json:"assigned_to,omitempty"`
+	// ParentID holds the value of the "parent_id" field.
+	ParentID *int `json:"parent_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -61,6 +63,10 @@ type TaskEdges struct {
 	Creator *User `json:"creator,omitempty"`
 	// Assignee holds the value of the assignee edge.
 	Assignee *User `json:"assignee,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *Task `json:"parent,omitempty"`
+	// Children holds the value of the children edge.
+	Children []*Task `json:"children,omitempty"`
 	// TaskAssignees holds the value of the task_assignees edge.
 	TaskAssignees []*TaskAssignee `json:"task_assignees,omitempty"`
 	// Histories holds the value of the histories edge.
@@ -69,7 +75,7 @@ type TaskEdges struct {
 	Notifications []*Notification `json:"notifications,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [10]bool
 }
 
 // PriorityOrErr returns the Priority value or an error if the edge
@@ -127,10 +133,30 @@ func (e TaskEdges) AssigneeOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "assignee"}
 }
 
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskEdges) ParentOrErr() (*Task, error) {
+	if e.Parent != nil {
+		return e.Parent, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: task.Label}
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// ChildrenOrErr returns the Children value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ChildrenOrErr() ([]*Task, error) {
+	if e.loadedTypes[6] {
+		return e.Children, nil
+	}
+	return nil, &NotLoadedError{edge: "children"}
+}
+
 // TaskAssigneesOrErr returns the TaskAssignees value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) TaskAssigneesOrErr() ([]*TaskAssignee, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[7] {
 		return e.TaskAssignees, nil
 	}
 	return nil, &NotLoadedError{edge: "task_assignees"}
@@ -139,7 +165,7 @@ func (e TaskEdges) TaskAssigneesOrErr() ([]*TaskAssignee, error) {
 // HistoriesOrErr returns the Histories value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) HistoriesOrErr() ([]*TaskHistory, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[8] {
 		return e.Histories, nil
 	}
 	return nil, &NotLoadedError{edge: "histories"}
@@ -148,7 +174,7 @@ func (e TaskEdges) HistoriesOrErr() ([]*TaskHistory, error) {
 // NotificationsOrErr returns the Notifications value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) NotificationsOrErr() ([]*Notification, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[9] {
 		return e.Notifications, nil
 	}
 	return nil, &NotLoadedError{edge: "notifications"}
@@ -159,7 +185,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case task.FieldID, task.FieldPriorityID, task.FieldStatusID, task.FieldCategoryID, task.FieldProgress, task.FieldCreatedBy, task.FieldAssignedTo:
+		case task.FieldID, task.FieldPriorityID, task.FieldStatusID, task.FieldCategoryID, task.FieldProgress, task.FieldCreatedBy, task.FieldAssignedTo, task.FieldParentID:
 			values[i] = new(sql.NullInt64)
 		case task.FieldTitle, task.FieldDescription:
 			values[i] = new(sql.NullString)
@@ -243,6 +269,13 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 				_m.AssignedTo = new(int)
 				*_m.AssignedTo = int(value.Int64)
 			}
+		case task.FieldParentID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
+			} else if value.Valid {
+				_m.ParentID = new(int)
+				*_m.ParentID = int(value.Int64)
+			}
 		case task.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -291,6 +324,16 @@ func (_m *Task) QueryCreator() *UserQuery {
 // QueryAssignee queries the "assignee" edge of the Task entity.
 func (_m *Task) QueryAssignee() *UserQuery {
 	return NewTaskClient(_m.config).QueryAssignee(_m)
+}
+
+// QueryParent queries the "parent" edge of the Task entity.
+func (_m *Task) QueryParent() *TaskQuery {
+	return NewTaskClient(_m.config).QueryParent(_m)
+}
+
+// QueryChildren queries the "children" edge of the Task entity.
+func (_m *Task) QueryChildren() *TaskQuery {
+	return NewTaskClient(_m.config).QueryChildren(_m)
 }
 
 // QueryTaskAssignees queries the "task_assignees" edge of the Task entity.
@@ -361,6 +404,11 @@ func (_m *Task) String() string {
 	builder.WriteString(", ")
 	if v := _m.AssignedTo; v != nil {
 		builder.WriteString("assigned_to=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ParentID; v != nil {
+		builder.WriteString("parent_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

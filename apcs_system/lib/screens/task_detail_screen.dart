@@ -336,6 +336,120 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       ),
                       const SizedBox(height: 16),
 
+                      // Parent task link
+                      if (_task!.parentId != null)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Родительская задача', style: TextStyle(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () => Navigator.pushReplacementNamed(context, '/task-detail', arguments: _task!.parentId),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.arrow_upward, size: 18, color: AppColors.primary),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _task!.parentId.toString(),
+                                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_task!.parentId != null) const SizedBox(height: 12),
+
+                      // Subtasks
+                      if (_task!.children.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Подзадачи (${_task!.children.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ..._task!.children.map((child) {
+                                return InkWell(
+                                  onTap: () => Navigator.pushNamed(context, '/task-detail', arguments: child.id),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${child.progress}%',
+                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(child.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                              Text(
+                                                child.status?.label ?? '',
+                                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(Icons.chevron_right, color: Colors.grey),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      if (_task!.children.isNotEmpty) const SizedBox(height: 12),
+
+                      // Create subtask button
+                      if (context.watch<AuthProvider>().user?.canManageTasks ?? false)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.pushNamed(context, '/create-task', arguments: _task!.id),
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('Создать подзадачу'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      if (context.watch<AuthProvider>().user?.canManageTasks ?? false) const SizedBox(height: 12),
+
                       // History button
                       SizedBox(
                         width: double.infinity,

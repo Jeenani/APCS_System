@@ -12,6 +12,8 @@ class TaskModel {
   final CreatorModel? creator;
   final CreatorModel? assignee;
   final List<TaskAssigneeModel> assignees;
+  final int? parentId;
+  final List<ChildTaskModel> children;
 
   TaskModel({
     required this.id,
@@ -27,6 +29,8 @@ class TaskModel {
     this.creator,
     this.assignee,
     this.assignees = const [],
+    this.parentId,
+    this.children = const [],
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +59,10 @@ class TaskModel {
           : null,
       assignees: (json['assignees'] as List<dynamic>? ?? [])
           .map((a) => TaskAssigneeModel.fromJson(a as Map<String, dynamic>))
+          .toList(),
+      parentId: json['parent_id'],
+      children: (json['children'] as List<dynamic>? ?? [])
+          .map((c) => ChildTaskModel.fromJson(c as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -202,5 +210,38 @@ class TaskAssigneeModel {
       default:
         return status;
     }
+  }
+}
+
+class ChildTaskModel {
+  final int id;
+  final String title;
+  final int progress;
+  final String dueDate;
+  final StatusModel? status;
+  final CreatorModel? creator;
+
+  ChildTaskModel({
+    required this.id,
+    required this.title,
+    required this.progress,
+    required this.dueDate,
+    this.status,
+    this.creator,
+  });
+
+  factory ChildTaskModel.fromJson(Map<String, dynamic> json) {
+    return ChildTaskModel(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      progress: json['progress'] ?? 0,
+      dueDate: json['due_date'] ?? '',
+      status: json['status'] != null
+          ? StatusModel.fromJson(json['status'])
+          : null,
+      creator: json['creator'] != null
+          ? CreatorModel.fromJson(json['creator'])
+          : null,
+    );
   }
 }

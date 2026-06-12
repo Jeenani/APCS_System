@@ -5,7 +5,8 @@ import '../core/api_client.dart';
 import '../providers/task_provider.dart';
 
 class CreateTaskScreen extends StatefulWidget {
-  const CreateTaskScreen({super.key});
+  final int? parentId;
+  const CreateTaskScreen({super.key, this.parentId});
 
   @override
   State<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -120,6 +121,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     if (_selectedAssignees.isNotEmpty) {
       data['assignees'] = _selectedAssignees.toList();
     }
+    if (widget.parentId != null) {
+      data['parent_id'] = widget.parentId;
+    }
 
     final success = await context.read<TaskProvider>().createTask(data);
     setState(() => _saving = false);
@@ -134,7 +138,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Создание задачи'),
+        title: Text(widget.parentId != null ? 'Создание подзадачи' : 'Создание задачи'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,

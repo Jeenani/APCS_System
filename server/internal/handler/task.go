@@ -36,6 +36,7 @@ type createTaskRequest struct {
 	CategoryID  *int   `json:"category_id"`
 	AssignedTo  *int   `json:"assigned_to"`
 	Assignees   []int  `json:"assignees"`
+	ParentID    *int   `json:"parent_id"`
 }
 
 type updateTaskRequest struct {
@@ -48,6 +49,7 @@ type updateTaskRequest struct {
 	Progress    *int16  `json:"progress"`
 	AssignedTo  *int    `json:"assigned_to"`
 	Assignees   []int   `json:"assignees"`
+	ParentID    *int    `json:"parent_id"`
 }
 
 func (h *TaskHandler) List(c *gin.Context) {
@@ -60,6 +62,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
 			q.WithUser()
 		}).
+		WithChildren().
 		Order(ent.Desc(task.FieldCreatedAt))
 
 	// Engineers only see tasks they created or are approved assignees on
@@ -74,6 +77,15 @@ func (h *TaskHandler) List(c *gin.Context) {
 				),
 			))
 		}
+	}
+
+	// Parent filter: default top-level only, unless specific parent_id requested
+	if parentID := c.Query("parent_id"); parentID != "" {
+		if pid, err := strconv.Atoi(parentID); err == nil {
+			query = query.Where(task.ParentIDEQ(pid))
+		}
+	} else if c.Query("include_subtasks") != "true" {
+		query = query.Where(task.ParentIDIsNil())
 	}
 
 	// Filters
@@ -140,6 +152,12 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
 			q.WithUser()
 		}).
+		WithParent(func(q *ent.TaskQuery) {
+			q.WithPriority().WithStatus().WithCategory()
+		}).
+		WithChildren(func(q *ent.TaskQuery) {
+			q.WithPriority().WithStatus().WithCreator()
+		}).
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
@@ -179,6 +197,15 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Validate parent_id if provided
+	if req.ParentID != nil {
+		parentExists, err := tx.Task.Query().Where(task.IDEQ(*req.ParentID)).Exist(c)
+		if err != nil || !parentExists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Родительская задача не найдена"})
+			return
+		}
+	}
+
 	builder := tx.Task.Create().
 		SetTitle(req.Title).
 		SetDueDate(dueDate).
@@ -194,6 +221,9 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 	if req.AssignedTo != nil {
 		builder = builder.SetAssignedTo(*req.AssignedTo)
+	}
+	if req.ParentID != nil {
+		builder = builder.SetParentID(*req.ParentID)
 	}
 
 	t, err := builder.Save(c)
@@ -418,6 +448,44 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		builder = builder.SetAssignedTo(*req.AssignedTo)
 	}
 
+	// Update parent_id
+	if req.ParentID != nil {
+		// Prevent self-parenting
+		if *req.ParentID == id {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Задача не может быть родителем самой себя"})
+			return
+		}
+		// Prevent circular reference: check if proposed parent is a descendant
+		if *req.ParentID != 0 {
+			parentExists, err := tx.Task.Query().Where(task.IDEQ(*req.ParentID)).Exist(c)
+			if err != nil || !parentExists {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Родительская задача не найдена"})
+				return
+			}
+			// Simple circular check: walk up the parent chain
+			currentParentID := *req.ParentID
+			visited := map[int]bool{id: true}
+			for currentParentID != 0 {
+				if visited[currentParentID] {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Циклическая ссылка в родительских задачах"})
+					return
+				}
+				visited[currentParentID] = true
+				p, err := tx.Task.Query().Where(task.IDEQ(currentParentID)).Select(task.FieldParentID).Only(c)
+				if err != nil {
+					break
+				}
+				if p.ParentID == nil {
+					break
+				}
+				currentParentID = *p.ParentID
+			}
+			builder = builder.SetParentID(*req.ParentID)
+		} else {
+			builder = builder.ClearParentID()
+		}
+	}
+
 	// Update assignees
 	if req.Assignees != nil {
 		// Get user role
@@ -631,6 +699,17 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// Check if task has children
+	hasChildren, err := h.client.Task.Query().Where(task.HasChildren()).Where(task.IDEQ(id)).Exist(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка проверки подзадач"})
+		return
+	}
+	if hasChildren {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Нельзя удалить задачу с подзадачами. Сначала удалите подзадачи."})
+		return
+	}
+
 	if err := h.client.Task.DeleteOneID(id).Exec(c); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
 		return
@@ -795,6 +874,44 @@ func taskToJSON(t *ent.Task) gin.H {
 			"full_name": t.Edges.Assignee.FullName,
 			"initials":  t.Edges.Assignee.Initials,
 		}
+	}
+	if t.ParentID != nil {
+		result["parent_id"] = *t.ParentID
+	}
+	if t.Edges.Parent != nil {
+		result["parent"] = gin.H{
+			"id":    t.Edges.Parent.ID,
+			"title": t.Edges.Parent.Title,
+		}
+		if t.Edges.Parent.Edges.Status != nil {
+			result["parent"].(gin.H)["status"] = t.Edges.Parent.Edges.Status.Code
+		}
+	}
+	if len(t.Edges.Children) > 0 {
+		children := make([]gin.H, 0, len(t.Edges.Children))
+		for _, child := range t.Edges.Children {
+			item := gin.H{
+				"id":       child.ID,
+				"title":    child.Title,
+				"progress": child.Progress,
+				"due_date": child.DueDate.Format("2006-01-02"),
+			}
+			if child.Edges.Status != nil {
+				item["status"] = gin.H{
+					"code": child.Edges.Status.Code,
+				}
+			}
+			if child.Edges.Creator != nil {
+				item["creator"] = gin.H{
+					"id":        child.Edges.Creator.ID,
+					"full_name": child.Edges.Creator.FullName,
+					"initials":  child.Edges.Creator.Initials,
+				}
+			}
+			children = append(children, item)
+		}
+		result["children"] = children
+		result["children_count"] = len(children)
 	}
 
 	// New: proposed/approved assignees

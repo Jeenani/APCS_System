@@ -252,6 +252,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "priority_id", Type: field.TypeInt},
+		{Name: "parent_id", Type: field.TypeInt, Nullable: true},
 		{Name: "category_id", Type: field.TypeInt, Nullable: true},
 		{Name: "status_id", Type: field.TypeInt},
 		{Name: "created_by", Type: field.TypeInt},
@@ -270,26 +271,32 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "tasks_task_categories_tasks",
+				Symbol:     "tasks_tasks_children",
 				Columns:    []*schema.Column{TasksColumns[8]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "tasks_task_categories_tasks",
+				Columns:    []*schema.Column{TasksColumns[9]},
 				RefColumns: []*schema.Column{TaskCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "tasks_task_status_tasks",
-				Columns:    []*schema.Column{TasksColumns[9]},
+				Columns:    []*schema.Column{TasksColumns[10]},
 				RefColumns: []*schema.Column{TaskStatusColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "tasks_users_created_tasks",
-				Columns:    []*schema.Column{TasksColumns[10]},
+				Columns:    []*schema.Column{TasksColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "tasks_users_assigned_tasks",
-				Columns:    []*schema.Column{TasksColumns[11]},
+				Columns:    []*schema.Column{TasksColumns[12]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -465,10 +472,11 @@ func init() {
 	PasswordResetTokensTable.ForeignKeys[0].RefTable = UsersTable
 	RefreshTokensTable.ForeignKeys[0].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = PrioritiesTable
-	TasksTable.ForeignKeys[1].RefTable = TaskCategoriesTable
-	TasksTable.ForeignKeys[2].RefTable = TaskStatusTable
-	TasksTable.ForeignKeys[3].RefTable = UsersTable
+	TasksTable.ForeignKeys[1].RefTable = TasksTable
+	TasksTable.ForeignKeys[2].RefTable = TaskCategoriesTable
+	TasksTable.ForeignKeys[3].RefTable = TaskStatusTable
 	TasksTable.ForeignKeys[4].RefTable = UsersTable
+	TasksTable.ForeignKeys[5].RefTable = UsersTable
 	TaskAssigneesTable.ForeignKeys[0].RefTable = TasksTable
 	TaskAssigneesTable.ForeignKeys[1].RefTable = UsersTable
 	TaskAssigneesTable.ForeignKeys[2].RefTable = UsersTable

@@ -2279,6 +2279,38 @@ func (c *TaskClient) QueryAssignee(_m *Task) *UserQuery {
 	return query
 }
 
+// QueryParent queries the parent edge of a Task.
+func (c *TaskClient) QueryParent(_m *Task) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.ParentTable, task.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChildren queries the children edge of a Task.
+func (c *TaskClient) QueryChildren(_m *Task) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ChildrenTable, task.ChildrenColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTaskAssignees queries the task_assignees edge of a Task.
 func (c *TaskClient) QueryTaskAssignees(_m *Task) *TaskAssigneeQuery {
 	query := (&TaskAssigneeClient{config: c.config}).Query()

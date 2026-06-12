@@ -34,6 +34,9 @@ func (Task) Fields() []ent.Field {
 		field.Int("assigned_to").
 			Optional().
 			Nillable(),
+		field.Int("parent_id").
+			Optional().
+			Nillable(),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
@@ -67,6 +70,10 @@ func (Task) Edges() []ent.Edge {
 		edge.From("assignee", User.Type).
 			Ref("assigned_tasks").
 			Field("assigned_to").
+			Unique(),
+		edge.To("children", Task.Type).
+			From("parent").
+			Field("parent_id").
 			Unique(),
 		edge.To("task_assignees", TaskAssignee.Type),
 		edge.To("histories", TaskHistory.Type),

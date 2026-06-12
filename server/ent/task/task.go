@@ -32,6 +32,8 @@ const (
 	FieldCreatedBy = "created_by"
 	// FieldAssignedTo holds the string denoting the assigned_to field in the database.
 	FieldAssignedTo = "assigned_to"
+	// FieldParentID holds the string denoting the parent_id field in the database.
+	FieldParentID = "parent_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -46,6 +48,10 @@ const (
 	EdgeCreator = "creator"
 	// EdgeAssignee holds the string denoting the assignee edge name in mutations.
 	EdgeAssignee = "assignee"
+	// EdgeParent holds the string denoting the parent edge name in mutations.
+	EdgeParent = "parent"
+	// EdgeChildren holds the string denoting the children edge name in mutations.
+	EdgeChildren = "children"
 	// EdgeTaskAssignees holds the string denoting the task_assignees edge name in mutations.
 	EdgeTaskAssignees = "task_assignees"
 	// EdgeHistories holds the string denoting the histories edge name in mutations.
@@ -89,6 +95,14 @@ const (
 	AssigneeInverseTable = "users"
 	// AssigneeColumn is the table column denoting the assignee relation/edge.
 	AssigneeColumn = "assigned_to"
+	// ParentTable is the table that holds the parent relation/edge.
+	ParentTable = "tasks"
+	// ParentColumn is the table column denoting the parent relation/edge.
+	ParentColumn = "parent_id"
+	// ChildrenTable is the table that holds the children relation/edge.
+	ChildrenTable = "tasks"
+	// ChildrenColumn is the table column denoting the children relation/edge.
+	ChildrenColumn = "parent_id"
 	// TaskAssigneesTable is the table that holds the task_assignees relation/edge.
 	TaskAssigneesTable = "task_assignees"
 	// TaskAssigneesInverseTable is the table name for the TaskAssignee entity.
@@ -124,6 +138,7 @@ var Columns = []string{
 	FieldProgress,
 	FieldCreatedBy,
 	FieldAssignedTo,
+	FieldParentID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -206,6 +221,11 @@ func ByAssignedTo(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAssignedTo, opts...).ToFunc()
 }
 
+// ByParentID orders the results by the parent_id field.
+func ByParentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -248,6 +268,27 @@ func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByAssigneeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newAssigneeStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByParentField orders the results by parent field.
+func ByParentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newParentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByChildrenCount orders the results by children count.
+func ByChildrenCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newChildrenStep(), opts...)
+	}
+}
+
+// ByChildren orders the results by children terms.
+func ByChildren(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChildrenStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -325,6 +366,20 @@ func newAssigneeStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AssigneeInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, AssigneeTable, AssigneeColumn),
+	)
+}
+func newParentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+	)
+}
+func newChildrenStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
 	)
 }
 func newTaskAssigneesStep() *sqlgraph.Step {

@@ -61,7 +61,8 @@ class AsutpTasksApp extends StatelessWidget {
             case '/home':
               return MaterialPageRoute(builder: (_) => const HomeScreen());
             case '/create-task':
-              return MaterialPageRoute(builder: (_) => const CreateTaskScreen());
+              final parentId = settings.arguments as int?;
+              return MaterialPageRoute(builder: (_) => CreateTaskScreen(parentId: parentId));
             case '/task-detail':
               final taskId = settings.arguments as int;
               return MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: taskId));
