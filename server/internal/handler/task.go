@@ -433,6 +433,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			}
 			_, err := b.Save(c)
 			if err != nil {
+				fmt.Printf("ERROR: creating assignee for user %d on task %d: %v\n", assigneeID, id, err)
 				tx.Rollback()
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка назначения исполнителей"})
 				return
