@@ -343,6 +343,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	// Permission check
 	roleVal, _ := c.Get("role")
 	canEdit := false
+	restrictedEdit := false // asutp_chief editing a task assigned by chief_engineer
 	if r, ok := roleVal.(string); ok {
 		switch r {
 		case "admin", "chief_engineer":
@@ -352,11 +353,13 @@ func (h *TaskHandler) Update(c *gin.Context) {
 				canEdit = true
 			} else if existing.AssignedTo != nil && *existing.AssignedTo == userID {
 				canEdit = true
+				restrictedEdit = true
 			} else {
 				isAssignee, _ := h.client.TaskAssignee.Query().
 					Where(taskassignee.TaskIDEQ(id), taskassignee.UserIDEQ(userID), taskassignee.StatusEQ("approved")).
 					Exist(c)
 				canEdit = isAssignee
+				restrictedEdit = isAssignee
 			}
 		}
 	}
@@ -373,7 +376,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 
 	builder := tx.Task.UpdateOneID(id)
 
-	if req.Title != nil && *req.Title != existing.Title {
+	if !restrictedEdit && req.Title != nil && *req.Title != existing.Title {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "title_changed")
 		if changeID > 0 {
 			h.client.TaskHistory.Create().
@@ -385,7 +388,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		builder = builder.SetTitle(*req.Title)
 	}
 
-	if req.Description != nil {
+	if !restrictedEdit && req.Description != nil {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "description_changed")
 		if changeID > 0 {
 			oldDesc := ""
@@ -401,7 +404,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		builder = builder.SetDescription(*req.Description)
 	}
 
-	if req.DueDate != nil {
+	if !restrictedEdit && req.DueDate != nil {
 		dueDate, err := time.Parse("2006-01-02", *req.DueDate)
 		if err == nil {
 			changeID, _ := getChangeTypeID(tx.Client(), c, "due_date_changed")
@@ -418,7 +421,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if req.PriorityID != nil && *req.PriorityID != existing.PriorityID {
+	if !restrictedEdit && req.PriorityID != nil && *req.PriorityID != existing.PriorityID {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "priority_changed")
 		if changeID > 0 {
 			h.client.TaskHistory.Create().
@@ -469,11 +472,11 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if req.CategoryID != nil {
+	if !restrictedEdit && req.CategoryID != nil {
 		builder = builder.SetCategoryID(*req.CategoryID)
 	}
 
-	if req.AssignedTo != nil {
+	if !restrictedEdit && req.AssignedTo != nil {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "assignee_changed")
 		if changeID > 0 {
 			h.client.TaskHistory.Create().
@@ -486,7 +489,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	}
 
 	// Update parent_id
-	if req.ParentID != nil {
+	if !restrictedEdit && req.ParentID != nil {
 		// Prevent self-parenting
 		if *req.ParentID == id {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Задача не может быть родителем самой себя"})
@@ -524,7 +527,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	}
 
 	// Update assignees
-	if req.Assignees != nil {
+	if !restrictedEdit && req.Assignees != nil {
 		// Get user role
 		updater, err := tx.User.Query().Where(user.IDEQ(userID)).WithRole().Only(c)
 		if err != nil {
