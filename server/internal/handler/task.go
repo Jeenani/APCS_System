@@ -407,15 +407,16 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
 		// Delete existing assignees for this task
-		existingAssignees, err := tx.TaskAssignee.Query().Where(taskassignee.HasTaskWith(task.IDEQ(id))).All(c)
+		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
 		if err != nil {
+			fmt.Printf("ERROR: loading task with assignees: %v\n", err)
 			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка поиска старых назначений"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки задачи"})
 			return
 		}
-		for _, ea := range existingAssignees {
-			err = tx.TaskAssignee.DeleteOneID(ea.ID).Exec(c)
-			if err != nil {
+		for _, ta := range taskWithAssignees.Edges.TaskAssignees {
+			if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
+				fmt.Printf("ERROR: deleting assignee %d: %v\n", ta.ID, err)
 				tx.Rollback()
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
 				return
@@ -481,7 +482,8 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 	userID := c.GetInt("user_id")
 
 	ta, err := h.client.TaskAssignee.Query().
-		Where(taskassignee.IDEQ(assigneeID), taskassignee.HasTaskWith(task.IDEQ(id))).
+		Where(taskassignee.IDEQ(assigneeID)).
+		WithProposer().
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Назначение не найдено"})
@@ -538,7 +540,8 @@ func (h *TaskHandler) RejectAssignee(c *gin.Context) {
 	}
 
 	ta, err := h.client.TaskAssignee.Query().
-		Where(taskassignee.IDEQ(assigneeID), taskassignee.HasTaskWith(task.IDEQ(id))).
+		Where(taskassignee.IDEQ(assigneeID)).
+		WithProposer().
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Назначение не найдено"})
