@@ -80,6 +80,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       'progress': _progress.round(),
     };
     data['assignees'] = _selectedAssignees.toList();
+    debugPrint('Update task body: $data');
 
     final success = await context.read<TaskProvider>().updateTask(widget.task.id, data);
     setState(() => _saving = false);

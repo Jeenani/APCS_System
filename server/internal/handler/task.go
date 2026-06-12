@@ -400,6 +400,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		// Get user role
 		updater, err := tx.User.Query().Where(user.IDEQ(userID)).WithRole().Only(c)
 		if err != nil {
+			fmt.Printf("ERROR getting user role: userID=%d, err=%v\n", userID, err)
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
 			return
@@ -782,7 +783,9 @@ func taskToJSON(t *ent.Task) gin.H {
 				"id":        ta.Edges.Approver.ID,
 				"full_name": ta.Edges.Approver.FullName,
 			}
-			item["approved_at"] = ta.ApprovedAt.Format(time.RFC3339)
+			if ta.ApprovedAt != nil {
+				item["approved_at"] = ta.ApprovedAt.Format(time.RFC3339)
+			}
 		}
 		assignees = append(assignees, item)
 	}

@@ -37,8 +37,10 @@ class TaskProvider extends ChangeNotifier {
   Future<TaskModel?> getTask(int id) async {
     try {
       final response = await ApiClient.get('/tasks/$id');
+      debugPrint('getTask response: $response');
       return TaskModel.fromJson(response);
     } catch (e) {
+      debugPrint('getTask error: $e');
       return null;
     }
   }
