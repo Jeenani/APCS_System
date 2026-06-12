@@ -33,7 +33,7 @@ func getOrCreateRole(ctx context.Context, client *ent.Client, name string) (*ent
 }
 
 // getOrCreatePriority возвращает приоритет по имени, создавая при необходимости
-func getOrCreatePriority(ctx context.Context, client *ent.Client, name, color string, order int) (*ent.Priority, error) {
+func getOrCreatePriority(ctx context.Context, client *ent.Client, name, color string, order int16) (*ent.Priority, error) {
 	p, err := client.Priority.Query().Where(priority.NameEQ(name)).Only(ctx)
 	if ent.IsNotFound(err) {
 		p, err = client.Priority.Create().SetName(name).SetColorHex(color).SetSortOrder(order).Save(ctx)
