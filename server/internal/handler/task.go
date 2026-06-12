@@ -94,37 +94,8 @@ func (h *TaskHandler) List(c *gin.Context) {
 
 	tasks, err := query.All(c)
 	if err != nil {
-		fmt.Printf("ERROR List query.All failed: %v\n", err)
-		// Fallback: query without TaskAssignees eager load
-		simpleQuery := h.client.Task.Query().
-			WithPriority().
-			WithStatus().
-			WithCategory().
-			WithCreator().
-			WithAssignee().
-			Order(ent.Desc(task.FieldCreatedAt))
-		if statusCode := c.Query("status"); statusCode != "" {
-			simpleQuery = simpleQuery.Where(task.HasStatusWith(taskstatus.CodeEQ(statusCode)))
-		}
-		if priorityID := c.Query("priority_id"); priorityID != "" {
-			if pid, err := strconv.Atoi(priorityID); err == nil {
-				simpleQuery = simpleQuery.Where(task.PriorityIDEQ(pid))
-			}
-		}
-		if search := c.Query("search"); search != "" {
-			simpleQuery = simpleQuery.Where(task.TitleContainsFold(search))
-		}
-		if categoryID := c.Query("category_id"); categoryID != "" {
-			if cid, err := strconv.Atoi(categoryID); err == nil {
-				simpleQuery = simpleQuery.Where(task.CategoryIDEQ(cid))
-			}
-		}
-		tasks, err = simpleQuery.All(c)
-		if err != nil {
-			fmt.Printf("ERROR List fallback query also failed: %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения задач: " + err.Error()})
-			return
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения задач"})
+		return
 	}
 
 	result := make([]gin.H, 0, len(tasks))
