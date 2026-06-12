@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"asutp-server/ent"
 	"asutp-server/internal/config"
@@ -21,14 +22,30 @@ func main() {
 		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}
 
-	client, err := ent.Open("postgres", cfg.DB.DSN())
+	var client *ent.Client
+	for i := 0; i < 10; i++ {
+		client, err = ent.Open("postgres", cfg.DB.DSN())
+		if err == nil {
+			break
+		}
+		log.Printf("Ожидание БД (попытка %d/10): %v", i+1, err)
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		log.Fatalf("Ошибка подключения к БД: %v", err)
 	}
 	defer client.Close()
 
 	ctx := context.Background()
-	if err := client.Schema.Create(ctx); err != nil {
+	for i := 0; i < 10; i++ {
+		err = client.Schema.Create(ctx)
+		if err == nil {
+			break
+		}
+		log.Printf("Ожидание миграции (попытка %d/10): %v", i+1, err)
+		time.Sleep(2 * time.Second)
+	}
+	if err != nil {
 		log.Fatalf("Ошибка миграции БД: %v", err)
 	}
 	if err := seed.Run(ctx, client); err != nil {
