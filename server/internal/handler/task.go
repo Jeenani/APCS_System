@@ -62,6 +62,20 @@ func (h *TaskHandler) List(c *gin.Context) {
 		}).
 		Order(ent.Desc(task.FieldCreatedAt))
 
+	// Engineers only see tasks they created or are approved assignees on
+	userID := c.GetInt("user_id")
+	if roleVal, ok := c.Get("role"); ok {
+		if roleName, ok := roleVal.(string); ok && roleName == "engineer" {
+			query = query.Where(task.Or(
+				task.CreatedByEQ(userID),
+				task.HasTaskAssigneesWith(
+					taskassignee.UserIDEQ(userID),
+					taskassignee.StatusEQ("approved"),
+				),
+			))
+		}
+	}
+
 	// Filters
 	if statusCode := c.Query("status"); statusCode != "" {
 		query = query.Where(task.HasStatusWith(taskstatus.CodeEQ(statusCode)))
