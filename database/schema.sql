@@ -308,12 +308,6 @@ CREATE INDEX idx_tasks_priority_id      ON tasks(priority_id);
 CREATE INDEX idx_tasks_due_date         ON tasks(due_date);
 CREATE INDEX idx_tasks_category_id      ON tasks(category_id);
 
-CREATE INDEX idx_task_assignees_task        ON task_assignees(task_task_assignees);
-CREATE INDEX idx_task_assignees_user        ON task_assignees(user_task_assignee_entries);
-CREATE INDEX idx_task_assignees_proposed    ON task_assignees(user_proposed_assignees);
-CREATE INDEX idx_task_assignees_approved    ON task_assignees(user_approved_assignees);
-CREATE INDEX idx_task_assignees_status      ON task_assignees(status);
-
 CREATE INDEX idx_tasks_title_fts ON tasks
     USING GIN (to_tsvector('russian', title));
 CREATE INDEX idx_tasks_desc_fts ON tasks

@@ -90,7 +90,7 @@ class TaskProvider extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> getAssignees() async {
     try {
       final response = await ApiClient.get('/references/assignees');
-      return List<Map<String, dynamic>>.from(response);
+      return List<Map<String, dynamic>>.from(response['assignees'] ?? []);
     } catch (e) {
       return [];
     }
