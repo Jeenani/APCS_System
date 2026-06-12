@@ -434,8 +434,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       if (_task!.children.isNotEmpty) const SizedBox(height: 12),
 
-                      // Create subtask button
-                      if (context.watch<AuthProvider>().user?.canManageTasks ?? false)
+                      // Create subtask button (only for top-level tasks, not subtasks)
+                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -448,7 +448,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                         ),
-                      if (context.watch<AuthProvider>().user?.canManageTasks ?? false) const SizedBox(height: 12),
+                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canManageTasks ?? false)) const SizedBox(height: 12),
 
                       // History button
                       SizedBox(
