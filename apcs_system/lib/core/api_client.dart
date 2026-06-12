@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import '../config/environment.dart';
@@ -8,6 +10,22 @@ class ApiClient {
   static String? _accessToken;
   static String? _refreshToken;
   static String? _baseUrl;
+
+  static http.Client? _httpClient;
+
+  static http.Client get client {
+    if (_httpClient != null) return _httpClient!;
+    if (Environment.isDebugMode) {
+      final ioClient = HttpClient()
+        ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      _httpClient = IOClient(ioClient);
+    } else {
+      _httpClient = http.Client();
+    }
+    return _httpClient!;
+  }
+
+  static http.Client get _client => client;
 
   // ============================================
   // Инициализация
@@ -97,7 +115,7 @@ class ApiClient {
   // ============================================
 
   static Future<dynamic> get(String path) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
     );
@@ -105,7 +123,7 @@ class ApiClient {
   }
 
   static Future<dynamic> post(String path, Map<String, dynamic> body) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
       body: jsonEncode(body),
@@ -114,7 +132,7 @@ class ApiClient {
   }
 
   static Future<dynamic> put(String path, Map<String, dynamic> body) async {
-    final response = await http.put(
+    final response = await _client.put(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
       body: jsonEncode(body),
@@ -123,7 +141,7 @@ class ApiClient {
   }
 
   static Future<dynamic> delete(String path) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
     );

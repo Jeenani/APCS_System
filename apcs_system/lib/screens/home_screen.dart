@@ -468,7 +468,7 @@ class _ProfileTab extends StatelessWidget {
   Future<void> _exportCSV(BuildContext context) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Экспорт CSV...')));
-      final response = await http.get(
+      final response = await ApiClient.client.get(
         Uri.parse('${ApiConfig.baseUrl}/export/csv'),
         headers: {'Authorization': 'Bearer ${ApiClient.accessToken}'},
       );
