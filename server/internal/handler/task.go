@@ -407,7 +407,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		}
 		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
-		// Delete existing assignees for this task
+		// Load existing assignees for this task
 		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
 		if err != nil {
 			fmt.Printf("ERROR: loading task with assignees: %v\n", err)
@@ -415,16 +415,27 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки задачи"})
 			return
 		}
+
+		// Track which users already have approved/rejected entries (preserve decisions)
+		existingDecisions := make(map[int]string) // userID -> status
 		for _, ta := range taskWithAssignees.Edges.TaskAssignees {
-			if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
-				fmt.Printf("ERROR: deleting assignee %d: %v\n", ta.ID, err)
-				tx.Rollback()
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
-				return
+			existingDecisions[ta.UserID] = ta.Status
+			// Only delete pending proposals; approved/rejected stay intact
+			if ta.Status == "pending" {
+				if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
+					fmt.Printf("ERROR: deleting pending assignee %d: %v\n", ta.ID, err)
+					tx.Rollback()
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+					return
+				}
 			}
 		}
 
 		for _, assigneeID := range req.Assignees {
+			// Skip if user already has an approved/rejected decision
+			if status, ok := existingDecisions[assigneeID]; ok && status != "pending" {
+				continue
+			}
 			b := tx.TaskAssignee.Create().
 				SetTaskID(id).
 				SetUserID(assigneeID).
