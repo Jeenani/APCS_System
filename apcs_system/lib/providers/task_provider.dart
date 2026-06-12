@@ -64,6 +64,10 @@ class TaskProvider extends ChangeNotifier {
       _error = e.message;
       notifyListeners();
       return false;
+    } catch (e) {
+      _error = 'Ошибка подключения: $e';
+      notifyListeners();
+      return false;
     }
   }
 

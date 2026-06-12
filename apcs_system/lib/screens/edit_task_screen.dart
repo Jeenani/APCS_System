@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/task_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 
 class EditTaskScreen extends StatefulWidget {
@@ -78,14 +79,37 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       'status_id': _statusId,
       'progress': _progress.round(),
     };
-    if (_selectedAssignees.isNotEmpty) {
-      data['assignees'] = _selectedAssignees.toList();
-    }
+    data['assignees'] = _selectedAssignees.toList();
 
     final success = await context.read<TaskProvider>().updateTask(widget.task.id, data);
     setState(() => _saving = false);
 
-    if (success && mounted) Navigator.pop(context);
+    if (!mounted) return;
+
+    if (!success) {
+      final errorMsg = context.read<TaskProvider>().error ?? 'Ошибка сохранения';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final userRole = context.read<AuthProvider>().user?.role;
+    final hadAssignees = _selectedAssignees.isNotEmpty;
+    String message;
+    if (hadAssignees) {
+      if (userRole == 'asutp_chief' || userRole == 'admin') {
+        message = 'Исполнители назначены';
+      } else {
+        message = 'Запрос на назначение отправлен начальнику АСУТП';
+      }
+    } else {
+      message = 'Задача обновлена';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+    Navigator.pop(context);
   }
 
   @override

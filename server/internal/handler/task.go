@@ -396,7 +396,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	}
 
 	// Update assignees
-	if len(req.Assignees) > 0 {
+	if req.Assignees != nil {
 		// Get user role
 		updater, err := tx.User.Query().Where(user.IDEQ(userID)).WithRole().Only(c)
 		if err != nil {
@@ -440,7 +440,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			}
 		}
 
-		if !canDirectAssign {
+		if !canDirectAssign && len(req.Assignees) > 0 {
 			_ = h.notifyApprovers(c, id, existing.Title, userID)
 		}
 	}
