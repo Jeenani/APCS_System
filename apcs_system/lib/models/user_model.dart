@@ -55,6 +55,9 @@ class UserModel {
   bool get canApproveAssignees =>
       role == 'admin' || role == 'chief_engineer';
 
+  /// Может создавать подзадачи
+  bool get canCreateSubtasks => role == 'asutp_chief' || role == 'admin';
+
   /// Администратор системы
   bool get isAdmin => role == 'admin';
 }

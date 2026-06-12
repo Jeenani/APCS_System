@@ -65,14 +65,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
-          if (_task != null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () async {
-                await Navigator.pushNamed(context, '/edit-task', arguments: _task);
-                _loadTask();
-              },
-            ),
+          if (_task != null)
+            Builder(builder: (context) {
+              final user = context.watch<AuthProvider>().user;
+              final canEdit = user != null && (
+                user.role == 'admin' ||
+                user.role == 'chief_engineer' ||
+                (user.role == 'asutp_chief' && _task!.creator?.id == user.id)
+              );
+              if (!canEdit) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, '/edit-task', arguments: _task);
+                  _loadTask();
+                },
+              );
+            }),
           if (_task != null && (context.watch<AuthProvider>().user?.canApproveAssignees ?? false))
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppColors.error),
@@ -435,11 +444,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       if (_task!.children.isNotEmpty) const SizedBox(height: 12),
 
                       // Create subtask button (only for top-level tasks, not subtasks)
-                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
+                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false))
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: () => Navigator.pushNamed(context, '/create-task', arguments: _task!.id),
+                            onPressed: () async {
+                              await Navigator.pushNamed(context, '/create-task', arguments: _task!.id);
+                              _loadTask();
+                            },
                             icon: const Icon(Icons.add_task),
                             label: const Text('Создать подзадачу'),
                             style: OutlinedButton.styleFrom(
@@ -448,7 +460,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                         ),
-                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canManageTasks ?? false)) const SizedBox(height: 12),
+                      if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false)) const SizedBox(height: 12),
 
                       // History button
                       SizedBox(
