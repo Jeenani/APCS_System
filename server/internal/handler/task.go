@@ -58,7 +58,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithCreator().
 		WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser().WithProposer().WithApprover()
+			q.WithUser()
 		}).
 		Order(ent.Desc(task.FieldCreatedAt))
 
@@ -124,7 +124,7 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		WithCreator().
 		WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser().WithProposer().WithApprover()
+			q.WithUser()
 		}).
 		Only(c)
 	if err != nil {
@@ -240,7 +240,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 
 	// Reload with edges
-	t, _ = h.client.Task.Query().
+	t, err = h.client.Task.Query().
 		Where(task.IDEQ(t.ID)).
 		WithPriority().
 		WithStatus().
@@ -251,6 +251,15 @@ func (h *TaskHandler) Create(c *gin.Context) {
 			q.WithUser()
 		}).
 		Only(c)
+	if err != nil {
+		fmt.Printf("ERROR reloading task after create: %v\n", err)
+		c.JSON(http.StatusCreated, gin.H{
+			"id": t.ID, "title": t.Title, "due_date": t.DueDate.Format("2006-01-02"),
+			"progress": t.Progress, "created_at": t.CreatedAt.Format(time.RFC3339),
+			"updated_at": t.UpdatedAt.Format(time.RFC3339),
+		})
+		return
+	}
 
 	c.JSON(http.StatusCreated, taskToJSON(t))
 }
@@ -469,15 +478,20 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	}
 
 	// Reload
-	t, _ := h.client.Task.Query().
+	tReload, err := h.client.Task.Query().
 		Where(task.IDEQ(id)).
 		WithPriority().WithStatus().WithCategory().WithCreator().WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser().WithProposer().WithApprover()
+			q.WithUser()
 		}).
 		Only(c)
+	if err != nil {
+		fmt.Printf("ERROR reloading task after update: %v\n", err)
+		c.JSON(http.StatusOK, taskToJSON(existing))
+		return
+	}
 
-	c.JSON(http.StatusOK, taskToJSON(t))
+	c.JSON(http.StatusOK, taskToJSON(tReload))
 }
 
 func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
