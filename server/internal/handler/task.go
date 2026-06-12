@@ -199,9 +199,13 @@ func (h *TaskHandler) Create(c *gin.Context) {
 
 	// Validate parent_id if provided
 	if req.ParentID != nil {
-		parentExists, err := tx.Task.Query().Where(task.IDEQ(*req.ParentID)).Exist(c)
-		if err != nil || !parentExists {
+		parent, err := tx.Task.Query().Where(task.IDEQ(*req.ParentID)).Select(task.FieldParentID).Only(c)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Родительская задача не найдена"})
+			return
+		}
+		if parent.ParentID != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Нельзя создавать подзадачу внутри подзадачи. Максимум один уровень вложенности."})
 			return
 		}
 	}
