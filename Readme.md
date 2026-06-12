@@ -102,7 +102,16 @@ docker compose -f docker-compose.prod.yml up -d server
 ```
 
 ```bash
-#пересборка С ОБНУЛЕНИЕМ БАЗОЙ ДАННЫХ СЕРВЕРА! 
+# ====== РЕКОМЕНДУЕМЫЙ способ (сохраняет БД и сертификаты) ======
+chmod +x deploy.sh
+./deploy.sh
+```
+
+```bash
+# ⚠️ ОПАСНО: полный сброс с удалением ВСЕХ данных (БД + сертификаты)
+# Используй ТОЛЬКО если нужно начать с чистой базы!
+# После этого Caddy будет запрашивать новый сертификат и может
+# упереться в Let's Encrypt rate limit (5 шт за 7 дней)
 git pull
 docker compose -f docker-compose.prod.yml down -v
 docker compose -f docker-compose.prod.yml build --no-cache server
@@ -111,12 +120,11 @@ docker ps
 ```
 
 ```bash
-# Полный перезапуск с пересборкой образа сервера
+# Ручной перезапуск с пересборкой (сохраняет volumes)
 docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d --build
 # Или быстрый restart без пересборки
 docker compose -f docker-compose.prod.yml restart
-
 ```
 Проверка логов и статуса:
 
