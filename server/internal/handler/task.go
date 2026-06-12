@@ -47,6 +47,7 @@ type updateTaskRequest struct {
 	CategoryID  *int    `json:"category_id"`
 	Progress    *int16  `json:"progress"`
 	AssignedTo  *int    `json:"assigned_to"`
+	Assignees   []int   `json:"assignees"`
 }
 
 func (h *TaskHandler) List(c *gin.Context) {
@@ -188,13 +189,28 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Create proposed assignees
+	// Get proposer role
+	proposer, err := tx.User.Query().Where(user.IDEQ(userID)).WithRole().Only(c)
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
+		return
+	}
+	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "asutp_chief" || proposer.Edges.Role.Name == "admin")
+
+	// Create assignees
 	for _, assigneeID := range req.Assignees {
-		_, err := tx.TaskAssignee.Create().
+		builder := tx.TaskAssignee.Create().
 			AddTaskIDs(t.ID).
 			AddUserIDs(assigneeID).
-			AddProposerIDs(userID).
-			Save(c)
+			AddProposerIDs(userID)
+		if canDirectAssign {
+			builder = builder.
+				SetStatus("approved").
+				AddApproverIDs(userID).
+				SetApprovedAt(time.Now())
+		}
+		_, err := builder.Save(c)
 		if err != nil {
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка назначения исполнителей"})
@@ -202,8 +218,8 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		}
 	}
 
-	// Notify asutp_chief about new proposals
-	if len(req.Assignees) > 0 {
+	// Notify asutp_chief about new proposals only from chief_engineer
+	if len(req.Assignees) > 0 && !canDirectAssign {
 		_ = h.notifyApprovers(c, t.ID, t.Title, userID)
 	}
 
@@ -379,6 +395,46 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		builder = builder.SetAssignedTo(*req.AssignedTo)
 	}
 
+	// Update assignees
+	if len(req.Assignees) > 0 {
+		// Get user role
+		updater, err := tx.User.Query().Where(user.IDEQ(userID)).WithRole().Only(c)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
+			return
+		}
+		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
+
+		// Delete existing assignees for this task
+		_, err = tx.TaskAssignee.Delete().Where(taskassignee.HasTaskWith(task.IDEQ(id))).Exec(c)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+			return
+		}
+
+		for _, assigneeID := range req.Assignees {
+			b := tx.TaskAssignee.Create().
+				AddTaskIDs(id).
+				AddUserIDs(assigneeID).
+				AddProposerIDs(userID)
+			if canDirectAssign {
+				b = b.SetStatus("approved").AddApproverIDs(userID).SetApprovedAt(time.Now())
+			}
+			_, err := b.Save(c)
+			if err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка назначения исполнителей"})
+				return
+			}
+		}
+
+		if !canDirectAssign {
+			_ = h.notifyApprovers(c, id, existing.Title, userID)
+		}
+	}
+
 	if _, err := builder.Save(c); err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления задачи"})
@@ -445,14 +501,17 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 		if ntID == 0 {
 			ntID = 4
 		}
-		h.client.Notification.Create().
+		_, err := h.client.Notification.Create().
 			SetUserID(ta.Edges.Proposer[0].ID).
 			SetTaskID(id).
 			SetTitle("Исполнитель одобрен").
 			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи одобрен")).
 			SetNotificationTypeID(ntID).
 			SetScheduledAt(time.Now()).
-			Exec(c)
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR: failed to create approval notification: %v\n", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Исполнитель одобрен"})
@@ -497,14 +556,17 @@ func (h *TaskHandler) RejectAssignee(c *gin.Context) {
 		if ntID == 0 {
 			ntID = 4
 		}
-		h.client.Notification.Create().
+		_, err := h.client.Notification.Create().
 			SetUserID(ta.Edges.Proposer[0].ID).
 			SetTaskID(id).
 			SetTitle("Исполнитель отклонён").
 			SetBody(fmt.Sprintf("Ваш предложенный исполнитель для задачи отклонён")).
 			SetNotificationTypeID(ntID).
 			SetScheduledAt(time.Now()).
-			Exec(c)
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR: failed to create reject notification: %v\n", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Исполнитель отклонён"})
@@ -735,14 +797,17 @@ func (h *TaskHandler) notifyApprovers(c *gin.Context, taskID int, taskTitle stri
 		if u.ID == proposerID {
 			continue // Don't notify self
 		}
-		h.client.Notification.Create().
+		_, err := h.client.Notification.Create().
 			SetUserID(u.ID).
 			SetTaskID(taskID).
 			SetTitle("Новое назначение на задачу").
 			SetBody(fmt.Sprintf("Задача \"%s\" — предложены исполнители", taskTitle)).
 			SetNotificationTypeID(ntID).
 			SetScheduledAt(time.Now()).
-			Exec(c)
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR: failed to create notification for user %d: %v\n", u.ID, err)
+		}
 	}
 	return nil
 }

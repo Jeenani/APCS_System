@@ -96,7 +96,7 @@ class ApiClient {
   // HTTP методы
   // ============================================
 
-  static Future<Map<String, dynamic>> get(String path) async {
+  static Future<dynamic> get(String path) async {
     final response = await http.get(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
@@ -104,7 +104,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
+  static Future<dynamic> post(String path, Map<String, dynamic> body) async {
     final response = await http.post(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
@@ -113,7 +113,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
+  static Future<dynamic> put(String path, Map<String, dynamic> body) async {
     final response = await http.put(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
@@ -122,7 +122,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> delete(String path) async {
+  static Future<dynamic> delete(String path) async {
     final response = await http.delete(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
@@ -130,14 +130,14 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  static Map<String, dynamic> _handleResponse(http.Response response) {
+  static dynamic _handleResponse(http.Response response) {
     final body = jsonDecode(utf8.decode(response.bodyBytes));
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body is Map<String, dynamic> ? body : {'data': body};
+      return body;
     }
     throw ApiException(
       statusCode: response.statusCode,
-      message: body['error'] ?? 'Ошибка сервера',
+      message: body is Map ? body['error'] ?? 'Ошибка сервера' : 'Ошибка сервера',
     );
   }
 }

@@ -35,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await ApiClient.post('/auth/login', {
         'login': login,
         'password': password,
-      });
+      }) as Map<String, dynamic>;
 
       await ApiClient.saveTokens(
         response['access_token'],

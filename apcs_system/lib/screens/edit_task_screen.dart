@@ -20,6 +20,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late int _statusId;
   late double _progress;
   bool _saving = false;
+  List<Map<String, dynamic>> _availableAssignees = [];
+  final Set<int> _selectedAssignees = {};
+  bool _loadingAssignees = false;
 
   @override
   void initState() {
@@ -30,6 +33,19 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _priorityId = widget.task.priority?.id ?? 1;
     _statusId = widget.task.status?.id ?? 1;
     _progress = widget.task.progress.toDouble();
+    _selectedAssignees.addAll(widget.task.assignees.map((a) => a.user?.id ?? 0).where((id) => id != 0));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAssignees());
+  }
+
+  Future<void> _loadAssignees() async {
+    setState(() => _loadingAssignees = true);
+    final assignees = await context.read<TaskProvider>().getAssignees();
+    if (mounted) {
+      setState(() {
+        _availableAssignees = assignees;
+        _loadingAssignees = false;
+      });
+    }
   }
 
   @override
@@ -62,6 +78,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       'status_id': _statusId,
       'progress': _progress.round(),
     };
+    if (_selectedAssignees.isNotEmpty) {
+      data['assignees'] = _selectedAssignees.toList();
+    }
 
     final success = await context.read<TaskProvider>().updateTask(widget.task.id, data);
     setState(() => _saving = false);
@@ -189,6 +208,59 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Assignees
+            const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (_loadingAssignees)
+              const SizedBox(
+                height: 40,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else if (_availableAssignees.isEmpty)
+              Text('Нет доступных исполнителей', style: TextStyle(fontSize: 13, color: Colors.grey[600]))
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _availableAssignees.map((u) {
+                  final id = u['id'] as int;
+                  final isSelected = _selectedAssignees.contains(id);
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (isSelected) {
+                        _selectedAssignees.remove(id);
+                      } else {
+                        _selectedAssignees.add(id);
+                      }
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.primary : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSelected ? Icons.check_circle : Icons.person_outline,
+                            size: 16,
+                            color: isSelected ? Colors.white : AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            u['full_name'] as String,
+                            style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 32),
 
             SizedBox(

@@ -98,7 +98,7 @@ func (h *ReferenceHandler) GetRoles(c *gin.Context) {
 
 func (h *ReferenceHandler) GetAssignees(c *gin.Context) {
 	items, err := h.client.User.Query().
-		Where(user.HasRoleWith(role.NameIn("chief_engineer", "engineer"))).
+		Where(user.HasRoleWith(role.NameIn("chief_engineer", "engineer", "asutp_chief"))).
 		Where(user.IsActiveEQ(true)).
 		WithRole().
 		All(c)

@@ -27,7 +27,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   Future<void> _loadSettings() async {
     try {
-      final response = await ApiClient.get('/profile');
+      final response = await ApiClient.get('/profile') as Map<String, dynamic>;
       final settings = response['notification_settings'];
       if (settings != null) {
         setState(() {

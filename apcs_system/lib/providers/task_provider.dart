@@ -22,7 +22,7 @@ class TaskProvider extends ChangeNotifier {
       if (sort != null) path += 'sort=$sort&';
       if (priorityId != null) path += 'priority_id=$priorityId&';
 
-      final response = await ApiClient.get(path);
+      final response = await ApiClient.get(path) as Map<String, dynamic>;
       final List tasksJson = response['tasks'] ?? [];
       _tasks = tasksJson.map((j) => TaskModel.fromJson(j)).toList();
       _error = null;
@@ -80,7 +80,7 @@ class TaskProvider extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> getHistory(int taskId) async {
     try {
-      final response = await ApiClient.get('/tasks/$taskId/history');
+      final response = await ApiClient.get('/tasks/$taskId/history') as Map<String, dynamic>;
       return List<Map<String, dynamic>>.from(response['history'] ?? []);
     } catch (e) {
       return [];
@@ -90,7 +90,7 @@ class TaskProvider extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> getAssignees() async {
     try {
       final response = await ApiClient.get('/references/assignees');
-      return List<Map<String, dynamic>>.from(response['assignees'] ?? []);
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       return [];
     }
