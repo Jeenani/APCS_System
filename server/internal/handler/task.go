@@ -267,6 +267,13 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		_ = h.notifyApprovers(c, t.ID, t.Title, userID)
 	}
 
+	// Recalculate parent progress if this is a subtask
+	if req.ParentID != nil {
+		if err := h.recalculateParentProgress(tx, c, *req.ParentID); err != nil {
+			fmt.Printf("ERROR recalculating parent progress after create: %v\n", err)
+		}
+	}
+
 	// Create history entry
 	taskCreatedType, _ := getChangeTypeID(tx.Client(), c, "task_created")
 	if taskCreatedType > 0 {
@@ -552,6 +559,22 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления задачи"})
 		return
+	}
+
+	// Recalculate parent progress for any affected parents
+	parentsToRecalc := make(map[int]struct{})
+	if existing.ParentID != nil {
+		parentsToRecalc[*existing.ParentID] = struct{}{}
+	}
+	// After save, reload to get the potentially new parent_id
+	updatedTask, _ := tx.Task.Get(c, id)
+	if updatedTask != nil && updatedTask.ParentID != nil {
+		parentsToRecalc[*updatedTask.ParentID] = struct{}{}
+	}
+	for pid := range parentsToRecalc {
+		if err := h.recalculateParentProgress(tx, c, pid); err != nil {
+			fmt.Printf("ERROR recalculating parent progress after update: %v\n", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -979,6 +1002,37 @@ func (h *TaskHandler) notifyApprovers(c *gin.Context, taskID int, taskTitle stri
 		if err != nil {
 			fmt.Printf("ERROR: failed to create notification for user %d: %v\n", u.ID, err)
 		}
+	}
+	return nil
+}
+
+func (h *TaskHandler) recalculateParentProgress(tx *ent.Tx, c *gin.Context, parentID int) error {
+	children, err := tx.Task.Query().Where(task.ParentIDEQ(parentID)).All(c)
+	if err != nil {
+		return err
+	}
+	if len(children) == 0 {
+		return nil
+	}
+
+	var total int16
+	for _, child := range children {
+		total += child.Progress
+	}
+	avg := int16(total / int16(len(children)))
+
+	_, err = tx.Task.UpdateOneID(parentID).SetProgress(avg).Save(c)
+	if err != nil {
+		return err
+	}
+
+	// Recurse to grandparent
+	p, err := tx.Task.Get(c, parentID)
+	if err != nil {
+		return err
+	}
+	if p.ParentID != nil {
+		return h.recalculateParentProgress(tx, c, *p.ParentID)
 	}
 	return nil
 }
