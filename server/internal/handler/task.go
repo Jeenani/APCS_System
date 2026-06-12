@@ -226,14 +226,14 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	// Create history entry
 	taskCreatedType, _ := getChangeTypeID(tx.Client(), c, "task_created")
 	if taskCreatedType > 0 {
-		tx.TaskHistory.Create().
+		h.client.TaskHistory.Create().
 			SetTaskID(t.ID).
 			SetChangedBy(userID).
 			SetChangeTypeID(taskCreatedType).
 			SetDisplayText("Задача создана").
 			Save(c)
 	}
-
+	
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сохранения"})
 		return
@@ -286,7 +286,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.Title != nil && *req.Title != existing.Title {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "title_changed")
 		if changeID > 0 {
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("title").SetOldValue(existing.Title).SetNewValue(*req.Title).
 				SetDisplayText(fmt.Sprintf("Название: %s → %s", existing.Title, *req.Title)).
@@ -302,7 +302,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			if existing.Description != nil {
 				oldDesc = *existing.Description
 			}
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("description").SetOldValue(oldDesc).SetNewValue(*req.Description).
 				SetDisplayText("Описание изменено").
@@ -316,7 +316,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		if err == nil {
 			changeID, _ := getChangeTypeID(tx.Client(), c, "due_date_changed")
 			if changeID > 0 {
-				tx.TaskHistory.Create().
+				h.client.TaskHistory.Create().
 					SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 					SetFieldName("due_date").
 					SetOldValue(existing.DueDate.Format("2006-01-02")).
@@ -331,7 +331,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.PriorityID != nil && *req.PriorityID != existing.PriorityID {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "priority_changed")
 		if changeID > 0 {
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("priority_id").
 				SetOldValue(strconv.Itoa(existing.PriorityID)).
@@ -345,7 +345,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.StatusID != nil && *req.StatusID != existing.StatusID {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "status_changed")
 		if changeID > 0 {
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("status_id").
 				SetOldValue(strconv.Itoa(existing.StatusID)).
@@ -359,7 +359,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.Progress != nil && *req.Progress != existing.Progress {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "progress_changed")
 		if changeID > 0 {
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("progress").
 				SetOldValue(fmt.Sprintf("%d%%", existing.Progress)).
@@ -386,7 +386,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.AssignedTo != nil {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "assignee_changed")
 		if changeID > 0 {
-			tx.TaskHistory.Create().
+			h.client.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("assigned_to").
 				SetDisplayText("Исполнитель изменён").
