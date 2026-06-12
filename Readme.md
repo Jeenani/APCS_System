@@ -127,6 +127,9 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ```bash
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
+
 # Ручной перезапуск с пересборкой (сохраняет volumes)
 docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d --build
