@@ -407,11 +407,19 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
 		// Delete existing assignees for this task
-		_, err = tx.TaskAssignee.Delete().Where(taskassignee.HasTaskWith(task.IDEQ(id))).Exec(c)
+		existingAssignees, err := tx.TaskAssignee.Query().Where(taskassignee.HasTaskWith(task.IDEQ(id))).All(c)
 		if err != nil {
 			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка поиска старых назначений"})
 			return
+		}
+		for _, ea := range existingAssignees {
+			err = tx.TaskAssignee.DeleteOneID(ea.ID).Exec(c)
+			if err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+				return
+			}
 		}
 
 		for _, assigneeID := range req.Assignees {
