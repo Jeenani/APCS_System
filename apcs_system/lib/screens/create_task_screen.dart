@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
+import '../core/api_client.dart';
 import '../providers/task_provider.dart';
 
 class CreateTaskScreen extends StatefulWidget {
@@ -21,23 +22,49 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   List<Map<String, dynamic>> _availableAssignees = [];
   final Set<int> _selectedAssignees = {};
   bool _loadingAssignees = false;
-
-  final _categories = [
-    {'id': 1, 'name': 'Датчики', 'icon': Icons.speed},
-    {'id': 2, 'name': 'Контроллеры', 'icon': Icons.memory},
-    {'id': 3, 'name': 'Панели оператора', 'icon': Icons.monitor},
-    {'id': 4, 'name': 'Клапаны', 'icon': Icons.toggle_on},
-    {'id': 5, 'name': 'Насосы', 'icon': Icons.water_drop},
-    {'id': 6, 'name': 'Уровнемеры', 'icon': Icons.straighten},
-    {'id': 7, 'name': 'PLC', 'icon': Icons.dns},
-    {'id': 8, 'name': 'SCADA', 'icon': Icons.dashboard},
-    {'id': 9, 'name': 'Контроль оборудования', 'icon': Icons.build},
-  ];
+  List<Map<String, dynamic>> _categories = [];
+  bool _loadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAssignees());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAssignees();
+      _loadCategories();
+    });
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final resp = await ApiClient.get('/references/categories');
+      if (resp is List) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(
+            resp.map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map)),
+          );
+          _loadingCategories = false;
+        });
+      } else {
+        setState(() => _loadingCategories = false);
+      }
+    } catch (e) {
+      setState(() => _loadingCategories = false);
+    }
+  }
+
+  IconData _iconFromIdentifier(String? id) {
+    switch (id) {
+      case 'icon_sensor': return Icons.speed;
+      case 'icon_plc': return Icons.memory;
+      case 'icon_hmi': return Icons.monitor;
+      case 'icon_valve': return Icons.toggle_on;
+      case 'icon_pump': return Icons.water_drop;
+      case 'icon_level': return Icons.straighten;
+      case 'icon_plc_rack': return Icons.dns;
+      case 'icon_scada': return Icons.dashboard;
+      case 'icon_equipment': return Icons.build;
+      default: return Icons.category;
+    }
   }
 
   Future<void> _loadAssignees() async {
@@ -203,32 +230,38 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               // Category
               const Text('Категория АСУТП', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((cat) {
-                  final isSelected = _categoryId == cat['id'];
-                  return GestureDetector(
-                    onTap: () => setState(() => _categoryId = cat['id'] as int),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+              if (_loadingCategories)
+                const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+              else if (_categories.isEmpty)
+                Text('Нет доступных категорий', style: TextStyle(fontSize: 13, color: Colors.grey[600]))
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _categories.map((cat) {
+                    final catId = cat['id'] as int?;
+                    final isSelected = _categoryId == catId;
+                    return GestureDetector(
+                      onTap: () => setState(() => _categoryId = catId),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.primary : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_iconFromIdentifier(cat['icon_identifier'] as String?), size: 16, color: isSelected ? Colors.white : AppColors.primary),
+                            const SizedBox(width: 6),
+                            Text(cat['name'] as String? ?? '', style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary)),
+                          ],
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(cat['icon'] as IconData, size: 16, color: isSelected ? Colors.white : AppColors.primary),
-                          const SizedBox(width: 6),
-                          Text(cat['name'] as String, style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary)),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+                ),
               const SizedBox(height: 16),
 
               // Assignees

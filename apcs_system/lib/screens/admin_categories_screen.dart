@@ -21,11 +21,22 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
 
   Future<void> _load() async {
     try {
-      final resp = await ApiClient.get('/references/categories') as Map<String, dynamic>;
-      setState(() {
-        _categories = List<Map<String, dynamic>>.from(resp['data'] ?? []);
-        _loading = false;
-      });
+      final resp = await ApiClient.get('/references/categories');
+      if (resp is List) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(
+            resp.map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map)),
+          );
+          _loading = false;
+        });
+      } else if (resp is Map<String, dynamic> && resp['data'] is List) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(resp['data']);
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
     } catch (e) {
       setState(() => _loading = false);
     }

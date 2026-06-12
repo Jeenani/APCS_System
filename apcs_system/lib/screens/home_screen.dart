@@ -62,25 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ===================== КОМПОНЕНТЫ АСУТП =====================
-class _AsutpComponent {
-  final String name;
-  final IconData icon;
-  final Color color;
-  final int? categoryId;
-
-  const _AsutpComponent({required this.name, required this.icon, required this.color, this.categoryId});
-}
-
-const _asutpComponents = [
-  _AsutpComponent(name: 'Датчики', icon: Icons.speed, color: AppColors.primary, categoryId: 1),
-  _AsutpComponent(name: 'Контроллеры', icon: Icons.memory, color: AppColors.accent, categoryId: 2),
-  _AsutpComponent(name: 'Клапаны', icon: Icons.toggle_on, color: AppColors.success, categoryId: 4),
-  _AsutpComponent(name: 'Насосы', icon: Icons.water_drop, color: Color(0xFF0288D1), categoryId: 5),
-  _AsutpComponent(name: 'ПЛК', icon: Icons.dns, color: AppColors.primaryDark, categoryId: 7),
-  _AsutpComponent(name: 'SCADA', icon: Icons.monitor, color: Color(0xFF7B1FA2), categoryId: 8),
-];
-
 // ===================== HOME TAB =====================
 class _HomeTab extends StatefulWidget {
   const _HomeTab();
@@ -91,6 +72,62 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> {
   int? _selectedCategoryId;
+  List<Map<String, dynamic>> _categories = [];
+  bool _loadingCategories = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final resp = await ApiClient.get('/references/categories');
+      if (resp is List) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(
+            resp.map((e) => e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map)),
+          );
+          _loadingCategories = false;
+        });
+      } else {
+        setState(() => _loadingCategories = false);
+      }
+    } catch (e) {
+      setState(() => _loadingCategories = false);
+    }
+  }
+
+  IconData _iconFromIdentifier(String? id) {
+    switch (id) {
+      case 'icon_sensor': return Icons.speed;
+      case 'icon_plc': return Icons.memory;
+      case 'icon_hmi': return Icons.monitor;
+      case 'icon_valve': return Icons.toggle_on;
+      case 'icon_pump': return Icons.water_drop;
+      case 'icon_level': return Icons.straighten;
+      case 'icon_plc_rack': return Icons.dns;
+      case 'icon_scada': return Icons.dashboard;
+      case 'icon_equipment': return Icons.build;
+      default: return Icons.category;
+    }
+  }
+
+  Color _colorFromIndex(int index) {
+    final colors = [
+      AppColors.primary,
+      AppColors.accent,
+      AppColors.success,
+      const Color(0xFF0288D1),
+      AppColors.primaryDark,
+      const Color(0xFF7B1FA2),
+      AppColors.warning,
+      AppColors.error,
+      Colors.teal,
+    ];
+    return colors[index % colors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,45 +198,55 @@ class _HomeTabState extends State<_HomeTab> {
               const SizedBox(height: 10),
               SizedBox(
                 height: 90,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: _asutpComponents.map((comp) {
-                    final isSelected = _selectedCategoryId == comp.categoryId;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (_selectedCategoryId == comp.categoryId) {
-                            _selectedCategoryId = null;
-                            context.read<TaskProvider>().loadTasks();
-                          } else {
-                            _selectedCategoryId = comp.categoryId;
-                            context.read<TaskProvider>().loadTasks();
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 80,
-                        margin: const EdgeInsets.only(right: 10),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: isSelected ? comp.color : comp.color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                border: isSelected ? Border.all(color: comp.color, width: 2) : null,
-                              ),
-                              child: Icon(comp.icon, color: isSelected ? Colors.white : comp.color, size: 28),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(comp.name, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                child: _loadingCategories
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    : _categories.isEmpty
+                        ? const Center(child: Text('Нет категорий', style: TextStyle(fontSize: 12, color: Colors.grey)))
+                        : ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: _categories.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final cat = entry.value;
+                              final catId = cat['id'] as int?;
+                              final catName = cat['name'] as String? ?? '';
+                              final iconId = cat['icon_identifier'] as String?;
+                              final color = _colorFromIndex(index);
+                              final isSelected = _selectedCategoryId == catId;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (_selectedCategoryId == catId) {
+                                      _selectedCategoryId = null;
+                                      context.read<TaskProvider>().loadTasks();
+                                    } else {
+                                      _selectedCategoryId = catId;
+                                      context.read<TaskProvider>().loadTasks();
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  width: 80,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? color : color.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: isSelected ? Border.all(color: color, width: 2) : null,
+                                        ),
+                                        child: Icon(_iconFromIdentifier(iconId), color: isSelected ? Colors.white : color, size: 28),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(catName, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
               ),
               const SizedBox(height: 20),
 
