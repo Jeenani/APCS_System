@@ -45,11 +45,11 @@ class UserModel {
 
   /// Может создавать/редактировать задачи и менять прогресс
   bool get canManageTasks =>
-      role == 'admin' || role == 'chief_engineer';
+      role == 'admin' || role == 'chief_engineer' || role == 'asutp_chief';
 
   /// Может экспортировать CSV
   bool get canExport =>
-      role == 'admin' || role == 'chief_engineer';
+      role == 'admin' || role == 'chief_engineer' || role == 'asutp_chief';
 
   /// Может одобрять/отклонять назначения исполнителей
   bool get canApproveAssignees =>

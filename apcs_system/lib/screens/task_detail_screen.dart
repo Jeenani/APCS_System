@@ -73,7 +73,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 _loadTask();
               },
             ),
-          if (_task != null && (context.watch<AuthProvider>().user?.canManageTasks ?? false))
+          if (_task != null && (context.watch<AuthProvider>().user?.canApproveAssignees ?? false))
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppColors.error),
               onPressed: () async {

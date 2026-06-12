@@ -210,7 +210,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
 		return
 	}
-	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "chief_engineer" || proposer.Edges.Role.Name == "admin")
+	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "chief_engineer" || proposer.Edges.Role.Name == "asutp_chief" || proposer.Edges.Role.Name == "admin")
 
 	// Create assignees
 	for _, assigneeID := range req.Assignees {
@@ -428,7 +428,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения роли"})
 			return
 		}
-		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "chief_engineer" || updater.Edges.Role.Name == "admin")
+		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "chief_engineer" || updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
 		// Load existing assignees for this task
 		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
