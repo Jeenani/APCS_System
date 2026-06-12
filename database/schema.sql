@@ -168,7 +168,6 @@ CREATE TABLE tasks (
     progress           SMALLINT     NOT NULL DEFAULT 0,
     created_by         INTEGER      NOT NULL REFERENCES users(id),
     assigned_to        INTEGER               REFERENCES users(id) ON DELETE SET NULL,
-    task_assignee_task INTEGER               REFERENCES task_assignees(id) ON DELETE SET NULL,
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
