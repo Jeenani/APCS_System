@@ -28,9 +28,6 @@ func main() {
 	defer client.Close()
 
 	ctx := context.Background()
-	if err := client.Schema.Create(ctx); err != nil {
-		log.Fatalf("Ошибка миграции схемы БД: %v", err)
-	}
 	if err := seed.Run(ctx, client); err != nil {
 		log.Fatalf("Ошибка seed: %v", err)
 	}
