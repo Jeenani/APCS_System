@@ -335,6 +335,32 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	}
 
 	userID := c.GetInt("user_id")
+
+	// Permission check
+	roleVal, _ := c.Get("role")
+	canEdit := false
+	if r, ok := roleVal.(string); ok {
+		switch r {
+		case "admin", "chief_engineer":
+			canEdit = true
+		case "asutp_chief":
+			if existing.CreatedBy == userID {
+				canEdit = true
+			} else if existing.AssignedTo != nil && *existing.AssignedTo == userID {
+				canEdit = true
+			} else {
+				isAssignee, _ := h.client.TaskAssignee.Query().
+					Where(taskassignee.TaskIDEQ(id), taskassignee.UserIDEQ(userID), taskassignee.StatusEQ("approved")).
+					Exist(c)
+				canEdit = isAssignee
+			}
+		}
+	}
+	if !canEdit {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Нет прав на редактирование этой задачи"})
+		return
+	}
+
 	tx, err := h.client.Tx(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка транзакции"})
