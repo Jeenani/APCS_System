@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/smtp"
 	"regexp"
 	"strconv"
 	"time"
@@ -332,13 +333,36 @@ func generateTempPassword() string {
 }
 
 func (h *AuthHandler) sendEmail(to, subject, body string) error {
+	from := h.cfg.EmailFrom
+	if from == "" {
+		from = "noreply@missednoteserv.chickenkiller.com"
+	}
+
+	// Try SMTP first if configured
+	if h.cfg.SMTP.Host != "" {
+		msg := []byte("To: " + to + "\r\n" +
+			"From: " + from + "\r\n" +
+			"Subject: " + subject + "\r\n" +
+			"MIME-Version: 1.0\r\n" +
+			"Content-Type: text/plain; charset=\"utf-8\"\r\n" +
+			"\r\n" +
+			body + "\r\n")
+		addr := h.cfg.SMTP.Host + ":" + h.cfg.SMTP.Port
+		var auth smtp.Auth
+		if h.cfg.SMTP.User != "" && h.cfg.SMTP.Pass != "" {
+			auth = smtp.PlainAuth("", h.cfg.SMTP.User, h.cfg.SMTP.Pass, h.cfg.SMTP.Host)
+		}
+		return smtp.SendMail(addr, auth, from, []string{to}, msg)
+	}
+
+	// Fallback to Resend
 	apiKey := h.cfg.ResendAPIKey
 	if apiKey == "" {
 		return fmt.Errorf("RESEND_API_KEY=your_resend_api_key_here не настроен")
 	}
 	client := resend.NewClient(apiKey)
 	params := &resend.SendEmailRequest{
-		From:    "noreply@missednoteserv.chickenkiller.com",
+		From:    from,
 		To:      []string{to},
 		Subject: subject,
 		Text:    body,
