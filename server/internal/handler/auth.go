@@ -338,7 +338,7 @@ func (h *AuthHandler) sendEmail(to, subject, body string) error {
 	}
 	client := resend.NewClient(apiKey)
 	params := &resend.SendEmailRequest{
-		From:    "noreply@altairgames.space",
+		From:    "noreply@missednoteserv.chickenkiller.com",
 		To:      []string{to},
 		Subject: subject,
 		Text:    body,
