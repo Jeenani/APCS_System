@@ -425,7 +425,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 func (h *AuthHandler) GetResetRequests(c *gin.Context) {
 	roleVal, _ := c.Get("role")
 	roleName, _ := roleVal.(string)
-	if roleName != "admin" && roleName != "chief_engineer" {
+	if roleName != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
 		return
 	}
@@ -469,7 +469,7 @@ func (h *AuthHandler) GetResetRequests(c *gin.Context) {
 func (h *AuthHandler) ApproveReset(c *gin.Context) {
 	roleVal, _ := c.Get("role")
 	roleName, _ := roleVal.(string)
-	if roleName != "admin" && roleName != "chief_engineer" {
+	if roleName != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
 		return
 	}
@@ -540,7 +540,7 @@ func (h *AuthHandler) ApproveReset(c *gin.Context) {
 func (h *AuthHandler) RejectReset(c *gin.Context) {
 	roleVal, _ := c.Get("role")
 	roleName, _ := roleVal.(string)
-	if roleName != "admin" && roleName != "chief_engineer" {
+	if roleName != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
 		return
 	}

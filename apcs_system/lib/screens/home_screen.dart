@@ -710,7 +710,8 @@ class _ProfileTabState extends State<_ProfileTab> {
                 _MenuItem(icon: Icons.people_outline, label: 'Управление пользователями', onTap: () => Navigator.pushNamed(context, '/admin/users')),
               if (isAdmin)
                 _MenuItem(icon: Icons.category_outlined, label: 'Управление справочниками', onTap: () => Navigator.pushNamed(context, '/admin/categories')),
-              _MenuItem(icon: Icons.lock_reset_outlined, label: 'Запросы на сброс пароля', onTap: () => Navigator.pushNamed(context, '/admin/reset-requests')),
+              if (isAdmin)
+                _MenuItem(icon: Icons.lock_reset_outlined, label: 'Запросы на сброс пароля', onTap: () => Navigator.pushNamed(context, '/admin/reset-requests')),
             ],
 
             _MenuItem(icon: Icons.help_outline, label: 'Справка', onTap: () {
