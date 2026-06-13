@@ -338,6 +338,10 @@ class TaskCard extends StatelessWidget {
       case 'icon_plc_rack': return Icons.dns;
       case 'icon_scada': return Icons.dashboard;
       case 'icon_equipment': return Icons.build;
+      case 'icon_inspection': return Icons.visibility;
+      case 'icon_cleaning': return Icons.cleaning_services;
+      case 'icon_firmware': return Icons.system_update;
+      case 'icon_security': return Icons.security;
       default: return Icons.task;
     }
   }
@@ -592,8 +596,13 @@ class _ProfileTabState extends State<_ProfileTab> {
         headers: {'Authorization': 'Bearer ${ApiClient.accessToken}'},
       );
       if (response.statusCode == 200) {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/tasks_export.csv');
+        final downloadsDir = await getDownloadsDirectory();
+        final baseDir = downloadsDir ?? await getApplicationDocumentsDirectory();
+        final appDir = Directory('${baseDir.path}/APCS_System');
+        if (!await appDir.exists()) {
+          await appDir.create(recursive: true);
+        }
+        final file = File('${appDir.path}/tasks_export.csv');
         await file.writeAsBytes(response.bodyBytes);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Сохранено: ${file.path}')));
@@ -685,9 +694,6 @@ class _ProfileTabState extends State<_ProfileTab> {
             const SizedBox(height: 20),
 
             _MenuItem(icon: Icons.notifications_outlined, label: 'Настройки уведомлений', onTap: () => Navigator.pushNamed(context, '/notification-settings')),
-            _MenuItem(icon: Icons.history, label: 'История активности', onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите задачу для просмотра истории')));
-            }),
             _MenuItem(icon: Icons.analytics_outlined, label: 'Подробный KPI', onTap: () => Navigator.pushNamed(context, '/kpi')),
             if (canExport)
               _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => _exportCSV(context)),
