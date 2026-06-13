@@ -110,10 +110,10 @@ func main() {
 	taskMgr.GET("/export/csv", taskH.ExportCSV)
 	taskMgr.POST("/tasks/:id/confirm-completion", taskH.ConfirmCompletion)
 
-	// ========== TASK COMPLETER (operator, asutp_chief, admin) ==========
+	// ========== TASK COMPLETER (chief_engineer, asutp_chief, admin) ==========
 	completer := api.Group("")
 	completer.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
-	completer.Use(middleware.RequireRole("admin", "asutp_chief", "operator"))
+	completer.Use(middleware.RequireRole("admin", "chief_engineer", "asutp_chief"))
 	completer.POST("/tasks/:id/complete", taskH.CompleteTask)
 
 	// ========== APPROVER (chief_engineer, admin) ==========

@@ -1107,10 +1107,6 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	roleVal, _ := c.Get("role")
 	roleName, _ := roleVal.(string)
-	if roleName != "admin" && roleName != "asutp_chief" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Только начальник АСУТП или администратор могут подтвердить выполнение"})
-		return
-	}
 
 	t, err := h.client.Task.Query().
 		Where(task.IDEQ(id)).
@@ -1121,6 +1117,18 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+		return
+	}
+
+	// Role-based restriction
+	canConfirm := false
+	if roleName == "chief_engineer" || roleName == "admin" {
+		canConfirm = true
+	} else if roleName == "asutp_chief" && t.ParentID != nil {
+		canConfirm = true
+	}
+	if !canConfirm {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав для подтверждения выполнения"})
 		return
 	}
 
@@ -1174,7 +1182,9 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	})
 }
 
-// CompleteTask marks a task as completed (operator, asutp_chief, admin)
+// CompleteTask marks a task as completed
+// chief_engineer/admin can complete any task
+// asutp_chief can only complete subtasks
 func (h *TaskHandler) CompleteTask(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -1183,6 +1193,11 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 	}
 
 	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	role := ""
+	if r, ok := roleVal.(string); ok {
+		role = r
+	}
 
 	completedStatus, err := h.client.TaskStatus.Query().
 		Where(taskstatus.CodeEQ("completed")).
@@ -1200,6 +1215,12 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 
 	if t.StatusID == completedStatus.ID {
 		c.JSON(http.StatusOK, gin.H{"message": "Задача уже отмечена выполненной"})
+		return
+	}
+
+	// Role-based restriction
+	if t.ParentID == nil && role == "asutp_chief" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Начальник АСУТП может отмечать выполненными только подзадачи"})
 		return
 	}
 

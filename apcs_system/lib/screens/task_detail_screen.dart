@@ -462,8 +462,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false)) const SizedBox(height: 12),
 
-                      // Mark as completed button (operator, asutp_chief, admin)
-                      if (_task!.status?.code != 'completed' && ['admin', 'asutp_chief', 'operator'].contains(context.watch<AuthProvider>().user?.role))
+                      // Mark as completed button
+                      // Main tasks: chief_engineer, admin
+                      // Subtasks: chief_engineer, asutp_chief, admin
+                      if (_task!.status?.code != 'completed' && (
+                        (_task!.parentId == null && ['admin', 'chief_engineer'].contains(context.watch<AuthProvider>().user?.role)) ||
+                        (_task!.parentId != null && ['admin', 'chief_engineer', 'asutp_chief'].contains(context.watch<AuthProvider>().user?.role))
+                      ))
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -500,10 +505,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                         ),
-                      if (_task!.status?.code != 'completed' && ['admin', 'asutp_chief', 'operator'].contains(context.watch<AuthProvider>().user?.role)) const SizedBox(height: 12),
+                      if (_task!.status?.code != 'completed' && (
+                        (_task!.parentId == null && ['admin', 'chief_engineer'].contains(context.watch<AuthProvider>().user?.role)) ||
+                        (_task!.parentId != null && ['admin', 'chief_engineer', 'asutp_chief'].contains(context.watch<AuthProvider>().user?.role))
+                      )) const SizedBox(height: 12),
 
-                      // Confirm completion button (KPI award — asutp_chief, admin)
-                      if (_task!.status?.code == 'completed' && (context.watch<AuthProvider>().user?.role == 'asutp_chief' || context.watch<AuthProvider>().user?.role == 'admin'))
+                      // Confirm completion button (KPI award)
+                      // Main tasks: chief_engineer, admin
+                      // Subtasks: chief_engineer, asutp_chief, admin
+                      if (_task!.status?.code == 'completed' && (
+                        (_task!.parentId == null && ['admin', 'chief_engineer'].contains(context.watch<AuthProvider>().user?.role)) ||
+                        (_task!.parentId != null && ['admin', 'chief_engineer', 'asutp_chief'].contains(context.watch<AuthProvider>().user?.role))
+                      ))
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -540,7 +553,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                         ),
-                      if (_task!.status?.code == 'completed' && (context.watch<AuthProvider>().user?.role == 'asutp_chief' || context.watch<AuthProvider>().user?.role == 'admin')) const SizedBox(height: 12),
+                      if (_task!.status?.code == 'completed' && (
+                        (_task!.parentId == null && ['admin', 'chief_engineer'].contains(context.watch<AuthProvider>().user?.role)) ||
+                        (_task!.parentId != null && ['admin', 'chief_engineer', 'asutp_chief'].contains(context.watch<AuthProvider>().user?.role))
+                      )) const SizedBox(height: 12),
 
                       // History button
                       SizedBox(
