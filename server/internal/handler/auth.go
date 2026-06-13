@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"net/smtp"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"asutp-server/ent"
@@ -19,6 +19,7 @@ import (
 	"asutp-server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/resend/resend-go/v3"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,16 +33,15 @@ func NewAuthHandler(client *ent.Client, cfg *config.Config) *AuthHandler {
 }
 
 type loginRequest struct {
-	Login    string `json:"login" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
 type registerRequest struct {
-	Login    string  `json:"login" binding:"required,min=3,max=100"`
-	Password string  `json:"password" binding:"required,min=6"`
-	FullName string  `json:"full_name" binding:"required"`
-	RoleID   int     `json:"role_id" binding:"required"`
-	Email    *string `json:"email"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+	FullName string `json:"full_name" binding:"required"`
+	RoleID   int    `json:"role_id" binding:"required"`
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -52,16 +52,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	u, err := h.client.User.Query().
-		Where(user.LoginEQ(req.Login)).
+		Where(user.EmailEQ(req.Email)).
 		WithRole().
 		Only(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный логин или пароль"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный email или пароль"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный логин или пароль"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный email или пароль"})
 		return
 	}
 
@@ -102,11 +102,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		SetLastLoginAt(time.Now()).
 		Exec(c)
 
-	email := ""
-	if u.Email != nil {
-		email = *u.Email
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshHash,
@@ -117,7 +112,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"initials":     u.Initials,
 			"role":         roleName,
 			"avatar_color": u.AvatarColor,
-			"email":        email,
+			"email":        u.Email,
 		},
 	})
 }
@@ -137,25 +132,25 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Validate email if provided
-	if req.Email != nil && *req.Email != "" {
-		if err := validateEmail(*req.Email); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		emailExists, _ := h.client.User.Query().Where(user.EmailEQ(*req.Email)).Exist(c)
-		if emailExists {
-			c.JSON(http.StatusConflict, gin.H{"error": "Email уже используется"})
-			return
-		}
+	if err := validateEmail(req.Email); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
-	// Check duplicate login
-	exists, _ := h.client.User.Query().Where(user.LoginEQ(req.Login)).Exist(c)
-	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "Логин уже занят"})
+	emailExists, _ := h.client.User.Query().Where(user.EmailEQ(req.Email)).Exist(c)
+	if emailExists {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email уже используется"})
 		return
+	}
+
+	// Auto-generate login from full name
+	generatedLogin := generateLoginFromFullName(req.FullName)
+	for i := 1; ; i++ {
+		loginExists, _ := h.client.User.Query().Where(user.LoginEQ(generatedLogin)).Exist(c)
+		if !loginExists {
+			break
+		}
+		generatedLogin = generateLoginFromFullName(req.FullName) + strconv.Itoa(i)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -172,16 +167,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	builder := tx.User.Create().
-		SetLogin(req.Login).
+	u, err := tx.User.Create().
+		SetLogin(generatedLogin).
+		SetEmail(req.Email).
 		SetPasswordHash(string(hash)).
 		SetFullName(req.FullName).
 		SetInitials(initials).
-		SetRoleID(req.RoleID)
-	if req.Email != nil && *req.Email != "" {
-		builder = builder.SetEmail(*req.Email)
-	}
-	u, err := builder.Save(c)
+		SetRoleID(req.RoleID).
+		Save(c)
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания пользователя"})
@@ -334,6 +327,48 @@ func generateInitials(fullName string) string {
 	return initials
 }
 
+var translitMap = map[rune]string{
+	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e",
+	'ж': "zh", 'з': "z", 'и': "i", 'й': "y", 'к': "k", 'л': "l", 'м': "m",
+	'н': "n", 'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t", 'у': "u",
+	'ф': "f", 'х': "kh", 'ц': "ts", 'ч': "ch", 'ш': "sh", 'щ': "sch",
+	'ъ': "", 'ы': "y", 'ь': "", 'э': "e", 'ю': "yu", 'я': "ya",
+	'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E",
+	'Ж': "Zh", 'З': "Z", 'И': "I", 'Й': "Y", 'К': "K", 'Л': "L", 'М': "M",
+	'Н': "N", 'О': "O", 'П': "P", 'Р': "R", 'С': "S", 'Т': "T", 'У': "U",
+	'Ф': "F", 'Х': "Kh", 'Ц': "Ts", 'Ч': "Ch", 'Ш': "Sh", 'Щ': "Sch",
+	'Ъ': "", 'Ы': "Y", 'Ь': "", 'Э': "E", 'Ю': "Yu", 'Я': "Ya",
+}
+
+func transliterate(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if t, ok := translitMap[r]; ok {
+			b.WriteString(t)
+		} else if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '_' || r == '-' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+func generateLoginFromFullName(fullName string) string {
+	parts := strings.Fields(fullName)
+	if len(parts) == 0 {
+		return "user"
+	}
+	if len(parts) == 1 {
+		return strings.ToLower(transliterate(parts[0]))
+	}
+	// "Иван Петров" -> "ivan.petrov"
+	first := strings.ToLower(transliterate(parts[0]))
+	last := strings.ToLower(transliterate(parts[len(parts)-1]))
+	if first == "" || last == "" {
+		return strings.ToLower(transliterate(parts[0]))
+	}
+	return first + "." + last
+}
+
 func validateEmail(email string) error {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !re.MatchString(email) {
@@ -352,39 +387,40 @@ func generateTempPassword() string {
 }
 
 func (h *AuthHandler) sendEmail(to, subject, body string) error {
-	cfg := h.cfg.SMTP
-	if cfg.Host == "" || cfg.Username == "" || cfg.Password == "" {
-		return fmt.Errorf("SMTP не настроен")
+	apiKey := h.cfg.ResendAPIKey
+	if apiKey == "" {
+		return fmt.Errorf("RESEND_API_KEY=your_resend_api_key_here не настроен")
 	}
-	msg := []byte("To: " + to + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"Content-Type: text/plain; charset=UTF-8\r\n" +
-		"\r\n" +
-		body + "\r\n")
-	addr := cfg.Host + ":" + cfg.Port
-	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
-	return smtp.SendMail(addr, auth, cfg.From, []string{to}, msg)
+	client := resend.NewClient(apiKey)
+	params := &resend.SendEmailRequest{
+		From:    "noreply@altairgames.space",
+		To:      []string{to},
+		Subject: subject,
+		Text:    body,
+	}
+	_, err := client.Emails.Send(params)
+	return err
 }
 
 // ForgotPassword — user requests password reset, admin gets notified
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req struct {
-		Login string `json:"login" binding:"required"`
+		Email string `json:"email" binding:"required,email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Укажите логин"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Укажите email"})
 		return
 	}
 
 	u, err := h.client.User.Query().
-		Where(user.LoginEQ(req.Login)).
+		Where(user.EmailEQ(req.Email)).
 		Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
 		return
 	}
 
-	if u.Email == nil || *u.Email == "" {
+	if u.Email == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "У пользователя не указан email. Обратитесь к администратору."})
 		return
 	}
@@ -403,7 +439,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	}
 
 	// Create token
-	tokenRaw := fmt.Sprintf("%d-%s-%d", u.ID, req.Login, time.Now().UnixNano())
+	tokenRaw := fmt.Sprintf("%d-%s-%d", u.ID, req.Email, time.Now().UnixNano())
 	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(tokenRaw)))
 	_, err = h.client.PasswordResetToken.Create().
 		SetUserID(u.ID).
@@ -476,8 +512,8 @@ func (h *AuthHandler) GetResetRequests(c *gin.Context) {
 				"full_name": r.Edges.User.FullName,
 				"email":     "",
 			}
-			if r.Edges.User.Email != nil {
-				item["user"].(gin.H)["email"] = *r.Edges.User.Email
+			if r.Edges.User.Email != "" {
+				item["user"].(gin.H)["email"] = r.Edges.User.Email
 			}
 		}
 		result = append(result, item)
@@ -515,7 +551,7 @@ func (h *AuthHandler) ApproveReset(c *gin.Context) {
 	}
 
 	u := token.Edges.User
-	if u.Email == nil || *u.Email == "" {
+	if u.Email == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "У пользователя нет email"})
 		return
 	}
@@ -539,7 +575,7 @@ func (h *AuthHandler) ApproveReset(c *gin.Context) {
 	// Send email
 	subject := "Восстановление пароля АСУТП Tasks"
 	body := fmt.Sprintf("Здравствуйте, %s!\n\nАдминистратор подтвердил восстановление пароля.\n\nВаш временный пароль: %s\n\nРекомендуем сменить его после входа в систему.\n\n---\nАСУТП Tasks", u.FullName, tempPass)
-	if err := h.sendEmail(*u.Email, subject, body); err != nil {
+	if err := h.sendEmail(u.Email, subject, body); err != nil {
 		fmt.Printf("ERROR sending email: %v\n", err)
 		// Even if email fails, password was changed. Log it.
 	}

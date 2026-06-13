@@ -105,11 +105,12 @@ func getOrCreateTaskCategory(ctx context.Context, client *ent.Client, name, icon
 }
 
 // getOrCreateUser возвращает пользователя по логину, создавая при необходимости
-func getOrCreateUser(ctx context.Context, client *ent.Client, login, fullName, initials string, roleID int, passwordHash string) (*ent.User, error) {
+func getOrCreateUser(ctx context.Context, client *ent.Client, login, email, fullName, initials string, roleID int, passwordHash string) (*ent.User, error) {
 	u, err := client.User.Query().Where(user.LoginEQ(login)).Only(ctx)
 	if ent.IsNotFound(err) {
 		u, err = client.User.Create().
 			SetLogin(login).
+			SetEmail(email).
 			SetPasswordHash(passwordHash).
 			SetFullName(fullName).
 			SetInitials(initials).
@@ -245,23 +246,23 @@ func Run(ctx context.Context, client *ent.Client) error {
 	}
 
 	// Users (GetOrCreate — не пересоздаём если уже есть)
-	userChiefEng, err := getOrCreateUser(ctx, client, "chief.engineer", "Сергей Волков", "СВ", roleChiefEng.ID, string(hash))
+	userChiefEng, err := getOrCreateUser(ctx, client, "chief.engineer", "chief.engineer@altairgames.space", "Сергей Волков", "СВ", roleChiefEng.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userAsutpChief, err := getOrCreateUser(ctx, client, "asutp.chief", "Иван Петров", "ИП", roleAsutpChief.ID, string(hash))
+	userAsutpChief, err := getOrCreateUser(ctx, client, "asutp.chief", "asutp.chief@altairgames.space", "Иван Петров", "ИП", roleAsutpChief.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userEngineer, err := getOrCreateUser(ctx, client, "ivan.engineer", "Алексей Сидоров", "АС", roleEngineer.ID, string(hash))
+	userEngineer, err := getOrCreateUser(ctx, client, "ivan.engineer", "ivan.engineer@altairgames.space", "Алексей Сидоров", "АС", roleEngineer.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userOperator, err := getOrCreateUser(ctx, client, "operator1", "Мария Козлова", "МК", roleOperator.ID, string(hash))
+	userOperator, err := getOrCreateUser(ctx, client, "operator1", "operator1@altairgames.space", "Мария Козлова", "МК", roleOperator.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userAdmin, err := getOrCreateUser(ctx, client, "admin", "Администратор Системы", "АС", roleAdmin.ID, string(hash))
+	userAdmin, err := getOrCreateUser(ctx, client, "admin", "admin@altairgames.space", "Администратор Системы", "АС", roleAdmin.ID, string(hash))
 	if err != nil {
 		return err
 	}

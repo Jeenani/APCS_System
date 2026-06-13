@@ -30,7 +30,7 @@ type User struct {
 	// RoleID holds the value of the "role_id" field.
 	RoleID int `json:"role_id,omitempty"`
 	// Email holds the value of the "email" field.
-	Email *string `json:"email,omitempty"`
+	Email string `json:"email,omitempty"`
 	// AvatarColor holds the value of the "avatar_color" field.
 	AvatarColor string `json:"avatar_color,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -280,8 +280,7 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
-				_m.Email = new(string)
-				*_m.Email = value.String
+				_m.Email = value.String
 			}
 		case user.FieldAvatarColor:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -434,10 +433,8 @@ func (_m *User) String() string {
 	builder.WriteString("role_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RoleID))
 	builder.WriteString(", ")
-	if v := _m.Email; v != nil {
-		builder.WriteString("email=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("email=")
+	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
 	builder.WriteString("avatar_color=")
 	builder.WriteString(_m.AvatarColor)

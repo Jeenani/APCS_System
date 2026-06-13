@@ -66,14 +66,6 @@ func (_c *UserCreate) SetEmail(v string) *UserCreate {
 	return _c
 }
 
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_c *UserCreate) SetNillableEmail(v *string) *UserCreate {
-	if v != nil {
-		_c.SetEmail(*v)
-	}
-	return _c
-}
-
 // SetAvatarColor sets the "avatar_color" field.
 func (_c *UserCreate) SetAvatarColor(v string) *UserCreate {
 	_c.mutation.SetAvatarColor(v)
@@ -438,6 +430,9 @@ func (_c *UserCreate) check() error {
 	if _, ok := _c.mutation.RoleID(); !ok {
 		return &ValidationError{Name: "role_id", err: errors.New(`ent: missing required field "User.role_id"`)}
 	}
+	if _, ok := _c.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
+	}
 	if v, ok := _c.mutation.Email(); ok {
 		if err := user.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
@@ -507,7 +502,7 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
-		_node.Email = &value
+		_node.Email = value
 	}
 	if value, ok := _c.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)

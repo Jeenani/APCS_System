@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	AppMode string
-	DB      DBConfig
-	Server  ServerConfig
-	JWT     JWTConfig
-	SMTP    SMTPConfig
+	AppMode      string
+	DB           DBConfig
+	Server       ServerConfig
+	JWT          JWTConfig
+	ResendAPIKey string
 }
 
 type DBConfig struct {
@@ -40,14 +40,6 @@ type JWTConfig struct {
 	Secret     string
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
-}
-
-type SMTPConfig struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
-	From     string
 }
 
 func Load() (*Config, error) {
@@ -80,13 +72,7 @@ func Load() (*Config, error) {
 			AccessTTL:  accessTTL,
 			RefreshTTL: refreshTTL,
 		},
-		SMTP: SMTPConfig{
-			Host:     getEnv("SMTP_HOST", ""),
-			Port:     getEnv("SMTP_PORT", "587"),
-			Username: getEnv("SMTP_USERNAME", ""),
-			Password: getEnv("SMTP_PASS=<SMTP_PASS>WORD", ""),
-			From:     getEnv("SMTP_FROM", "noreply@altairgames.space"),
-		},
+		ResendAPIKey: getEnv("RESEND_API_KEY=your_resend_api_key_here", ""),
 	}, nil
 }
 

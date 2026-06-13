@@ -119,7 +119,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     full_name     VARCHAR(200) NOT NULL,
     initials      VARCHAR(10)  NOT NULL,
-    email         VARCHAR(255) UNIQUE,
+    email         VARCHAR(255) NOT NULL UNIQUE,
     role_id       SMALLINT     NOT NULL REFERENCES roles(id),
     avatar_color  VARCHAR(7)   NOT NULL DEFAULT '#1565C0',
     is_active     BOOLEAN      NOT NULL DEFAULT TRUE,

@@ -53,7 +53,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 func (h *AdminHandler) CreateUser(c *gin.Context) {
 	var req struct {
-		Login    string `json:"login" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=6"`
 		FullName string `json:"full_name" binding:"required"`
 		RoleID   int    `json:"role_id" binding:"required"`
@@ -71,18 +71,32 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	exists, _ := h.client.User.Query().Where(user.LoginEQ(req.Login)).Exist(c)
-	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "Логин уже занят"})
+	if err := validateEmail(req.Email); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	emailExists, _ := h.client.User.Query().Where(user.EmailEQ(req.Email)).Exist(c)
+	if emailExists {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email уже используется"})
+		return
+	}
+
+	generatedLogin := generateLoginFromFullName(req.FullName)
+	for i := 1; ; i++ {
+		loginExists, _ := h.client.User.Query().Where(user.LoginEQ(generatedLogin)).Exist(c)
+		if !loginExists {
+			break
+		}
+		generatedLogin = generateLoginFromFullName(req.FullName) + strconv.Itoa(i)
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	initials := generateInitials(req.FullName)
 
 	u, err := h.client.User.Create().
-		SetLogin(req.Login).
+		SetLogin(generatedLogin).
+		SetEmail(req.Email).
 		SetPasswordHash(string(hash)).
 		SetFullName(req.FullName).
 		SetInitials(initials).
@@ -99,6 +113,7 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"id":        u.ID,
 		"login":     u.Login,
+		"email":     u.Email,
 		"full_name": u.FullName,
 		"initials":  u.Initials,
 	})

@@ -122,12 +122,6 @@ func (_u *UserUpdate) SetNillableEmail(v *string) *UserUpdate {
 	return _u
 }
 
-// ClearEmail clears the value of the "email" field.
-func (_u *UserUpdate) ClearEmail() *UserUpdate {
-	_u.mutation.ClearEmail()
-	return _u
-}
-
 // SetAvatarColor sets the "avatar_color" field.
 func (_u *UserUpdate) SetAvatarColor(v string) *UserUpdate {
 	_u.mutation.SetAvatarColor(v)
@@ -755,9 +749,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
-	}
-	if _u.mutation.EmailCleared() {
-		_spec.ClearField(user.FieldEmail, field.TypeString)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)
@@ -1476,12 +1467,6 @@ func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
 	return _u
 }
 
-// ClearEmail clears the value of the "email" field.
-func (_u *UserUpdateOne) ClearEmail() *UserUpdateOne {
-	_u.mutation.ClearEmail()
-	return _u
-}
-
 // SetAvatarColor sets the "avatar_color" field.
 func (_u *UserUpdateOne) SetAvatarColor(v string) *UserUpdateOne {
 	_u.mutation.SetAvatarColor(v)
@@ -2139,9 +2124,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
-	}
-	if _u.mutation.EmailCleared() {
-		_spec.ClearField(user.FieldEmail, field.TypeString)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)

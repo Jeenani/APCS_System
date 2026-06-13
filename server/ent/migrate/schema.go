@@ -454,7 +454,7 @@ var (
 		{Name: "password_hash", Type: field.TypeString, Size: 255},
 		{Name: "full_name", Type: field.TypeString, Size: 200},
 		{Name: "initials", Type: field.TypeString, Size: 10},
-		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
 		{Name: "avatar_color", Type: field.TypeString, Size: 7, Default: "#1565C0"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},

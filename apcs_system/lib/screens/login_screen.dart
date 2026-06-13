@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLogin = true;
   bool _obscurePassword = true;
-  final _loginController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _loginController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _fullNameController.dispose();
     super.dispose();
@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (_isLogin) {
       final success = await auth.login(
-        _loginController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
       );
       if (success && mounted) {
@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else {
       final success = await auth.register(
-        _loginController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
         _fullNameController.text.trim(),
         _selectedRoleId,
@@ -204,17 +204,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                // Login field
+                // Email field
                 TextFormField(
-                  controller: _loginController,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: 'Логин',
-                    prefixIcon: const Icon(Icons.person_outline),
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Введите логин';
-                    if (v.trim().length < 3) return 'Минимум 3 символа';
+                    if (v == null || v.trim().isEmpty) return 'Введите email';
+                    if (!RegExp(r'^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$').hasMatch(v.trim())) return 'Некорректный email';
                     return null;
                   },
                 ),

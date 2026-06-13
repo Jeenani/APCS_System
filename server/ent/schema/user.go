@@ -31,8 +31,7 @@ func (User) Fields() []ent.Field {
 		field.Int("role_id"),
 		field.String("email").
 			MaxLen(255).
-			Optional().
-			Nillable().
+			NotEmpty().
 			Unique(),
 		field.String("avatar_color").
 			MaxLen(7).

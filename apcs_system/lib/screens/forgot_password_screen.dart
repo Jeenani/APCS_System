@@ -11,7 +11,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _loginController = TextEditingController();
+  final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _message;
@@ -22,7 +22,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() { _isLoading = true; _message = null; });
 
     final auth = context.read<AuthProvider>();
-    final result = await auth.forgotPassword(_loginController.text.trim());
+    final result = await auth.forgotPassword(_emailController.text.trim());
 
     if (mounted) {
       setState(() {
@@ -35,7 +35,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
-    _loginController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -59,24 +59,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  'Введите ваш логин',
+                  'Введите ваш email',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Если у вашей учётной записи указан email, администратор получит уведомление и подтвердит восстановление. Временный пароль будет отправлен на вашу почту.',
+                  'Администратор получит уведомление и подтвердит восстановление. Временный пароль будет отправлен на вашу почту.',
                   style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _loginController,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: 'Логин',
-                    prefixIcon: const Icon(Icons.person_outline),
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Введите логин';
+                    if (v == null || v.trim().isEmpty) return 'Введите email';
+                    if (!RegExp(r'^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$').hasMatch(v.trim())) return 'Некорректный email';
                     return null;
                   },
                 ),
