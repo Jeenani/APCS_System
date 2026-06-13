@@ -26,14 +26,14 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> login(String login, String password) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final response = await ApiClient.post('/auth/login', {
-        'login': login,
+        'email': email,
         'password': password,
       }) as Map<String, dynamic>;
 
@@ -63,14 +63,14 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String login, String password, String fullName, int roleId) async {
+  Future<bool> register(String email, String password, String fullName, int roleId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       await ApiClient.post('/auth/register', {
-        'login': login,
+        'email': email,
         'password': password,
         'full_name': fullName,
         'role_id': roleId,
