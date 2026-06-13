@@ -9,8 +9,8 @@ services:
       POSTGRES_DB: asutp_tasks
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: r2d2m
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
