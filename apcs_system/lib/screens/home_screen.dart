@@ -171,7 +171,7 @@ class _HomeTabState extends State<_HomeTab> {
               // Статистика
               Consumer<TaskProvider>(
                 builder: (_, tp, __) {
-                  final tasks = tp.tasks;
+                  final tasks = tp.tasks.where((t) => t.status?.code != 'archived').toList();
                   final total = tasks.length;
                   final completed = tasks.where((t) => t.status?.code == 'completed').length;
                   final inProgress = tasks.where((t) => t.status?.code == 'in_progress').length;
@@ -273,7 +273,7 @@ class _HomeTabState extends State<_HomeTab> {
               Consumer<TaskProvider>(
                 builder: (_, tp, __) {
                   if (tp.isLoading) return const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()));
-                  var tasks = tp.tasks;
+                  var tasks = tp.tasks.where((t) => t.status?.code != 'archived').toList();
                   if (_selectedCategoryId != null) {
                     tasks = tasks.where((t) => t.category?.id == _selectedCategoryId).toList();
                   }
