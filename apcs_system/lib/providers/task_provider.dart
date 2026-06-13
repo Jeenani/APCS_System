@@ -12,7 +12,7 @@ class TaskProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadTasks({String? status, String? search, String? sort, int? priorityId}) async {
+  Future<void> loadTasks({String? status, String? search, String? sort, int? priorityId, bool? archived}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -22,6 +22,7 @@ class TaskProvider extends ChangeNotifier {
       if (search != null && search.isNotEmpty) path += 'search=$search&';
       if (sort != null) path += 'sort=$sort&';
       if (priorityId != null) path += 'priority_id=$priorityId&';
+      if (archived == true) path += 'archived=true&';
 
       final response = await ApiClient.get(path) as Map<String, dynamic>;
       final List tasksJson = response['tasks'] ?? [];

@@ -122,6 +122,8 @@ class StatusModel {
         return 'Завершена';
       case 'cancelled':
         return 'Отменена';
+      case 'archived':
+        return 'Архивирована';
       default:
         return code;
     }

@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../core/constants.dart';
 import '../core/api_client.dart';
 import '../models/task_model.dart';
+import '../models/kpi_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 
@@ -435,8 +436,23 @@ class TaskCard extends StatelessWidget {
 }
 
 // ===================== TASKS TAB =====================
-class _TasksTab extends StatelessWidget {
+class _TasksTab extends StatefulWidget {
   const _TasksTab();
+
+  @override
+  State<_TasksTab> createState() => _TasksTabState();
+}
+
+class _TasksTabState extends State<_TasksTab> {
+  bool _showArchived = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskProvider>().loadTasks();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -453,13 +469,44 @@ class _TasksTab extends StatelessWidget {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('Активные'),
+                  selected: !_showArchived,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() => _showArchived = false);
+                      context.read<TaskProvider>().loadTasks();
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('Архив'),
+                  selected: _showArchived,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() => _showArchived = true);
+                      context.read<TaskProvider>().loadTasks(archived: true);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           Expanded(
             child: Consumer<TaskProvider>(
               builder: (_, tp, __) {
                 if (tp.isLoading) return const Center(child: CircularProgressIndicator());
-                if (tp.tasks.isEmpty) return const _EmptyState();
+                if (tp.tasks.isEmpty) return _EmptyState(archived: _showArchived);
                 return RefreshIndicator(
-                  onRefresh: () => tp.loadTasks(),
+                  onRefresh: () => _showArchived
+                      ? context.read<TaskProvider>().loadTasks(archived: true)
+                      : context.read<TaskProvider>().loadTasks(),
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: tp.tasks.length,
@@ -509,8 +556,33 @@ class _NotificationsTab extends StatelessWidget {
 }
 
 // ===================== PROFILE TAB =====================
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends StatefulWidget {
   const _ProfileTab();
+
+  @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> {
+  KpiSummary? _kpiSummary;
+  bool _loadingKpi = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKpi();
+  }
+
+  Future<void> _loadKpi() async {
+    setState(() => _loadingKpi = true);
+    final summary = await context.read<TaskProvider>().getMyKpi();
+    if (mounted) {
+      setState(() {
+        _kpiSummary = summary;
+        _loadingKpi = false;
+      });
+    }
+  }
 
   Future<void> _exportCSV(BuildContext context) async {
     try {
@@ -543,9 +615,10 @@ class _ProfileTab extends StatelessWidget {
     final user = context.watch<AuthProvider>().user;
     final tasks = context.watch<TaskProvider>().tasks;
     final total = tasks.length;
-    final completed = tasks.where((t) => t.status?.code == 'completed').length;
+    final completed = tasks.where((t) => t.status?.code == 'completed' || t.status?.code == 'archived').length;
     final inProgress = total - completed;
-    final percent = total > 0 ? ((completed * 100) / total).round() : 0;
+    final kpiAvg = _kpiSummary?.average ?? 0.0;
+    final kpiColor = kpiAvg >= 80 ? AppColors.success : kpiAvg >= 50 ? AppColors.warning : Colors.red;
     final isAdmin = user?.isAdmin ?? false;
     final canExport = user?.canExport ?? false;
     final canManage = user?.canManageTasks ?? false;
@@ -578,22 +651,34 @@ class _ProfileTab extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Completion circle
+            // KPI circle
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: [
-                  const Text('Мои показатели', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text('Мой KPI', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: 100, height: 100,
-                    child: Stack(fit: StackFit.expand, children: [
-                      CircularProgressIndicator(value: percent / 100, strokeWidth: 8, backgroundColor: Colors.grey[200], valueColor: const AlwaysStoppedAnimation(AppColors.primary)),
-                      Center(child: Text('$percent%', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary))),
-                    ]),
-                  ),
+                  if (_loadingKpi)
+                    const SizedBox(
+                      width: 100, height: 100,
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 6)),
+                    )
+                  else
+                    SizedBox(
+                      width: 100, height: 100,
+                      child: Stack(fit: StackFit.expand, children: [
+                        CircularProgressIndicator(value: kpiAvg / 100, strokeWidth: 8, backgroundColor: Colors.grey[200], valueColor: AlwaysStoppedAnimation(kpiColor)),
+                        Center(child: Text('${kpiAvg.round()}%', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: kpiColor))),
+                      ]),
+                    ),
+                  const SizedBox(height: 8),
+                  if (_kpiSummary != null)
+                    Text(
+                      'Начислений: ${_kpiSummary!.totalCount}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
                 ],
               ),
             ),
@@ -603,7 +688,7 @@ class _ProfileTab extends StatelessWidget {
             _MenuItem(icon: Icons.history, label: 'История активности', onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите задачу для просмотра истории')));
             }),
-            _MenuItem(icon: Icons.analytics_outlined, label: 'Мой KPI', onTap: () => Navigator.pushNamed(context, '/kpi')),
+            _MenuItem(icon: Icons.analytics_outlined, label: 'Подробный KPI', onTap: () => Navigator.pushNamed(context, '/kpi')),
             if (canExport)
               _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => _exportCSV(context)),
 
@@ -680,7 +765,9 @@ class _MenuItem extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final bool archived;
+  const _EmptyState({this.archived = false});
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -692,14 +779,27 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 120, height: 120,
               decoration: BoxDecoration(color: AppColors.primaryLight.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: const Icon(Icons.dns_outlined, size: 60, color: AppColors.primaryLight),
+              child: Icon(
+                archived ? Icons.archive_outlined : Icons.dns_outlined,
+                size: 60,
+                color: AppColors.primaryLight,
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Задач пока нет', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(
+              archived ? 'Архив пуст' : 'Задач пока нет',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
-            Text('Создайте первую задачу для вашего\nобъекта автоматизации', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500])),
+            Text(
+              archived
+                  ? 'Здесь будут задачи после\nподтверждения выполнения'
+                  : 'Создайте первую задачу для вашего\nобъекта автоматизации',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[500]),
+            ),
             const SizedBox(height: 20),
-            if (context.watch<AuthProvider>().user?.canCreateMainTasks ?? false)
+            if (!archived && (context.watch<AuthProvider>().user?.canCreateMainTasks ?? false))
               ElevatedButton.icon(
                 onPressed: () => Navigator.pushNamed(context, '/create-task'),
                 icon: const Icon(Icons.add),

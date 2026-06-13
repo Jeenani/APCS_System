@@ -91,6 +91,13 @@ func (h *TaskHandler) List(c *gin.Context) {
 		query = query.Where(task.ParentIDIsNil())
 	}
 
+	// Archive filter: default exclude archived, unless archived=true
+	if c.Query("archived") == "true" {
+		query = query.Where(task.HasStatusWith(taskstatus.CodeEQ("archived")))
+	} else {
+		query = query.Where(task.Not(task.HasStatusWith(taskstatus.CodeEQ("archived"))))
+	}
+
 	// Filters
 	if statusCode := c.Query("status"); statusCode != "" {
 		query = query.Where(task.HasStatusWith(taskstatus.CodeEQ(statusCode)))
@@ -1175,8 +1182,18 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		awarded++
 	}
 
+	// Archive the task after KPI confirmation
+	archivedStatus, err := h.client.TaskStatus.Query().
+		Where(taskstatus.CodeEQ("archived")).
+		Only(c)
+	if err == nil {
+		h.client.Task.UpdateOneID(id).
+			SetStatusID(archivedStatus.ID).
+			Save(c)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "Выполнение подтверждено",
+		"message":       "Выполнение подтверждено, задача архивирована",
 		"kpi_awarded":   awarded,
 		"kpi_score":     score,
 	})

@@ -185,6 +185,9 @@ func Run(ctx context.Context, client *ent.Client) error {
 	if _, err := getOrCreateTaskStatus(ctx, client, "cancelled", true); err != nil {
 		return err
 	}
+	if _, err := getOrCreateTaskStatus(ctx, client, "archived", true); err != nil {
+		return err
+	}
 
 	// Change Types
 	for _, code := range []string{
