@@ -116,6 +116,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	if err := validateFullName(req.FullName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validatePassword(req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Check duplicate login
 	exists, _ := h.client.User.Query().Where(user.LoginEQ(req.Login)).Exist(c)
 	if exists {
@@ -232,6 +241,53 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		Exec(c)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Выход выполнен"})
+}
+
+func validateFullName(name string) error {
+	if len([]rune(name)) < 2 {
+		return fmt.Errorf("ФИО должно содержать минимум 2 символа")
+	}
+	if len([]rune(name)) > 200 {
+		return fmt.Errorf("ФИО не должно превышать 200 символов")
+	}
+	for _, r := range name {
+		if r >= '0' && r <= '9' {
+			return fmt.Errorf("ФИО не должно содержать цифры")
+		}
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return fmt.Errorf("Пароль должен содержать минимум 8 символов")
+	}
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for _, r := range password {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			hasUpper = true
+		case r >= 'a' && r <= 'z':
+			hasLower = true
+		case r >= '0' && r <= '9':
+			hasDigit = true
+		case r >= '!' && r <= '/' || r >= ':' && r <= '@' || r >= '[' && r <= '`' || r >= '{' && r <= '~':
+			hasSpecial = true
+		}
+	}
+	if !hasUpper {
+		return fmt.Errorf("Пароль должен содержать минимум одну заглавную букву")
+	}
+	if !hasLower {
+		return fmt.Errorf("Пароль должен содержать минимум одну строчную букву")
+	}
+	if !hasDigit {
+		return fmt.Errorf("Пароль должен содержать минимум одну цифру")
+	}
+	if !hasSpecial {
+		return fmt.Errorf("Пароль должен содержать минимум один специальный символ")
+	}
+	return nil
 }
 
 func generateInitials(fullName string) string {

@@ -63,6 +63,15 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	if err := validateFullName(req.FullName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validatePassword(req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	exists, _ := h.client.User.Query().Where(user.LoginEQ(req.Login)).Exist(c)
 	if exists {
 		c.JSON(http.StatusConflict, gin.H{"error": "Логин уже занят"})
