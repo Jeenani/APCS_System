@@ -363,6 +363,13 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Block editing archived tasks
+	existingStatus, _ := h.client.TaskStatus.Query().Where(taskstatus.IDEQ(existing.StatusID)).Only(c)
+	if existingStatus != nil && existingStatus.Code == "archived" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя редактировать"})
+		return
+	}
+
 	userID := c.GetInt("user_id")
 
 	// Permission check
@@ -657,6 +664,13 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 		return
 	}
 
+	// Block for archived tasks
+	t, err := h.client.Task.Query().Where(task.IDEQ(id)).WithStatus().Only(c)
+	if err == nil && t.Edges.Status != nil && t.Edges.Status.Code == "archived" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя изменять"})
+		return
+	}
+
 	userID := c.GetInt("user_id")
 
 	ta, err := h.client.TaskAssignee.Query().
@@ -717,6 +731,13 @@ func (h *TaskHandler) RejectAssignee(c *gin.Context) {
 		return
 	}
 
+	// Block for archived tasks
+	t, err := h.client.Task.Query().Where(task.IDEQ(id)).WithStatus().Only(c)
+	if err == nil && t.Edges.Status != nil && t.Edges.Status.Code == "archived" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя изменять"})
+		return
+	}
+
 	ta, err := h.client.TaskAssignee.Query().
 		Where(taskassignee.IDEQ(assigneeID)).
 		WithProposer().
@@ -765,6 +786,19 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
+		return
+	}
+
+	t, err := h.client.Task.Get(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+		return
+	}
+
+	// Block deletion of archived tasks
+	status, _ := h.client.TaskStatus.Query().Where(taskstatus.IDEQ(t.StatusID)).Only(c)
+	if status != nil && status.Code == "archived" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя удалить"})
 		return
 	}
 
@@ -1139,6 +1173,11 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		return
 	}
 
+	if t.Edges.Status != nil && t.Edges.Status.Code == "archived" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Задача уже архивирована, KPI начислен"})
+		return
+	}
+
 	if t.Edges.Status == nil || t.Edges.Status.Code != "completed" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Задача должна быть в статусе 'Выполнена' для подтверждения"})
 		return
@@ -1187,9 +1226,14 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		Where(taskstatus.CodeEQ("archived")).
 		Only(c)
 	if err == nil {
-		h.client.Task.UpdateOneID(id).
+		_, archiveErr := h.client.Task.UpdateOneID(id).
 			SetStatusID(archivedStatus.ID).
 			Save(c)
+		if archiveErr != nil {
+			fmt.Printf("ERROR archiving task %d after KPI confirmation: %v\n", id, archiveErr)
+		}
+	} else {
+		fmt.Printf("ERROR: archived status not found, cannot archive task %d after KPI confirmation: %v\n", id, err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1227,6 +1271,13 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 	t, err := h.client.Task.Get(c, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+		return
+	}
+
+	// Check current status
+	curStatus, _ := h.client.TaskStatus.Query().Where(taskstatus.IDEQ(t.StatusID)).Only(c)
+	if curStatus != nil && curStatus.Code == "archived" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя изменять"})
 		return
 	}
 
