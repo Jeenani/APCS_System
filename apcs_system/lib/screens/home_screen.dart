@@ -699,12 +699,13 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Создайте первую задачу для вашего\nобъекта автоматизации', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500])),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/create-task'),
-              icon: const Icon(Icons.add),
-              label: const Text('Создать задачу'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            ),
+            if (context.watch<AuthProvider>().user?.canManageTasks ?? false)
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/create-task'),
+                icon: const Icon(Icons.add),
+                label: const Text('Создать задачу'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              ),
           ],
         ),
       ),
