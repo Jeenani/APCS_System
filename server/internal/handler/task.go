@@ -1159,6 +1159,59 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	})
 }
 
+// CompleteTask marks a task as completed (operator, asutp_chief, admin)
+func (h *TaskHandler) CompleteTask(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID задачи"})
+		return
+	}
+
+	userID := c.GetInt("user_id")
+
+	completedStatus, err := h.client.TaskStatus.Query().
+		Where(taskstatus.CodeEQ("completed")).
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Статус 'Выполнена' не найден"})
+		return
+	}
+
+	t, err := h.client.Task.Get(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+		return
+	}
+
+	if t.StatusID == completedStatus.ID {
+		c.JSON(http.StatusOK, gin.H{"message": "Задача уже отмечена выполненной"})
+		return
+	}
+
+	_, err = h.client.Task.UpdateOneID(id).
+		SetStatusID(completedStatus.ID).
+		SetProgress(100).
+		Save(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления статуса"})
+		return
+	}
+
+	// Log history
+	changeID, _ := getChangeTypeID(h.client, c, "status_changed")
+	if changeID > 0 {
+		h.client.TaskHistory.Create().
+			SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
+			SetFieldName("status_id").
+			SetOldValue(strconv.Itoa(t.StatusID)).
+			SetNewValue(strconv.Itoa(completedStatus.ID)).
+			SetDisplayText("Статус изменён на 'Выполнена'").
+			Save(c)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Задача отмечена выполненной"})
+}
+
 // GetKPI returns KPI records for the authenticated user
 func (h *TaskHandler) GetKPI(c *gin.Context) {
 	userID := c.GetInt("user_id")

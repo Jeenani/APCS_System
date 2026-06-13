@@ -462,7 +462,47 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false)) const SizedBox(height: 12),
 
-                      // Confirm completion button
+                      // Mark as completed button (operator, asutp_chief, admin)
+                      if (_task!.status?.code != 'completed' && ['admin', 'asutp_chief', 'operator'].contains(context.watch<AuthProvider>().user?.role))
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Отметить выполненной?'),
+                                  content: const Text('Задача будет переведена в статус "Выполнена"'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+                                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Отметить')),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true && mounted) {
+                                final success = await context.read<TaskProvider>().completeTask(_task!.id);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(success ? 'Задача отмечена выполненной' : 'Ошибка: ${context.read<TaskProvider>().error ?? ''}'),
+                                      backgroundColor: success ? Colors.green : Colors.red,
+                                    ),
+                                  );
+                                  _loadTask();
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.done_all),
+                            label: const Text('Отметить выполненной'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      if (_task!.status?.code != 'completed' && ['admin', 'asutp_chief', 'operator'].contains(context.watch<AuthProvider>().user?.role)) const SizedBox(height: 12),
+
+                      // Confirm completion button (KPI award — asutp_chief, admin)
                       if (_task!.status?.code == 'completed' && (context.watch<AuthProvider>().user?.role == 'asutp_chief' || context.watch<AuthProvider>().user?.role == 'admin'))
                         SizedBox(
                           width: double.infinity,

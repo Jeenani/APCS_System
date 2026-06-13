@@ -123,6 +123,21 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> completeTask(int taskId) async {
+    try {
+      await ApiClient.post('/tasks/$taskId/complete', {});
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Ошибка подключения: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> confirmCompletion(int taskId) async {
     try {
       await ApiClient.post('/tasks/$taskId/confirm-completion', {});
