@@ -71,7 +71,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 
 	result := gin.H{
 		"id":           u.ID,
-		"login":        u.Login,
+		"email":        u.Email,
 		"full_name":    u.FullName,
 		"initials":     u.Initials,
 		"role":         roleName,

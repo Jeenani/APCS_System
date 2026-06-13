@@ -217,7 +217,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       child: Text(u['initials'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                     ),
                     title: Text(u['full_name'] ?? '', style: TextStyle(decoration: isActive ? null : TextDecoration.lineThrough)),
-                    subtitle: Text('${u['login']} • ${_roleLabel(u['role'] ?? '')}'),
+                    subtitle: Text('${u['email']} • ${_roleLabel(u['role'] ?? '')}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

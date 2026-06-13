@@ -11,15 +11,15 @@ import (
 
 type Claims struct {
 	UserID   int    `json:"user_id"`
-	Login    string `json:"login"`
+	Email    string `json:"email"`
 	RoleName string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(secret string, userID int, login, role string, ttl time.Duration) (string, error) {
+func GenerateAccessToken(secret string, userID int, email, role string, ttl time.Duration) (string, error) {
 	claims := Claims{
 		UserID:   userID,
-		Login:    login,
+		Email:    email,
 		RoleName: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
@@ -54,7 +54,7 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
-		c.Set("login", claims.Login)
+		c.Set("email", claims.Email)
 		c.Set("role", claims.RoleName)
 		c.Next()
 	}

@@ -104,12 +104,11 @@ func getOrCreateTaskCategory(ctx context.Context, client *ent.Client, name, icon
 	return c, nil
 }
 
-// getOrCreateUser возвращает пользователя по логину, создавая при необходимости
-func getOrCreateUser(ctx context.Context, client *ent.Client, login, email, fullName, initials string, roleID int, passwordHash string) (*ent.User, error) {
-	u, err := client.User.Query().Where(user.LoginEQ(login)).Only(ctx)
+// getOrCreateUser возвращает пользователя по email, создавая при необходимости
+func getOrCreateUser(ctx context.Context, client *ent.Client, email, fullName, initials string, roleID int, passwordHash string) (*ent.User, error) {
+	u, err := client.User.Query().Where(user.EmailEQ(email)).Only(ctx)
 	if ent.IsNotFound(err) {
 		u, err = client.User.Create().
-			SetLogin(login).
 			SetEmail(email).
 			SetPasswordHash(passwordHash).
 			SetFullName(fullName).
@@ -118,7 +117,7 @@ func getOrCreateUser(ctx context.Context, client *ent.Client, login, email, full
 			Save(ctx)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("user %s: %w", login, err)
+		return nil, fmt.Errorf("user %s: %w", email, err)
 	}
 	return u, nil
 }
@@ -246,23 +245,23 @@ func Run(ctx context.Context, client *ent.Client) error {
 	}
 
 	// Users (GetOrCreate — не пересоздаём если уже есть)
-	userChiefEng, err := getOrCreateUser(ctx, client, "chief.engineer", "chief.engineer@altairgames.space", "Сергей Волков", "СВ", roleChiefEng.ID, string(hash))
+	userChiefEng, err := getOrCreateUser(ctx, client, "chief.engineer@altairgames.space", "Сергей Волков", "СВ", roleChiefEng.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userAsutpChief, err := getOrCreateUser(ctx, client, "asutp.chief", "asutp.chief@altairgames.space", "Иван Петров", "ИП", roleAsutpChief.ID, string(hash))
+	userAsutpChief, err := getOrCreateUser(ctx, client, "asutp.chief@altairgames.space", "Иван Петров", "ИП", roleAsutpChief.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userEngineer, err := getOrCreateUser(ctx, client, "ivan.engineer", "ivan.engineer@altairgames.space", "Алексей Сидоров", "АС", roleEngineer.ID, string(hash))
+	userEngineer, err := getOrCreateUser(ctx, client, "ivan.engineer@altairgames.space", "Алексей Сидоров", "АС", roleEngineer.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userOperator, err := getOrCreateUser(ctx, client, "operator1", "operator1@altairgames.space", "Мария Козлова", "МК", roleOperator.ID, string(hash))
+	userOperator, err := getOrCreateUser(ctx, client, "operator1@altairgames.space", "Мария Козлова", "МК", roleOperator.ID, string(hash))
 	if err != nil {
 		return err
 	}
-	userAdmin, err := getOrCreateUser(ctx, client, "admin", "admin@altairgames.space", "Администратор Системы", "АС", roleAdmin.ID, string(hash))
+	userAdmin, err := getOrCreateUser(ctx, client, "admin@altairgames.space", "Администратор Системы", "АС", roleAdmin.ID, string(hash))
 	if err != nil {
 		return err
 	}
@@ -331,11 +330,11 @@ func Run(ctx context.Context, client *ent.Client) error {
 
 	log.Println("Seed: данные успешно загружены")
 	log.Println("Seed: Тестовые пользователи (пароль: __seed_pass__):")
-	log.Println("  chief.engineer   — Главный инженер")
-	log.Println("  asutp.chief      — Нач. службы АСУТП")
-	log.Println("  ivan.engineer    — Инженер")
-	log.Println("  operator1        — Оператор")
-	log.Println("  admin            — Администратор")
+	log.Println("  chief.engineer@altairgames.space   — Главный инженер")
+	log.Println("  asutp.chief@altairgames.space      — Нач. службы АСУТП")
+	log.Println("  ivan.engineer@altairgames.space    — Инженер")
+	log.Println("  operator1@altairgames.space         — Оператор")
+	log.Println("  admin@altairgames.space            — Администратор")
 
 	return nil
 }

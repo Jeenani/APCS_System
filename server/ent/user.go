@@ -19,8 +19,8 @@ type User struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// Login holds the value of the "login" field.
-	Login string `json:"login,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
 	PasswordHash string `json:"-"`
 	// FullName holds the value of the "full_name" field.
@@ -29,8 +29,6 @@ type User struct {
 	Initials string `json:"initials,omitempty"`
 	// RoleID holds the value of the "role_id" field.
 	RoleID int `json:"role_id,omitempty"`
-	// Email holds the value of the "email" field.
-	Email string `json:"email,omitempty"`
 	// AvatarColor holds the value of the "avatar_color" field.
 	AvatarColor string `json:"avatar_color,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -221,7 +219,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case user.FieldID, user.FieldRoleID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldLogin, user.FieldPasswordHash, user.FieldFullName, user.FieldInitials, user.FieldEmail, user.FieldAvatarColor:
+		case user.FieldEmail, user.FieldPasswordHash, user.FieldFullName, user.FieldInitials, user.FieldAvatarColor:
 			values[i] = new(sql.NullString)
 		case user.FieldLastLoginAt, user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -246,11 +244,11 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
-		case user.FieldLogin:
+		case user.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field login", values[i])
+				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
-				_m.Login = value.String
+				_m.Email = value.String
 			}
 		case user.FieldPasswordHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -275,12 +273,6 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field role_id", values[i])
 			} else if value.Valid {
 				_m.RoleID = int(value.Int64)
-			}
-		case user.FieldEmail:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email", values[i])
-			} else if value.Valid {
-				_m.Email = value.String
 			}
 		case user.FieldAvatarColor:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -419,8 +411,8 @@ func (_m *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("login=")
-	builder.WriteString(_m.Login)
+	builder.WriteString("email=")
+	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
 	builder.WriteString("password_hash=<sensitive>")
 	builder.WriteString(", ")
@@ -432,9 +424,6 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("role_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RoleID))
-	builder.WriteString(", ")
-	builder.WriteString("email=")
-	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
 	builder.WriteString("avatar_color=")
 	builder.WriteString(_m.AvatarColor)

@@ -480,18 +480,18 @@ func init() {
 	taskstatus.DefaultIsTerminal = taskstatusDescIsTerminal.Default.(bool)
 	userFields := schema.User{}.Fields()
 	_ = userFields
-	// userDescLogin is the schema descriptor for login field.
-	userDescLogin := userFields[0].Descriptor()
-	// user.LoginValidator is a validator for the "login" field. It is called by the builders before save.
-	user.LoginValidator = func() func(string) error {
-		validators := userDescLogin.Validators
+	// userDescEmail is the schema descriptor for email field.
+	userDescEmail := userFields[0].Descriptor()
+	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	user.EmailValidator = func() func(string) error {
+		validators := userDescEmail.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
 		}
-		return func(login string) error {
+		return func(email string) error {
 			for _, fn := range fns {
-				if err := fn(login); err != nil {
+				if err := fn(email); err != nil {
 					return err
 				}
 			}
@@ -552,40 +552,22 @@ func init() {
 			return nil
 		}
 	}()
-	// userDescEmail is the schema descriptor for email field.
-	userDescEmail := userFields[5].Descriptor()
-	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	user.EmailValidator = func() func(string) error {
-		validators := userDescEmail.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(email string) error {
-			for _, fn := range fns {
-				if err := fn(email); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
 	// userDescAvatarColor is the schema descriptor for avatar_color field.
-	userDescAvatarColor := userFields[6].Descriptor()
+	userDescAvatarColor := userFields[5].Descriptor()
 	// user.DefaultAvatarColor holds the default value on creation for the avatar_color field.
 	user.DefaultAvatarColor = userDescAvatarColor.Default.(string)
 	// user.AvatarColorValidator is a validator for the "avatar_color" field. It is called by the builders before save.
 	user.AvatarColorValidator = userDescAvatarColor.Validators[0].(func(string) error)
 	// userDescIsActive is the schema descriptor for is_active field.
-	userDescIsActive := userFields[7].Descriptor()
+	userDescIsActive := userFields[6].Descriptor()
 	// user.DefaultIsActive holds the default value on creation for the is_active field.
 	user.DefaultIsActive = userDescIsActive.Default.(bool)
 	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userFields[9].Descriptor()
+	userDescCreatedAt := userFields[8].Descriptor()
 	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
 	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userFields[10].Descriptor()
+	userDescUpdatedAt := userFields[9].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

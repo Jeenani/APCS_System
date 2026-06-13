@@ -1,31 +1,28 @@
 class UserModel {
   final int id;
-  final String login;
+  final String email;
   final String fullName;
   final String initials;
   final String role;
   final String avatarColor;
-  final String? email;
 
   UserModel({
     required this.id,
-    required this.login,
+    required this.email,
     required this.fullName,
     required this.initials,
     required this.role,
     required this.avatarColor,
-    this.email,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? 0,
-      login: json['login'] ?? '',
+      email: json['email'] ?? '',
       fullName: json['full_name'] ?? '',
       initials: json['initials'] ?? '',
       role: json['role'] ?? '',
       avatarColor: json['avatar_color'] ?? '#1565C0',
-      email: json['email']?.toString(),
     );
   }
 

@@ -38,16 +38,16 @@ func (_u *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return _u
 }
 
-// SetLogin sets the "login" field.
-func (_u *UserUpdate) SetLogin(v string) *UserUpdate {
-	_u.mutation.SetLogin(v)
+// SetEmail sets the "email" field.
+func (_u *UserUpdate) SetEmail(v string) *UserUpdate {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillableLogin sets the "login" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableLogin(v *string) *UserUpdate {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableEmail(v *string) *UserUpdate {
 	if v != nil {
-		_u.SetLogin(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
@@ -104,20 +104,6 @@ func (_u *UserUpdate) SetRoleID(v int) *UserUpdate {
 func (_u *UserUpdate) SetNillableRoleID(v *int) *UserUpdate {
 	if v != nil {
 		_u.SetRoleID(*v)
-	}
-	return _u
-}
-
-// SetEmail sets the "email" field.
-func (_u *UserUpdate) SetEmail(v string) *UserUpdate {
-	_u.mutation.SetEmail(v)
-	return _u
-}
-
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableEmail(v *string) *UserUpdate {
-	if v != nil {
-		_u.SetEmail(*v)
 	}
 	return _u
 }
@@ -687,9 +673,9 @@ func (_u *UserUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserUpdate) check() error {
-	if v, ok := _u.mutation.Login(); ok {
-		if err := user.LoginValidator(v); err != nil {
-			return &ValidationError{Name: "login", err: fmt.Errorf(`ent: validator failed for field "User.login": %w`, err)}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.PasswordHash(); ok {
@@ -705,11 +691,6 @@ func (_u *UserUpdate) check() error {
 	if v, ok := _u.mutation.Initials(); ok {
 		if err := user.InitialsValidator(v); err != nil {
 			return &ValidationError{Name: "initials", err: fmt.Errorf(`ent: validator failed for field "User.initials": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Email(); ok {
-		if err := user.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.AvatarColor(); ok {
@@ -735,8 +716,8 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
-	if value, ok := _u.mutation.Login(); ok {
-		_spec.SetField(user.FieldLogin, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
@@ -746,9 +727,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Initials(); ok {
 		_spec.SetField(user.FieldInitials, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)
@@ -1383,16 +1361,16 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
-// SetLogin sets the "login" field.
-func (_u *UserUpdateOne) SetLogin(v string) *UserUpdateOne {
-	_u.mutation.SetLogin(v)
+// SetEmail sets the "email" field.
+func (_u *UserUpdateOne) SetEmail(v string) *UserUpdateOne {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillableLogin sets the "login" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableLogin(v *string) *UserUpdateOne {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
 	if v != nil {
-		_u.SetLogin(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
@@ -1449,20 +1427,6 @@ func (_u *UserUpdateOne) SetRoleID(v int) *UserUpdateOne {
 func (_u *UserUpdateOne) SetNillableRoleID(v *int) *UserUpdateOne {
 	if v != nil {
 		_u.SetRoleID(*v)
-	}
-	return _u
-}
-
-// SetEmail sets the "email" field.
-func (_u *UserUpdateOne) SetEmail(v string) *UserUpdateOne {
-	_u.mutation.SetEmail(v)
-	return _u
-}
-
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
-	if v != nil {
-		_u.SetEmail(*v)
 	}
 	return _u
 }
@@ -2045,9 +2009,9 @@ func (_u *UserUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserUpdateOne) check() error {
-	if v, ok := _u.mutation.Login(); ok {
-		if err := user.LoginValidator(v); err != nil {
-			return &ValidationError{Name: "login", err: fmt.Errorf(`ent: validator failed for field "User.login": %w`, err)}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.PasswordHash(); ok {
@@ -2063,11 +2027,6 @@ func (_u *UserUpdateOne) check() error {
 	if v, ok := _u.mutation.Initials(); ok {
 		if err := user.InitialsValidator(v); err != nil {
 			return &ValidationError{Name: "initials", err: fmt.Errorf(`ent: validator failed for field "User.initials": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Email(); ok {
-		if err := user.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.AvatarColor(); ok {
@@ -2110,8 +2069,8 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			}
 		}
 	}
-	if value, ok := _u.mutation.Login(); ok {
-		_spec.SetField(user.FieldLogin, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
@@ -2121,9 +2080,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.Initials(); ok {
 		_spec.SetField(user.FieldInitials, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)

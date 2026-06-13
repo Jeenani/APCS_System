@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"asutp-server/ent"
@@ -76,7 +75,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	accessToken, err := middleware.GenerateAccessToken(
-		h.cfg.JWT.Secret, u.ID, u.Login, roleName, h.cfg.JWT.AccessTTL,
+		h.cfg.JWT.Secret, u.ID, u.Email, roleName, h.cfg.JWT.AccessTTL,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
@@ -84,7 +83,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Generate refresh token
-	refreshRaw := fmt.Sprintf("%d-%s-%d", u.ID, u.Login, time.Now().UnixNano())
+	refreshRaw := fmt.Sprintf("%d-%s-%d", u.ID, u.Email, time.Now().UnixNano())
 	refreshHash := fmt.Sprintf("%x", sha256.Sum256([]byte(refreshRaw)))
 
 	_, err = h.client.RefreshToken.Create().
@@ -107,7 +106,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"refresh_token": refreshHash,
 		"user": gin.H{
 			"id":           u.ID,
-			"login":        u.Login,
 			"full_name":    u.FullName,
 			"initials":     u.Initials,
 			"role":         roleName,
@@ -143,16 +141,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Auto-generate login from full name
-	generatedLogin := generateLoginFromFullName(req.FullName)
-	for i := 1; ; i++ {
-		loginExists, _ := h.client.User.Query().Where(user.LoginEQ(generatedLogin)).Exist(c)
-		if !loginExists {
-			break
-		}
-		generatedLogin = generateLoginFromFullName(req.FullName) + strconv.Itoa(i)
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка хеширования пароля"})
@@ -168,7 +156,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	u, err := tx.User.Create().
-		SetLogin(generatedLogin).
 		SetEmail(req.Email).
 		SetPasswordHash(string(hash)).
 		SetFullName(req.FullName).
@@ -198,7 +185,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"id":        u.ID,
-		"login":     u.Login,
+		"email":     u.Email,
 		"full_name": u.FullName,
 		"initials":  u.Initials,
 	})
@@ -235,7 +222,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	accessToken, err := middleware.GenerateAccessToken(
-		h.cfg.JWT.Secret, u.ID, u.Login, roleName, h.cfg.JWT.AccessTTL,
+		h.cfg.JWT.Secret, u.ID, u.Email, roleName, h.cfg.JWT.AccessTTL,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
@@ -325,48 +312,6 @@ func generateInitials(fullName string) string {
 		}
 	}
 	return initials
-}
-
-var translitMap = map[rune]string{
-	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e",
-	'ж': "zh", 'з': "z", 'и': "i", 'й': "y", 'к': "k", 'л': "l", 'м': "m",
-	'н': "n", 'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t", 'у': "u",
-	'ф': "f", 'х': "kh", 'ц': "ts", 'ч': "ch", 'ш': "sh", 'щ': "sch",
-	'ъ': "", 'ы': "y", 'ь': "", 'э': "e", 'ю': "yu", 'я': "ya",
-	'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E",
-	'Ж': "Zh", 'З': "Z", 'И': "I", 'Й': "Y", 'К': "K", 'Л': "L", 'М': "M",
-	'Н': "N", 'О': "O", 'П': "P", 'Р': "R", 'С': "S", 'Т': "T", 'У': "U",
-	'Ф': "F", 'Х': "Kh", 'Ц': "Ts", 'Ч': "Ch", 'Ш': "Sh", 'Щ': "Sch",
-	'Ъ': "", 'Ы': "Y", 'Ь': "", 'Э': "E", 'Ю': "Yu", 'Я': "Ya",
-}
-
-func transliterate(s string) string {
-	var b strings.Builder
-	for _, r := range s {
-		if t, ok := translitMap[r]; ok {
-			b.WriteString(t)
-		} else if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '_' || r == '-' {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-func generateLoginFromFullName(fullName string) string {
-	parts := strings.Fields(fullName)
-	if len(parts) == 0 {
-		return "user"
-	}
-	if len(parts) == 1 {
-		return strings.ToLower(transliterate(parts[0]))
-	}
-	// "Иван Петров" -> "ivan.petrov"
-	first := strings.ToLower(transliterate(parts[0]))
-	last := strings.ToLower(transliterate(parts[len(parts)-1]))
-	if first == "" || last == "" {
-		return strings.ToLower(transliterate(parts[0]))
-	}
-	return first + "." + last
 }
 
 func validateEmail(email string) error {
@@ -467,7 +412,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		_, _ = h.client.Notification.Create().
 			SetUserID(admin.ID).
 			SetTitle("Запрос сброса пароля").
-			SetBody(fmt.Sprintf("Пользователь %s (%s) запросил сброс пароля", u.FullName, u.Login)).
+			SetBody(fmt.Sprintf("Пользователь %s запросил сброс пароля", u.FullName)).
 			SetNotificationTypeID(ntID).
 			SetScheduledAt(time.Now()).
 			Save(c)
@@ -508,7 +453,6 @@ func (h *AuthHandler) GetResetRequests(c *gin.Context) {
 		if r.Edges.User != nil {
 			item["user"] = gin.H{
 				"id":        r.Edges.User.ID,
-				"login":     r.Edges.User.Login,
 				"full_name": r.Edges.User.FullName,
 				"email":     "",
 			}

@@ -40,7 +40,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		}
 		result = append(result, gin.H{
 			"id":        u.ID,
-			"login":     u.Login,
+			"email":     u.Email,
 			"full_name": u.FullName,
 			"initials":  u.Initials,
 			"role":      roleName,
@@ -82,20 +82,10 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	generatedLogin := generateLoginFromFullName(req.FullName)
-	for i := 1; ; i++ {
-		loginExists, _ := h.client.User.Query().Where(user.LoginEQ(generatedLogin)).Exist(c)
-		if !loginExists {
-			break
-		}
-		generatedLogin = generateLoginFromFullName(req.FullName) + strconv.Itoa(i)
-	}
-
 	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	initials := generateInitials(req.FullName)
 
 	u, err := h.client.User.Create().
-		SetLogin(generatedLogin).
 		SetEmail(req.Email).
 		SetPasswordHash(string(hash)).
 		SetFullName(req.FullName).
@@ -112,7 +102,6 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"id":        u.ID,
-		"login":     u.Login,
 		"email":     u.Email,
 		"full_name": u.FullName,
 		"initials":  u.Initials,

@@ -30,9 +30,9 @@ type UserCreate struct {
 	hooks    []Hook
 }
 
-// SetLogin sets the "login" field.
-func (_c *UserCreate) SetLogin(v string) *UserCreate {
-	_c.mutation.SetLogin(v)
+// SetEmail sets the "email" field.
+func (_c *UserCreate) SetEmail(v string) *UserCreate {
+	_c.mutation.SetEmail(v)
 	return _c
 }
 
@@ -57,12 +57,6 @@ func (_c *UserCreate) SetInitials(v string) *UserCreate {
 // SetRoleID sets the "role_id" field.
 func (_c *UserCreate) SetRoleID(v int) *UserCreate {
 	_c.mutation.SetRoleID(v)
-	return _c
-}
-
-// SetEmail sets the "email" field.
-func (_c *UserCreate) SetEmail(v string) *UserCreate {
-	_c.mutation.SetEmail(v)
 	return _c
 }
 
@@ -395,12 +389,12 @@ func (_c *UserCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserCreate) check() error {
-	if _, ok := _c.mutation.Login(); !ok {
-		return &ValidationError{Name: "login", err: errors.New(`ent: missing required field "User.login"`)}
+	if _, ok := _c.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
 	}
-	if v, ok := _c.mutation.Login(); ok {
-		if err := user.LoginValidator(v); err != nil {
-			return &ValidationError{Name: "login", err: fmt.Errorf(`ent: validator failed for field "User.login": %w`, err)}
+	if v, ok := _c.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.PasswordHash(); !ok {
@@ -429,14 +423,6 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.RoleID(); !ok {
 		return &ValidationError{Name: "role_id", err: errors.New(`ent: missing required field "User.role_id"`)}
-	}
-	if _, ok := _c.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
-	}
-	if v, ok := _c.mutation.Email(); ok {
-		if err := user.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
-		}
 	}
 	if _, ok := _c.mutation.AvatarColor(); !ok {
 		return &ValidationError{Name: "avatar_color", err: errors.New(`ent: missing required field "User.avatar_color"`)}
@@ -484,9 +470,9 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_node = &User{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
 	)
-	if value, ok := _c.mutation.Login(); ok {
-		_spec.SetField(user.FieldLogin, field.TypeString, value)
-		_node.Login = value
+	if value, ok := _c.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+		_node.Email = value
 	}
 	if value, ok := _c.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
@@ -499,10 +485,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Initials(); ok {
 		_spec.SetField(user.FieldInitials, field.TypeString, value)
 		_node.Initials = value
-	}
-	if value, ok := _c.mutation.Email(); ok {
-		_spec.SetField(user.FieldEmail, field.TypeString, value)
-		_node.Email = value
 	}
 	if value, ok := _c.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)

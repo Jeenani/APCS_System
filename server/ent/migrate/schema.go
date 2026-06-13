@@ -450,11 +450,10 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "login", Type: field.TypeString, Unique: true, Size: 100},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
 		{Name: "password_hash", Type: field.TypeString, Size: 255},
 		{Name: "full_name", Type: field.TypeString, Size: 200},
 		{Name: "initials", Type: field.TypeString, Size: 10},
-		{Name: "email", Type: field.TypeString, Unique: true, Size: 255},
 		{Name: "avatar_color", Type: field.TypeString, Size: 7, Default: "#1565C0"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
@@ -470,7 +469,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_roles_users",
-				Columns:    []*schema.Column{UsersColumns[11]},
+				Columns:    []*schema.Column{UsersColumns[10]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

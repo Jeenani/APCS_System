@@ -14,8 +14,8 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldLogin holds the string denoting the login field in the database.
-	FieldLogin = "login"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
 	FieldPasswordHash = "password_hash"
 	// FieldFullName holds the string denoting the full_name field in the database.
@@ -24,8 +24,6 @@ const (
 	FieldInitials = "initials"
 	// FieldRoleID holds the string denoting the role_id field in the database.
 	FieldRoleID = "role_id"
-	// FieldEmail holds the string denoting the email field in the database.
-	FieldEmail = "email"
 	// FieldAvatarColor holds the string denoting the avatar_color field in the database.
 	FieldAvatarColor = "avatar_color"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -169,12 +167,11 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
-	FieldLogin,
+	FieldEmail,
 	FieldPasswordHash,
 	FieldFullName,
 	FieldInitials,
 	FieldRoleID,
-	FieldEmail,
 	FieldAvatarColor,
 	FieldIsActive,
 	FieldLastLoginAt,
@@ -193,16 +190,14 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// LoginValidator is a validator for the "login" field. It is called by the builders before save.
-	LoginValidator func(string) error
+	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	EmailValidator func(string) error
 	// PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	PasswordHashValidator func(string) error
 	// FullNameValidator is a validator for the "full_name" field. It is called by the builders before save.
 	FullNameValidator func(string) error
 	// InitialsValidator is a validator for the "initials" field. It is called by the builders before save.
 	InitialsValidator func(string) error
-	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	EmailValidator func(string) error
 	// DefaultAvatarColor holds the default value on creation for the "avatar_color" field.
 	DefaultAvatarColor string
 	// AvatarColorValidator is a validator for the "avatar_color" field. It is called by the builders before save.
@@ -225,9 +220,9 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByLogin orders the results by the login field.
-func ByLogin(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLogin, opts...).ToFunc()
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
 // ByPasswordHash orders the results by the password_hash field.
@@ -248,11 +243,6 @@ func ByInitials(opts ...sql.OrderTermOption) OrderOption {
 // ByRoleID orders the results by the role_id field.
 func ByRoleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRoleID, opts...).ToFunc()
-}
-
-// ByEmail orders the results by the email field.
-func ByEmail(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
 // ByAvatarColor orders the results by the avatar_color field.

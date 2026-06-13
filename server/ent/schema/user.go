@@ -14,8 +14,8 @@ type User struct {
 
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("login").
-			MaxLen(100).
+		field.String("email").
+			MaxLen(255).
 			NotEmpty().
 			Unique(),
 		field.String("password_hash").
@@ -29,10 +29,6 @@ func (User) Fields() []ent.Field {
 			MaxLen(10).
 			NotEmpty(),
 		field.Int("role_id"),
-		field.String("email").
-			MaxLen(255).
-			NotEmpty().
-			Unique(),
 		field.String("avatar_color").
 			MaxLen(7).
 			Default("#1565C0"),
