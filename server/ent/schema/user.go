@@ -29,6 +29,11 @@ func (User) Fields() []ent.Field {
 			MaxLen(10).
 			NotEmpty(),
 		field.Int("role_id"),
+		field.String("email").
+			MaxLen(255).
+			Optional().
+			Nillable().
+			Unique(),
 		field.String("avatar_color").
 			MaxLen(7).
 			Default("#1565C0"),

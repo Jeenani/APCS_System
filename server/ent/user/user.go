@@ -24,6 +24,8 @@ const (
 	FieldInitials = "initials"
 	// FieldRoleID holds the string denoting the role_id field in the database.
 	FieldRoleID = "role_id"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
 	// FieldAvatarColor holds the string denoting the avatar_color field in the database.
 	FieldAvatarColor = "avatar_color"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -172,6 +174,7 @@ var Columns = []string{
 	FieldFullName,
 	FieldInitials,
 	FieldRoleID,
+	FieldEmail,
 	FieldAvatarColor,
 	FieldIsActive,
 	FieldLastLoginAt,
@@ -198,6 +201,8 @@ var (
 	FullNameValidator func(string) error
 	// InitialsValidator is a validator for the "initials" field. It is called by the builders before save.
 	InitialsValidator func(string) error
+	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	EmailValidator func(string) error
 	// DefaultAvatarColor holds the default value on creation for the "avatar_color" field.
 	DefaultAvatarColor string
 	// AvatarColorValidator is a validator for the "avatar_color" field. It is called by the builders before save.
@@ -243,6 +248,11 @@ func ByInitials(opts ...sql.OrderTermOption) OrderOption {
 // ByRoleID orders the results by the role_id field.
 func ByRoleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRoleID, opts...).ToFunc()
+}
+
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
 // ByAvatarColor orders the results by the avatar_color field.

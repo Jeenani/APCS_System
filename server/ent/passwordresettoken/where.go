@@ -65,6 +65,11 @@ func TokenHash(v string) predicate.PasswordResetToken {
 	return predicate.PasswordResetToken(sql.FieldEQ(FieldTokenHash, v))
 }
 
+// Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
+func Status(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldEQ(FieldStatus, v))
+}
+
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.PasswordResetToken {
 	return predicate.PasswordResetToken(sql.FieldEQ(FieldExpiresAt, v))
@@ -163,6 +168,71 @@ func TokenHashEqualFold(v string) predicate.PasswordResetToken {
 // TokenHashContainsFold applies the ContainsFold predicate on the "token_hash" field.
 func TokenHashContainsFold(v string) predicate.PasswordResetToken {
 	return predicate.PasswordResetToken(sql.FieldContainsFold(FieldTokenHash, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// StatusGT applies the GT predicate on the "status" field.
+func StatusGT(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldGT(FieldStatus, v))
+}
+
+// StatusGTE applies the GTE predicate on the "status" field.
+func StatusGTE(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldGTE(FieldStatus, v))
+}
+
+// StatusLT applies the LT predicate on the "status" field.
+func StatusLT(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldLT(FieldStatus, v))
+}
+
+// StatusLTE applies the LTE predicate on the "status" field.
+func StatusLTE(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldLTE(FieldStatus, v))
+}
+
+// StatusContains applies the Contains predicate on the "status" field.
+func StatusContains(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldContains(FieldStatus, v))
+}
+
+// StatusHasPrefix applies the HasPrefix predicate on the "status" field.
+func StatusHasPrefix(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldHasPrefix(FieldStatus, v))
+}
+
+// StatusHasSuffix applies the HasSuffix predicate on the "status" field.
+func StatusHasSuffix(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldHasSuffix(FieldStatus, v))
+}
+
+// StatusEqualFold applies the EqualFold predicate on the "status" field.
+func StatusEqualFold(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldEqualFold(FieldStatus, v))
+}
+
+// StatusContainsFold applies the ContainsFold predicate on the "status" field.
+func StatusContainsFold(v string) predicate.PasswordResetToken {
+	return predicate.PasswordResetToken(sql.FieldContainsFold(FieldStatus, v))
 }
 
 // ExpiresAtEQ applies the EQ predicate on the "expires_at" field.

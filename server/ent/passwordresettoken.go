@@ -22,6 +22,8 @@ type PasswordResetToken struct {
 	UserID int `json:"user_id,omitempty"`
 	// TokenHash holds the value of the "token_hash" field.
 	TokenHash string `json:"token_hash,omitempty"`
+	// Status holds the value of the "status" field.
+	Status string `json:"status,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// UsedAt holds the value of the "used_at" field.
@@ -61,7 +63,7 @@ func (*PasswordResetToken) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case passwordresettoken.FieldID, passwordresettoken.FieldUserID:
 			values[i] = new(sql.NullInt64)
-		case passwordresettoken.FieldTokenHash:
+		case passwordresettoken.FieldTokenHash, passwordresettoken.FieldStatus:
 			values[i] = new(sql.NullString)
 		case passwordresettoken.FieldExpiresAt, passwordresettoken.FieldUsedAt, passwordresettoken.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -97,6 +99,12 @@ func (_m *PasswordResetToken) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field token_hash", values[i])
 			} else if value.Valid {
 				_m.TokenHash = value.String
+			}
+		case passwordresettoken.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = value.String
 			}
 		case passwordresettoken.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -163,6 +171,9 @@ func (_m *PasswordResetToken) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("token_hash=")
 	builder.WriteString(_m.TokenHash)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(_m.Status)
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))

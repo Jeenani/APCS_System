@@ -289,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_isLogin) ...[
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
                     child: Text('Забыли пароль?', style: TextStyle(color: Colors.grey[600])),
                   ),
                 ],

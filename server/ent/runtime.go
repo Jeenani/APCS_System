@@ -223,8 +223,14 @@ func init() {
 			return nil
 		}
 	}()
+	// passwordresettokenDescStatus is the schema descriptor for status field.
+	passwordresettokenDescStatus := passwordresettokenFields[2].Descriptor()
+	// passwordresettoken.DefaultStatus holds the default value on creation for the status field.
+	passwordresettoken.DefaultStatus = passwordresettokenDescStatus.Default.(string)
+	// passwordresettoken.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	passwordresettoken.StatusValidator = passwordresettokenDescStatus.Validators[0].(func(string) error)
 	// passwordresettokenDescCreatedAt is the schema descriptor for created_at field.
-	passwordresettokenDescCreatedAt := passwordresettokenFields[4].Descriptor()
+	passwordresettokenDescCreatedAt := passwordresettokenFields[5].Descriptor()
 	// passwordresettoken.DefaultCreatedAt holds the default value on creation for the created_at field.
 	passwordresettoken.DefaultCreatedAt = passwordresettokenDescCreatedAt.Default.(func() time.Time)
 	priorityFields := schema.Priority{}.Fields()
@@ -546,22 +552,26 @@ func init() {
 			return nil
 		}
 	}()
+	// userDescEmail is the schema descriptor for email field.
+	userDescEmail := userFields[5].Descriptor()
+	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 	// userDescAvatarColor is the schema descriptor for avatar_color field.
-	userDescAvatarColor := userFields[5].Descriptor()
+	userDescAvatarColor := userFields[6].Descriptor()
 	// user.DefaultAvatarColor holds the default value on creation for the avatar_color field.
 	user.DefaultAvatarColor = userDescAvatarColor.Default.(string)
 	// user.AvatarColorValidator is a validator for the "avatar_color" field. It is called by the builders before save.
 	user.AvatarColorValidator = userDescAvatarColor.Validators[0].(func(string) error)
 	// userDescIsActive is the schema descriptor for is_active field.
-	userDescIsActive := userFields[6].Descriptor()
+	userDescIsActive := userFields[7].Descriptor()
 	// user.DefaultIsActive holds the default value on creation for the is_active field.
 	user.DefaultIsActive = userDescIsActive.Default.(bool)
 	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userFields[8].Descriptor()
+	userDescCreatedAt := userFields[9].Descriptor()
 	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
 	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
 	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userFields[9].Descriptor()
+	userDescUpdatedAt := userFields[10].Descriptor()
 	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

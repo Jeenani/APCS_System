@@ -699,15 +699,18 @@ class _ProfileTabState extends State<_ProfileTab> {
               _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => _exportCSV(context)),
 
             // Админ-панель
-            if (isAdmin) ...[
+            if (isAdmin || user?.role == 'chief_engineer') ...[
               const SizedBox(height: 8),
               const Divider(),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text('Администрирование', style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w600)),
               ),
-              _MenuItem(icon: Icons.people_outline, label: 'Управление пользователями', onTap: () => Navigator.pushNamed(context, '/admin/users')),
-              _MenuItem(icon: Icons.category_outlined, label: 'Управление справочниками', onTap: () => Navigator.pushNamed(context, '/admin/categories')),
+              if (isAdmin)
+                _MenuItem(icon: Icons.people_outline, label: 'Управление пользователями', onTap: () => Navigator.pushNamed(context, '/admin/users')),
+              if (isAdmin)
+                _MenuItem(icon: Icons.category_outlined, label: 'Управление справочниками', onTap: () => Navigator.pushNamed(context, '/admin/categories')),
+              _MenuItem(icon: Icons.lock_reset_outlined, label: 'Запросы на сброс пароля', onTap: () => Navigator.pushNamed(context, '/admin/reset-requests')),
             ],
 
             _MenuItem(icon: Icons.help_outline, label: 'Справка', onTap: () {

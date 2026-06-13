@@ -5541,6 +5541,7 @@ type PasswordResetTokenMutation struct {
 	typ           string
 	id            *int
 	token_hash    *string
+	status        *string
 	expires_at    *time.Time
 	used_at       *time.Time
 	created_at    *time.Time
@@ -5720,6 +5721,42 @@ func (m *PasswordResetTokenMutation) OldTokenHash(ctx context.Context) (v string
 // ResetTokenHash resets all changes to the "token_hash" field.
 func (m *PasswordResetTokenMutation) ResetTokenHash() {
 	m.token_hash = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *PasswordResetTokenMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *PasswordResetTokenMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the PasswordResetToken entity.
+// If the PasswordResetToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordResetTokenMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *PasswordResetTokenMutation) ResetStatus() {
+	m.status = nil
 }
 
 // SetExpiresAt sets the "expires_at" field.
@@ -5904,12 +5941,15 @@ func (m *PasswordResetTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PasswordResetTokenMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.user != nil {
 		fields = append(fields, passwordresettoken.FieldUserID)
 	}
 	if m.token_hash != nil {
 		fields = append(fields, passwordresettoken.FieldTokenHash)
+	}
+	if m.status != nil {
+		fields = append(fields, passwordresettoken.FieldStatus)
 	}
 	if m.expires_at != nil {
 		fields = append(fields, passwordresettoken.FieldExpiresAt)
@@ -5932,6 +5972,8 @@ func (m *PasswordResetTokenMutation) Field(name string) (ent.Value, bool) {
 		return m.UserID()
 	case passwordresettoken.FieldTokenHash:
 		return m.TokenHash()
+	case passwordresettoken.FieldStatus:
+		return m.Status()
 	case passwordresettoken.FieldExpiresAt:
 		return m.ExpiresAt()
 	case passwordresettoken.FieldUsedAt:
@@ -5951,6 +5993,8 @@ func (m *PasswordResetTokenMutation) OldField(ctx context.Context, name string) 
 		return m.OldUserID(ctx)
 	case passwordresettoken.FieldTokenHash:
 		return m.OldTokenHash(ctx)
+	case passwordresettoken.FieldStatus:
+		return m.OldStatus(ctx)
 	case passwordresettoken.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
 	case passwordresettoken.FieldUsedAt:
@@ -5979,6 +6023,13 @@ func (m *PasswordResetTokenMutation) SetField(name string, value ent.Value) erro
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTokenHash(v)
+		return nil
+	case passwordresettoken.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	case passwordresettoken.FieldExpiresAt:
 		v, ok := value.(time.Time)
@@ -6067,6 +6118,9 @@ func (m *PasswordResetTokenMutation) ResetField(name string) error {
 		return nil
 	case passwordresettoken.FieldTokenHash:
 		m.ResetTokenHash()
+		return nil
+	case passwordresettoken.FieldStatus:
+		m.ResetStatus()
 		return nil
 	case passwordresettoken.FieldExpiresAt:
 		m.ResetExpiresAt()
@@ -12593,6 +12647,7 @@ type UserMutation struct {
 	password_hash                *string
 	full_name                    *string
 	initials                     *string
+	email                        *string
 	avatar_color                 *string
 	is_active                    *bool
 	last_login_at                *time.Time
@@ -12920,6 +12975,55 @@ func (m *UserMutation) OldRoleID(ctx context.Context) (v int, err error) {
 // ResetRoleID resets all changes to the "role_id" field.
 func (m *UserMutation) ResetRoleID() {
 	m.role = nil
+}
+
+// SetEmail sets the "email" field.
+func (m *UserMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the value of the "email" field in the mutation.
+func (m *UserMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old "email" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldEmail(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ClearEmail clears the value of the "email" field.
+func (m *UserMutation) ClearEmail() {
+	m.email = nil
+	m.clearedFields[user.FieldEmail] = struct{}{}
+}
+
+// EmailCleared returns if the "email" field was cleared in this mutation.
+func (m *UserMutation) EmailCleared() bool {
+	_, ok := m.clearedFields[user.FieldEmail]
+	return ok
+}
+
+// ResetEmail resets all changes to the "email" field.
+func (m *UserMutation) ResetEmail() {
+	m.email = nil
+	delete(m.clearedFields, user.FieldEmail)
 }
 
 // SetAvatarColor sets the "avatar_color" field.
@@ -13863,7 +13967,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.login != nil {
 		fields = append(fields, user.FieldLogin)
 	}
@@ -13878,6 +13982,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.role != nil {
 		fields = append(fields, user.FieldRoleID)
+	}
+	if m.email != nil {
+		fields = append(fields, user.FieldEmail)
 	}
 	if m.avatar_color != nil {
 		fields = append(fields, user.FieldAvatarColor)
@@ -13912,6 +14019,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.Initials()
 	case user.FieldRoleID:
 		return m.RoleID()
+	case user.FieldEmail:
+		return m.Email()
 	case user.FieldAvatarColor:
 		return m.AvatarColor()
 	case user.FieldIsActive:
@@ -13941,6 +14050,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldInitials(ctx)
 	case user.FieldRoleID:
 		return m.OldRoleID(ctx)
+	case user.FieldEmail:
+		return m.OldEmail(ctx)
 	case user.FieldAvatarColor:
 		return m.OldAvatarColor(ctx)
 	case user.FieldIsActive:
@@ -13994,6 +14105,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRoleID(v)
+		return nil
+	case user.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
 		return nil
 	case user.FieldAvatarColor:
 		v, ok := value.(string)
@@ -14063,6 +14181,9 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *UserMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(user.FieldEmail) {
+		fields = append(fields, user.FieldEmail)
+	}
 	if m.FieldCleared(user.FieldLastLoginAt) {
 		fields = append(fields, user.FieldLastLoginAt)
 	}
@@ -14080,6 +14201,9 @@ func (m *UserMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *UserMutation) ClearField(name string) error {
 	switch name {
+	case user.FieldEmail:
+		m.ClearEmail()
+		return nil
 	case user.FieldLastLoginAt:
 		m.ClearLastLoginAt()
 		return nil
@@ -14105,6 +14229,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldRoleID:
 		m.ResetRoleID()
+		return nil
+	case user.FieldEmail:
+		m.ResetEmail()
 		return nil
 	case user.FieldAvatarColor:
 		m.ResetAvatarColor()

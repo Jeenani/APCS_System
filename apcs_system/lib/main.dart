@@ -17,6 +17,8 @@ import 'screens/notification_settings_screen.dart';
 import 'screens/admin_users_screen.dart';
 import 'screens/admin_categories_screen.dart';
 import 'screens/kpi_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/reset_requests_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +61,8 @@ class AsutpTasksApp extends StatelessWidget {
           switch (settings.name) {
             case '/login':
               return MaterialPageRoute(builder: (_) => const LoginScreen());
+            case '/forgot-password':
+              return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
             case '/home':
               return MaterialPageRoute(builder: (_) => const HomeScreen());
             case '/create-task':
@@ -81,6 +85,8 @@ class AsutpTasksApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const AdminUsersScreen());
             case '/admin/categories':
               return MaterialPageRoute(builder: (_) => const AdminCategoriesScreen());
+            case '/admin/reset-requests':
+              return MaterialPageRoute(builder: (_) => const ResetRequestsScreen());
             case '/kpi':
               return MaterialPageRoute(builder: (_) => const KpiScreen());
             default:

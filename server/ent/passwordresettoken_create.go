@@ -33,6 +33,20 @@ func (_c *PasswordResetTokenCreate) SetTokenHash(v string) *PasswordResetTokenCr
 	return _c
 }
 
+// SetStatus sets the "status" field.
+func (_c *PasswordResetTokenCreate) SetStatus(v string) *PasswordResetTokenCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *PasswordResetTokenCreate) SetNillableStatus(v *string) *PasswordResetTokenCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_c *PasswordResetTokenCreate) SetExpiresAt(v time.Time) *PasswordResetTokenCreate {
 	_c.mutation.SetExpiresAt(v)
@@ -107,6 +121,10 @@ func (_c *PasswordResetTokenCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *PasswordResetTokenCreate) defaults() {
+	if _, ok := _c.mutation.Status(); !ok {
+		v := passwordresettoken.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := passwordresettoken.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -124,6 +142,14 @@ func (_c *PasswordResetTokenCreate) check() error {
 	if v, ok := _c.mutation.TokenHash(); ok {
 		if err := passwordresettoken.TokenHashValidator(v); err != nil {
 			return &ValidationError{Name: "token_hash", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.token_hash": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "PasswordResetToken.status"`)}
+	}
+	if v, ok := _c.mutation.Status(); ok {
+		if err := passwordresettoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.status": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.ExpiresAt(); !ok {
@@ -164,6 +190,10 @@ func (_c *PasswordResetTokenCreate) createSpec() (*PasswordResetToken, *sqlgraph
 	if value, ok := _c.mutation.TokenHash(); ok {
 		_spec.SetField(passwordresettoken.FieldTokenHash, field.TypeString, value)
 		_node.TokenHash = value
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(passwordresettoken.FieldStatus, field.TypeString, value)
+		_node.Status = value
 	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(passwordresettoken.FieldExpiresAt, field.TypeTime, value)

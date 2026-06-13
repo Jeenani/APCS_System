@@ -57,6 +57,20 @@ func (_u *PasswordResetTokenUpdate) SetNillableTokenHash(v *string) *PasswordRes
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *PasswordResetTokenUpdate) SetStatus(v string) *PasswordResetTokenUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *PasswordResetTokenUpdate) SetNillableStatus(v *string) *PasswordResetTokenUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *PasswordResetTokenUpdate) SetExpiresAt(v time.Time) *PasswordResetTokenUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -141,6 +155,11 @@ func (_u *PasswordResetTokenUpdate) check() error {
 			return &ValidationError{Name: "token_hash", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.token_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := passwordresettoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.status": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PasswordResetToken.user"`)
 	}
@@ -161,6 +180,9 @@ func (_u *PasswordResetTokenUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.TokenHash(); ok {
 		_spec.SetField(passwordresettoken.FieldTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(passwordresettoken.FieldStatus, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(passwordresettoken.FieldExpiresAt, field.TypeTime, value)
@@ -244,6 +266,20 @@ func (_u *PasswordResetTokenUpdateOne) SetTokenHash(v string) *PasswordResetToke
 func (_u *PasswordResetTokenUpdateOne) SetNillableTokenHash(v *string) *PasswordResetTokenUpdateOne {
 	if v != nil {
 		_u.SetTokenHash(*v)
+	}
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *PasswordResetTokenUpdateOne) SetStatus(v string) *PasswordResetTokenUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *PasswordResetTokenUpdateOne) SetNillableStatus(v *string) *PasswordResetTokenUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
 	}
 	return _u
 }
@@ -345,6 +381,11 @@ func (_u *PasswordResetTokenUpdateOne) check() error {
 			return &ValidationError{Name: "token_hash", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.token_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := passwordresettoken.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PasswordResetToken.status": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "PasswordResetToken.user"`)
 	}
@@ -382,6 +423,9 @@ func (_u *PasswordResetTokenUpdateOne) sqlSave(ctx context.Context) (_node *Pass
 	}
 	if value, ok := _u.mutation.TokenHash(); ok {
 		_spec.SetField(passwordresettoken.FieldTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(passwordresettoken.FieldStatus, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(passwordresettoken.FieldExpiresAt, field.TypeTime, value)

@@ -5,6 +5,7 @@ class UserModel {
   final String initials;
   final String role;
   final String avatarColor;
+  final String? email;
 
   UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     required this.initials,
     required this.role,
     required this.avatarColor,
+    this.email,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class UserModel {
       initials: json['initials'] ?? '',
       role: json['role'] ?? '',
       avatarColor: json['avatar_color'] ?? '#1565C0',
+      email: json['email']?.toString(),
     );
   }
 

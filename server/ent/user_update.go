@@ -108,6 +108,26 @@ func (_u *UserUpdate) SetNillableRoleID(v *int) *UserUpdate {
 	return _u
 }
 
+// SetEmail sets the "email" field.
+func (_u *UserUpdate) SetEmail(v string) *UserUpdate {
+	_u.mutation.SetEmail(v)
+	return _u
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableEmail(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetEmail(*v)
+	}
+	return _u
+}
+
+// ClearEmail clears the value of the "email" field.
+func (_u *UserUpdate) ClearEmail() *UserUpdate {
+	_u.mutation.ClearEmail()
+	return _u
+}
+
 // SetAvatarColor sets the "avatar_color" field.
 func (_u *UserUpdate) SetAvatarColor(v string) *UserUpdate {
 	_u.mutation.SetAvatarColor(v)
@@ -693,6 +713,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "initials", err: fmt.Errorf(`ent: validator failed for field "User.initials": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.AvatarColor(); ok {
 		if err := user.AvatarColorValidator(v); err != nil {
 			return &ValidationError{Name: "avatar_color", err: fmt.Errorf(`ent: validator failed for field "User.avatar_color": %w`, err)}
@@ -727,6 +752,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Initials(); ok {
 		_spec.SetField(user.FieldInitials, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(user.FieldEmail, field.TypeString)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)
@@ -1431,6 +1462,26 @@ func (_u *UserUpdateOne) SetNillableRoleID(v *int) *UserUpdateOne {
 	return _u
 }
 
+// SetEmail sets the "email" field.
+func (_u *UserUpdateOne) SetEmail(v string) *UserUpdateOne {
+	_u.mutation.SetEmail(v)
+	return _u
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetEmail(*v)
+	}
+	return _u
+}
+
+// ClearEmail clears the value of the "email" field.
+func (_u *UserUpdateOne) ClearEmail() *UserUpdateOne {
+	_u.mutation.ClearEmail()
+	return _u
+}
+
 // SetAvatarColor sets the "avatar_color" field.
 func (_u *UserUpdateOne) SetAvatarColor(v string) *UserUpdateOne {
 	_u.mutation.SetAvatarColor(v)
@@ -2029,6 +2080,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "initials", err: fmt.Errorf(`ent: validator failed for field "User.initials": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.AvatarColor(); ok {
 		if err := user.AvatarColorValidator(v); err != nil {
 			return &ValidationError{Name: "avatar_color", err: fmt.Errorf(`ent: validator failed for field "User.avatar_color": %w`, err)}
@@ -2080,6 +2136,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.Initials(); ok {
 		_spec.SetField(user.FieldInitials, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(user.FieldEmail, field.TypeString)
 	}
 	if value, ok := _u.mutation.AvatarColor(); ok {
 		_spec.SetField(user.FieldAvatarColor, field.TypeString, value)

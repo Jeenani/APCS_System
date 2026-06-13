@@ -119,6 +119,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     full_name     VARCHAR(200) NOT NULL,
     initials      VARCHAR(10)  NOT NULL,
+    email         VARCHAR(255) UNIQUE,
     role_id       SMALLINT     NOT NULL REFERENCES roles(id),
     avatar_color  VARCHAR(7)   NOT NULL DEFAULT '#1565C0',
     is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -276,9 +277,13 @@ CREATE TABLE password_reset_tokens (
     id         SERIAL       PRIMARY KEY,
     user_id    INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash VARCHAR(255) NOT NULL UNIQUE,
+    status     VARCHAR(20)  NOT NULL DEFAULT 'pending',
     expires_at TIMESTAMPTZ  NOT NULL,
     used_at    TIMESTAMPTZ,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_password_reset_status
+        CHECK (status IN ('pending', 'approved', 'rejected'))
 );
 
 COMMENT ON COLUMN password_reset_tokens.token_hash IS 'SHA-256 от реального одноразового токена';

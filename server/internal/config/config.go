@@ -13,6 +13,7 @@ type Config struct {
 	DB      DBConfig
 	Server  ServerConfig
 	JWT     JWTConfig
+	SMTP    SMTPConfig
 }
 
 type DBConfig struct {
@@ -39,6 +40,14 @@ type JWTConfig struct {
 	Secret     string
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
+}
+
+type SMTPConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	From     string
 }
 
 func Load() (*Config, error) {
@@ -70,6 +79,13 @@ func Load() (*Config, error) {
 			Secret:     getEnv("JWT_SECRET=<JWT_SECRET>", "asutp-secret-key"),
 			AccessTTL:  accessTTL,
 			RefreshTTL: refreshTTL,
+		},
+		SMTP: SMTPConfig{
+			Host:     getEnv("SMTP_HOST", ""),
+			Port:     getEnv("SMTP_PORT", "587"),
+			Username: getEnv("SMTP_USERNAME", ""),
+			Password: getEnv("SMTP_PASS=<SMTP_PASS>WORD", ""),
+			From:     getEnv("SMTP_FROM", "noreply@altairgames.space"),
 		},
 	}, nil
 }

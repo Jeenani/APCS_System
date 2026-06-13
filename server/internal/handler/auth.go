@@ -3,11 +3,17 @@ package handler
 import (
 	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"net/smtp"
+	"regexp"
+	"strconv"
 	"time"
 
 	"asutp-server/ent"
+	"asutp-server/ent/passwordresettoken"
 	"asutp-server/ent/refreshtoken"
+	"asutp-server/ent/role"
 	"asutp-server/ent/user"
 	"asutp-server/internal/config"
 	"asutp-server/internal/middleware"
@@ -31,10 +37,11 @@ type loginRequest struct {
 }
 
 type registerRequest struct {
-	Login    string `json:"login" binding:"required,min=3,max=100"`
-	Password string `json:"password" binding:"required,min=6"`
-	FullName string `json:"full_name" binding:"required"`
-	RoleID   int    `json:"role_id" binding:"required"`
+	Login    string  `json:"login" binding:"required,min=3,max=100"`
+	Password string  `json:"password" binding:"required,min=6"`
+	FullName string  `json:"full_name" binding:"required"`
+	RoleID   int     `json:"role_id" binding:"required"`
+	Email    *string `json:"email"`
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -95,6 +102,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		SetLastLoginAt(time.Now()).
 		Exec(c)
 
+	email := ""
+	if u.Email != nil {
+		email = *u.Email
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshHash,
@@ -105,6 +117,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"initials":     u.Initials,
 			"role":         roleName,
 			"avatar_color": u.AvatarColor,
+			"email":        email,
 		},
 	})
 }
@@ -123,6 +136,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err := validatePassword(req.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Validate email if provided
+	if req.Email != nil && *req.Email != "" {
+		if err := validateEmail(*req.Email); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		emailExists, _ := h.client.User.Query().Where(user.EmailEQ(*req.Email)).Exist(c)
+		if emailExists {
+			c.JSON(http.StatusConflict, gin.H{"error": "Email уже используется"})
+			return
+		}
 	}
 
 	// Check duplicate login
@@ -146,13 +172,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	u, err := tx.User.Create().
+	builder := tx.User.Create().
 		SetLogin(req.Login).
 		SetPasswordHash(string(hash)).
 		SetFullName(req.FullName).
 		SetInitials(initials).
-		SetRoleID(req.RoleID).
-		Save(c)
+		SetRoleID(req.RoleID)
+	if req.Email != nil && *req.Email != "" {
+		builder = builder.SetEmail(*req.Email)
+	}
+	u, err := builder.Save(c)
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания пользователя"})
@@ -303,4 +332,279 @@ func generateInitials(fullName string) string {
 		}
 	}
 	return initials
+}
+
+func validateEmail(email string) error {
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !re.MatchString(email) {
+		return fmt.Errorf("Некорректный формат email")
+	}
+	return nil
+}
+
+func generateTempPassword() string {
+	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%"
+	b := make([]byte, 12)
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
+}
+
+func (h *AuthHandler) sendEmail(to, subject, body string) error {
+	cfg := h.cfg.SMTP
+	if cfg.Host == "" || cfg.Username == "" || cfg.Password == "" {
+		return fmt.Errorf("SMTP не настроен")
+	}
+	msg := []byte("To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"Content-Type: text/plain; charset=UTF-8\r\n" +
+		"\r\n" +
+		body + "\r\n")
+	addr := cfg.Host + ":" + cfg.Port
+	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
+	return smtp.SendMail(addr, auth, cfg.From, []string{to}, msg)
+}
+
+// ForgotPassword — user requests password reset, admin gets notified
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req struct {
+		Login string `json:"login" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Укажите логин"})
+		return
+	}
+
+	u, err := h.client.User.Query().
+		Where(user.LoginEQ(req.Login)).
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+
+	if u.Email == nil || *u.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "У пользователя не указан email. Обратитесь к администратору."})
+		return
+	}
+
+	// Check for existing pending request
+	pendingExists, _ := h.client.PasswordResetToken.Query().
+		Where(
+			passwordresettoken.UserIDEQ(u.ID),
+			passwordresettoken.StatusEQ("pending"),
+			passwordresettoken.ExpiresAtGT(time.Now()),
+		).
+		Exist(c)
+	if pendingExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запрос на сброс уже отправлен. Ожидайте подтверждения администратора."})
+		return
+	}
+
+	// Create token
+	tokenRaw := fmt.Sprintf("%d-%s-%d", u.ID, req.Login, time.Now().UnixNano())
+	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(tokenRaw)))
+	_, err = h.client.PasswordResetToken.Create().
+		SetUserID(u.ID).
+		SetTokenHash(tokenHash).
+		SetStatus("pending").
+		SetExpiresAt(time.Now().Add(24 * time.Hour)).
+		Save(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания запроса"})
+		return
+	}
+
+	// Notify admins
+	admins, _ := h.client.User.Query().
+		Where(
+			user.HasRoleWith(role.NameIn("admin", "chief_engineer")),
+		).
+		All(c)
+
+	ntID, _ := getNotificationTypeID(h.client, c, "system")
+	if ntID == 0 {
+		ntID = 4
+	}
+	for _, admin := range admins {
+		_, _ = h.client.Notification.Create().
+			SetUserID(admin.ID).
+			SetTitle("Запрос сброса пароля").
+			SetBody(fmt.Sprintf("Пользователь %s (%s) запросил сброс пароля", u.FullName, u.Login)).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Save(c)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Запрос отправлен администратору на подтверждение"})
+}
+
+// GetResetRequests — admin view
+func (h *AuthHandler) GetResetRequests(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	roleName, _ := roleVal.(string)
+	if roleName != "admin" && roleName != "chief_engineer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
+		return
+	}
+
+	requests, err := h.client.PasswordResetToken.Query().
+		Where(passwordresettoken.StatusEQ("pending")).
+		WithUser(func(q *ent.UserQuery) {
+			q.WithRole()
+		}).
+		Order(ent.Desc(passwordresettoken.FieldCreatedAt)).
+		All(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки запросов"})
+		return
+	}
+
+	var result []gin.H
+	for _, r := range requests {
+		item := gin.H{
+			"id":         r.ID,
+			"status":     r.Status,
+			"created_at": r.CreatedAt,
+			"expires_at": r.ExpiresAt,
+		}
+		if r.Edges.User != nil {
+			item["user"] = gin.H{
+				"id":        r.Edges.User.ID,
+				"login":     r.Edges.User.Login,
+				"full_name": r.Edges.User.FullName,
+				"email":     "",
+			}
+			if r.Edges.User.Email != nil {
+				item["user"].(gin.H)["email"] = *r.Edges.User.Email
+			}
+		}
+		result = append(result, item)
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+// ApproveReset — admin approves and sends temp password via SMTP
+func (h *AuthHandler) ApproveReset(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	roleName, _ := roleVal.(string)
+	if roleName != "admin" && roleName != "chief_engineer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
+		return
+	}
+
+	token, err := h.client.PasswordResetToken.Query().
+		Where(passwordresettoken.IDEQ(id)).
+		WithUser().
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Запрос не найден"})
+		return
+	}
+
+	if token.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запрос уже обработан"})
+		return
+	}
+
+	u := token.Edges.User
+	if u.Email == nil || *u.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "У пользователя нет email"})
+		return
+	}
+
+	// Generate temp password
+	tempPass := generateTempPassword()
+	hash, err := bcrypt.GenerateFromPassword([]byte(tempPass), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации пароля"})
+		return
+	}
+
+	// Update user password
+	if err = h.client.User.UpdateOneID(u.ID).
+		SetPasswordHash(string(hash)).
+		Exec(c); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления пароля"})
+		return
+	}
+
+	// Send email
+	subject := "Восстановление пароля АСУТП Tasks"
+	body := fmt.Sprintf("Здравствуйте, %s!\n\nАдминистратор подтвердил восстановление пароля.\n\nВаш временный пароль: %s\n\nРекомендуем сменить его после входа в систему.\n\n---\nАСУТП Tasks", u.FullName, tempPass)
+	if err := h.sendEmail(*u.Email, subject, body); err != nil {
+		fmt.Printf("ERROR sending email: %v\n", err)
+		// Even if email fails, password was changed. Log it.
+	}
+
+	// Mark token approved
+	_, err = h.client.PasswordResetToken.UpdateOneID(id).
+		SetStatus("approved").
+		SetUsedAt(time.Now()).
+		Save(c)
+	if err != nil {
+		fmt.Printf("ERROR updating token status: %v\n", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Восстановление подтверждено. Временный пароль отправлен на email."})
+}
+
+// RejectReset — admin rejects request
+func (h *AuthHandler) RejectReset(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	roleName, _ := roleVal.(string)
+	if roleName != "admin" && roleName != "chief_engineer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
+		return
+	}
+
+	token, err := h.client.PasswordResetToken.Query().
+		Where(passwordresettoken.IDEQ(id)).
+		WithUser().
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Запрос не найден"})
+		return
+	}
+
+	if token.Status != "pending" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запрос уже обработан"})
+		return
+	}
+
+	_, err = h.client.PasswordResetToken.UpdateOneID(id).
+		SetStatus("rejected").
+		Save(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления"})
+		return
+	}
+
+	// Notify user
+	ntID, _ := getNotificationTypeID(h.client, c, "system")
+	if ntID == 0 {
+		ntID = 4
+	}
+	_, _ = h.client.Notification.Create().
+		SetUserID(token.Edges.User.ID).
+		SetTitle("Запрос сброса пароля отклонён").
+		SetBody("Администратор отклонил ваш запрос на восстановление пароля. Обратитесь к нему лично.").
+		SetNotificationTypeID(ntID).
+		SetScheduledAt(time.Now()).
+		Save(c)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Запрос отклонён"})
 }

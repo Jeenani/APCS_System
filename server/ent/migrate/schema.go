@@ -212,6 +212,7 @@ var (
 	PasswordResetTokensColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "token_hash", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -225,7 +226,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "password_reset_tokens_users_password_reset_tokens",
-				Columns:    []*schema.Column{PasswordResetTokensColumns[5]},
+				Columns:    []*schema.Column{PasswordResetTokensColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -453,6 +454,7 @@ var (
 		{Name: "password_hash", Type: field.TypeString, Size: 255},
 		{Name: "full_name", Type: field.TypeString, Size: 200},
 		{Name: "initials", Type: field.TypeString, Size: 10},
+		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
 		{Name: "avatar_color", Type: field.TypeString, Size: 7, Default: "#1565C0"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
@@ -468,7 +470,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_roles_users",
-				Columns:    []*schema.Column{UsersColumns[10]},
+				Columns:    []*schema.Column{UsersColumns[11]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

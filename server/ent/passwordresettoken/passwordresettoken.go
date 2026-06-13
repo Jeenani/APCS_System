@@ -18,6 +18,8 @@ const (
 	FieldUserID = "user_id"
 	// FieldTokenHash holds the string denoting the token_hash field in the database.
 	FieldTokenHash = "token_hash"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldUsedAt holds the string denoting the used_at field in the database.
@@ -42,6 +44,7 @@ var Columns = []string{
 	FieldID,
 	FieldUserID,
 	FieldTokenHash,
+	FieldStatus,
 	FieldExpiresAt,
 	FieldUsedAt,
 	FieldCreatedAt,
@@ -60,6 +63,10 @@ func ValidColumn(column string) bool {
 var (
 	// TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
 	TokenHashValidator func(string) error
+	// DefaultStatus holds the default value on creation for the "status" field.
+	DefaultStatus string
+	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	StatusValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
@@ -80,6 +87,11 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByTokenHash orders the results by the token_hash field.
 func ByTokenHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTokenHash, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.

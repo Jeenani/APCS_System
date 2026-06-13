@@ -19,6 +19,9 @@ func (PasswordResetToken) Fields() []ent.Field {
 			MaxLen(255).
 			NotEmpty().
 			Unique(),
+		field.String("status").
+			MaxLen(20).
+			Default("pending"),
 		field.Time("expires_at"),
 		field.Time("used_at").
 			Optional().

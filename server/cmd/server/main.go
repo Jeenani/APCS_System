@@ -79,6 +79,7 @@ func main() {
 	auth.POST("/login", authH.Login)
 	auth.POST("/register", authH.Register)
 	auth.POST("/refresh", authH.RefreshToken)
+	auth.POST("/forgot-password", authH.ForgotPassword)
 
 	refs := api.Group("/references")
 	refs.GET("/priorities", refH.GetPriorities)
@@ -135,6 +136,14 @@ func main() {
 	adminApi.POST("/categories", adminH.CreateCategory)
 	adminApi.PUT("/categories/:id", adminH.UpdateCategory)
 	adminApi.DELETE("/categories/:id", adminH.DeleteCategory)
+
+	// ========== RESET REQUESTS (admin + chief_engineer) ==========
+	resetApi := api.Group("/admin/reset-requests")
+	resetApi.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
+	resetApi.Use(middleware.RequireRole("admin", "chief_engineer"))
+	resetApi.GET("", authH.GetResetRequests)
+	resetApi.POST("/:id/approve", authH.ApproveReset)
+	resetApi.POST("/:id/reject", authH.RejectReset)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "АСУТП Tasks API", "mode": cfg.AppMode})
