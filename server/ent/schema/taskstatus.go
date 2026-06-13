@@ -19,7 +19,7 @@ func (TaskStatus) Fields() []ent.Field {
 			NotEmpty().
 			Unique().
 			Validate(func(s string) error {
-				for _, v := range []string{"new", "in_progress", "completed", "cancelled"} {
+				for _, v := range []string{"new", "in_progress", "completed", "cancelled", "archived"} {
 					if s == v {
 						return nil
 					}
