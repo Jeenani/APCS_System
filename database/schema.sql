@@ -54,7 +54,7 @@ CREATE TABLE task_status (
     is_terminal BOOLEAN     NOT NULL DEFAULT FALSE,
 
     CONSTRAINT chk_task_status_code
-        CHECK (code IN ('new', 'in_progress', 'completed', 'cancelled'))
+        CHECK (code IN ('new', 'in_progress', 'completed', 'cancelled', 'archived'))
 );
 
 COMMENT ON TABLE task_status IS 'Статусы жизненного цикла задачи; is_terminal=TRUE у completed/cancelled';
@@ -165,6 +165,7 @@ CREATE TABLE tasks (
     priority_id SMALLINT     NOT NULL REFERENCES priorities(id),
     status_id   SMALLINT     NOT NULL REFERENCES task_status(id),
     category_id SMALLINT              REFERENCES task_categories(id) ON DELETE SET NULL,
+    parent_id   INTEGER               REFERENCES tasks(id) ON DELETE SET NULL,
     progress           SMALLINT     NOT NULL DEFAULT 0,
     created_by         INTEGER      NOT NULL REFERENCES users(id),
     assigned_to        INTEGER               REFERENCES users(id) ON DELETE SET NULL,
@@ -181,14 +182,14 @@ COMMENT ON COLUMN tasks.progress IS '0–100 %; авто-смена status_id н
 -- chief_engineer / admin предлагают → asutp_chief утверждает
 -- ---------------------------------------------------------
 CREATE TABLE task_assignees (
-    id                         SERIAL       PRIMARY KEY,
-    status                     VARCHAR(20)  NOT NULL DEFAULT 'pending',
-    approved_at                TIMESTAMPTZ,
-    created_at                 TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    task_task_assignees        INTEGER      REFERENCES tasks(id) ON DELETE SET NULL,
-    user_task_assignee_entries INTEGER      REFERENCES users(id) ON DELETE SET NULL,
-    user_proposed_assignees    INTEGER      REFERENCES users(id) ON DELETE SET NULL,
-    user_approved_assignees    INTEGER      REFERENCES users(id) ON DELETE SET NULL,
+    id          SERIAL       PRIMARY KEY,
+    status      VARCHAR(20)  NOT NULL DEFAULT 'pending',
+    approved_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    task_id     INTEGER      NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id     INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    proposer_id INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    approver_id INTEGER               REFERENCES users(id) ON DELETE SET NULL,
 
     CONSTRAINT chk_task_assignees_status
         CHECK (status IN ('pending', 'approved', 'rejected'))
@@ -196,11 +197,11 @@ CREATE TABLE task_assignees (
 
 COMMENT ON TABLE task_assignees IS 'Статус назначения исполнителя: pending | approved | rejected';
 
-CREATE INDEX idx_task_assignees_task ON task_assignees(task_task_assignees);
-CREATE INDEX idx_task_assignees_user ON task_assignees(user_task_assignee_entries);
-CREATE INDEX idx_task_assignees_proposed ON task_assignees(user_proposed_assignees);
-CREATE INDEX idx_task_assignees_approved ON task_assignees(user_approved_assignees);
-CREATE INDEX idx_task_assignees_status ON task_assignees(status);
+CREATE INDEX idx_task_assignees_task     ON task_assignees(task_id);
+CREATE INDEX idx_task_assignees_user     ON task_assignees(user_id);
+CREATE INDEX idx_task_assignees_proposer ON task_assignees(proposer_id);
+CREATE INDEX idx_task_assignees_approver ON task_assignees(approver_id);
+CREATE INDEX idx_task_assignees_status   ON task_assignees(status);
 
 
 -- ============================================================
@@ -307,11 +308,28 @@ CREATE INDEX idx_tasks_status_id        ON tasks(status_id);
 CREATE INDEX idx_tasks_priority_id      ON tasks(priority_id);
 CREATE INDEX idx_tasks_due_date         ON tasks(due_date);
 CREATE INDEX idx_tasks_category_id      ON tasks(category_id);
+CREATE INDEX idx_tasks_parent_id        ON tasks(parent_id);
 
 CREATE INDEX idx_tasks_title_fts ON tasks
     USING GIN (to_tsvector('russian', title));
 CREATE INDEX idx_tasks_desc_fts ON tasks
     USING GIN (to_tsvector('russian', COALESCE(description, '')));
+
+CREATE TABLE kpi (
+    id           SERIAL      PRIMARY KEY,
+    task_id      INTEGER     NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id      INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    score        NUMERIC(5,2) NOT NULL,
+    is_confirmed BOOLEAN     NOT NULL DEFAULT FALSE,
+    confirmed_at TIMESTAMPTZ,
+    confirmed_by INTEGER              REFERENCES users(id) ON DELETE SET NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE kpi IS 'Начисления KPI по задачам; score 0–100';
+
+CREATE INDEX idx_kpi_task_id ON kpi(task_id);
+CREATE INDEX idx_kpi_user_id ON kpi(user_id);
 
 CREATE INDEX idx_task_history_task_id    ON task_history(task_id);
 CREATE INDEX idx_task_history_changed_at ON task_history(changed_at DESC);
