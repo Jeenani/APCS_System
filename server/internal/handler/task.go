@@ -1225,21 +1225,30 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	archivedStatus, err := h.client.TaskStatus.Query().
 		Where(taskstatus.CodeEQ("archived")).
 		Only(c)
+	archived := false
 	if err == nil {
 		_, archiveErr := h.client.Task.UpdateOneID(id).
 			SetStatusID(archivedStatus.ID).
 			Save(c)
 		if archiveErr != nil {
 			fmt.Printf("ERROR archiving task %d after KPI confirmation: %v\n", id, archiveErr)
+		} else {
+			archived = true
 		}
 	} else {
 		fmt.Printf("ERROR: archived status not found, cannot archive task %d after KPI confirmation: %v\n", id, err)
 	}
 
+	msg := "Выполнение подтверждено"
+	if archived {
+		msg += ", задача архивирована"
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "Выполнение подтверждено, задача архивирована",
+		"message":       msg,
 		"kpi_awarded":   awarded,
 		"kpi_score":     score,
+		"archived":      archived,
 	})
 }
 

@@ -379,8 +379,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       if (_task!.parentId != null) const SizedBox(height: 12),
 
-                      // Subtasks
-                      if (_task!.children.isNotEmpty)
+                      // Active Subtasks
+                      final activeChildren = _task!.children.where((c) => c.status?.code != 'archived').toList();
+                      final archivedChildren = _task!.children.where((c) => c.status?.code == 'archived').toList();
+
+                      if (activeChildren.isNotEmpty)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -394,11 +397,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('Подзадачи (${_task!.children.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text('Подзадачи (${activeChildren.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              ..._task!.children.map((child) {
+                              ...activeChildren.map((child) {
                                 return InkWell(
                                   onTap: () => Navigator.pushNamed(context, '/task-detail', arguments: child.id),
                                   child: Padding(
@@ -441,7 +444,69 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ],
                           ),
                         ),
-                      if (_task!.children.isNotEmpty) const SizedBox(height: 12),
+                      if (activeChildren.isNotEmpty) const SizedBox(height: 12),
+
+                      // Archived Subtasks
+                      if (archivedChildren.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.archive_outlined, size: 18, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Text('Архивированные подзадачи (${archivedChildren.length})', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ...archivedChildren.map((child) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${child.progress}%',
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(child.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey[700])),
+                                            Text(
+                                              child.status?.label ?? '',
+                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_right, color: Colors.grey),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      if (archivedChildren.isNotEmpty) const SizedBox(height: 12),
 
                       // Create subtask button (only for top-level tasks, not subtasks)
                       if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false))
