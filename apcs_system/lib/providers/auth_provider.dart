@@ -92,10 +92,10 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, String>> forgotPassword(String login) async {
+  Future<Map<String, String>> forgotPassword(String email) async {
     try {
       final response = await ApiClient.post('/auth/forgot-password', {
-        'login': login,
+        'email': email,
       }) as Map<String, dynamic>;
       return {'message': response['message']?.toString() ?? 'Запрос отправлен'};
     } on ApiException catch (e) {

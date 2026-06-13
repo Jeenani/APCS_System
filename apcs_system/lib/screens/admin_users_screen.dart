@@ -128,7 +128,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Future<void> _showCreateDialog() async {
-    final loginC = TextEditingController();
+    final emailC = TextEditingController();
     final passC = TextEditingController();
     final nameC = TextEditingController();
     int roleId = 4;
@@ -142,7 +142,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               TextField(controller: nameC, decoration: const InputDecoration(labelText: 'ФИО')),
               const SizedBox(height: 8),
-              TextField(controller: loginC, decoration: const InputDecoration(labelText: 'Логин')),
+              TextField(controller: emailC, decoration: const InputDecoration(labelText: 'Email'), keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 8),
               TextField(controller: passC, decoration: const InputDecoration(labelText: 'Пароль'), obscureText: true),
               const SizedBox(height: 8),
@@ -166,7 +166,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               onPressed: () async {
                 try {
                   await ApiClient.post('/admin/users', {
-                    'login': loginC.text.trim(),
+                    'email': emailC.text.trim(),
                     'password': passC.text,
                     'full_name': nameC.text.trim(),
                     'role_id': roleId,
