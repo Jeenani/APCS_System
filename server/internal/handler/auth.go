@@ -2,8 +2,10 @@ package handler
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/smtp"
 	"regexp"
@@ -348,6 +350,55 @@ func (h *AuthHandler) sendEmail(to, subject, body string) error {
 			"\r\n" +
 			body + "\r\n")
 		addr := h.cfg.SMTP.Host + ":" + h.cfg.SMTP.Port
+
+		if h.cfg.SMTP.Port == "587" {
+			conn, err := net.Dial("tcp", addr)
+			if err != nil {
+				return fmt.Errorf("smtp dial: %w", err)
+			}
+			defer conn.Close()
+
+			client, err := smtp.NewClient(conn, h.cfg.SMTP.Host)
+			if err != nil {
+				return fmt.Errorf("smtp client: %w", err)
+			}
+			defer client.Close()
+
+			if ok, _ := client.Extension("STARTTLS"); ok {
+				tlsConfig := &tls.Config{ServerName: h.cfg.SMTP.Host}
+				if err = client.StartTLS(tlsConfig); err != nil {
+					return fmt.Errorf("smtp starttls: %w", err)
+				}
+			}
+
+			if h.cfg.SMTP.User != "" && h.cfg.SMTP.Pass != "" {
+				auth := smtp.PlainAuth("", h.cfg.SMTP.User, h.cfg.SMTP.Pass, h.cfg.SMTP.Host)
+				if err = client.Auth(auth); err != nil {
+					return fmt.Errorf("smtp auth: %w", err)
+				}
+			}
+
+			if err = client.Mail(from); err != nil {
+				return err
+			}
+			if err = client.Rcpt(to); err != nil {
+				return err
+			}
+			w, err := client.Data()
+			if err != nil {
+				return err
+			}
+			_, err = w.Write(msg)
+			if err != nil {
+				return err
+			}
+			if err = w.Close(); err != nil {
+				return err
+			}
+			return client.Quit()
+		}
+
+		// Plain or SSL (465)
 		var auth smtp.Auth
 		if h.cfg.SMTP.User != "" && h.cfg.SMTP.Pass != "" {
 			auth = smtp.PlainAuth("", h.cfg.SMTP.User, h.cfg.SMTP.Pass, h.cfg.SMTP.Host)
