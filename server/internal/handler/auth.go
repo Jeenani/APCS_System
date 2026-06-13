@@ -442,7 +442,7 @@ func (h *AuthHandler) GetResetRequests(c *gin.Context) {
 		return
 	}
 
-	var result []gin.H
+	result := make([]gin.H, 0)
 	for _, r := range requests {
 		item := gin.H{
 			"id":         r.ID,

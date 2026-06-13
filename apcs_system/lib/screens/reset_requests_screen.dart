@@ -141,10 +141,6 @@ class _ResetRequestsScreenState extends State<ResetRequestsScreen> {
                                               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                             ),
                                             Text(
-                                              'Логин: ${user['login']?.toString() ?? '-'}',
-                                              style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                            ),
-                                            Text(
                                               'Email: ${user['email']?.toString() ?? '-'}',
                                               style: TextStyle(color: Colors.grey[600], fontSize: 13),
                                             ),
