@@ -71,9 +71,13 @@ type UserEdges struct {
 	PasswordResetTokens []*PasswordResetToken `json:"password_reset_tokens,omitempty"`
 	// RefreshTokens holds the value of the refresh_tokens edge.
 	RefreshTokens []*RefreshToken `json:"refresh_tokens,omitempty"`
+	// Kpis holds the value of the kpis edge.
+	Kpis []*Kpi `json:"kpis,omitempty"`
+	// ConfirmedKpis holds the value of the confirmed_kpis edge.
+	ConfirmedKpis []*Kpi `json:"confirmed_kpis,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [12]bool
+	loadedTypes [14]bool
 }
 
 // RoleOrErr returns the Role value or an error if the edge
@@ -186,6 +190,24 @@ func (e UserEdges) RefreshTokensOrErr() ([]*RefreshToken, error) {
 		return e.RefreshTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "refresh_tokens"}
+}
+
+// KpisOrErr returns the Kpis value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) KpisOrErr() ([]*Kpi, error) {
+	if e.loadedTypes[12] {
+		return e.Kpis, nil
+	}
+	return nil, &NotLoadedError{edge: "kpis"}
+}
+
+// ConfirmedKpisOrErr returns the ConfirmedKpis value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ConfirmedKpisOrErr() ([]*Kpi, error) {
+	if e.loadedTypes[13] {
+		return e.ConfirmedKpis, nil
+	}
+	return nil, &NotLoadedError{edge: "confirmed_kpis"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -354,6 +376,16 @@ func (_m *User) QueryPasswordResetTokens() *PasswordResetTokenQuery {
 // QueryRefreshTokens queries the "refresh_tokens" edge of the User entity.
 func (_m *User) QueryRefreshTokens() *RefreshTokenQuery {
 	return NewUserClient(_m.config).QueryRefreshTokens(_m)
+}
+
+// QueryKpis queries the "kpis" edge of the User entity.
+func (_m *User) QueryKpis() *KpiQuery {
+	return NewUserClient(_m.config).QueryKpis(_m)
+}
+
+// QueryConfirmedKpis queries the "confirmed_kpis" edge of the User entity.
+func (_m *User) QueryConfirmedKpis() *KpiQuery {
+	return NewUserClient(_m.config).QueryConfirmedKpis(_m)
 }
 
 // Update returns a builder for updating this User.

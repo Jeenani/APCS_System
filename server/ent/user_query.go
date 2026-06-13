@@ -4,6 +4,7 @@ package ent
 
 import (
 	"asutp-server/ent/exportlog"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/passwordresettoken"
@@ -44,6 +45,8 @@ type UserQuery struct {
 	withExportLogs          *ExportLogQuery
 	withPasswordResetTokens *PasswordResetTokenQuery
 	withRefreshTokens       *RefreshTokenQuery
+	withKpis                *KpiQuery
+	withConfirmedKpis       *KpiQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -344,6 +347,50 @@ func (_q *UserQuery) QueryRefreshTokens() *RefreshTokenQuery {
 	return query
 }
 
+// QueryKpis chains the current query on the "kpis" edge.
+func (_q *UserQuery) QueryKpis() *KpiQuery {
+	query := (&KpiClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.KpisTable, user.KpisColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryConfirmedKpis chains the current query on the "confirmed_kpis" edge.
+func (_q *UserQuery) QueryConfirmedKpis() *KpiQuery {
+	query := (&KpiClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfirmedKpisTable, user.ConfirmedKpisColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first User entity from the query.
 // Returns a *NotFoundError when no User was found.
 func (_q *UserQuery) First(ctx context.Context) (*User, error) {
@@ -548,6 +595,8 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withExportLogs:          _q.withExportLogs.Clone(),
 		withPasswordResetTokens: _q.withPasswordResetTokens.Clone(),
 		withRefreshTokens:       _q.withRefreshTokens.Clone(),
+		withKpis:                _q.withKpis.Clone(),
+		withConfirmedKpis:       _q.withConfirmedKpis.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -686,6 +735,28 @@ func (_q *UserQuery) WithRefreshTokens(opts ...func(*RefreshTokenQuery)) *UserQu
 	return _q
 }
 
+// WithKpis tells the query-builder to eager-load the nodes that are connected to
+// the "kpis" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithKpis(opts ...func(*KpiQuery)) *UserQuery {
+	query := (&KpiClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withKpis = query
+	return _q
+}
+
+// WithConfirmedKpis tells the query-builder to eager-load the nodes that are connected to
+// the "confirmed_kpis" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithConfirmedKpis(opts ...func(*KpiQuery)) *UserQuery {
+	query := (&KpiClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withConfirmedKpis = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -764,7 +835,7 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [12]bool{
+		loadedTypes = [14]bool{
 			_q.withRole != nil,
 			_q.withNotificationSetting != nil,
 			_q.withCreatedTasks != nil,
@@ -777,6 +848,8 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			_q.withExportLogs != nil,
 			_q.withPasswordResetTokens != nil,
 			_q.withRefreshTokens != nil,
+			_q.withKpis != nil,
+			_q.withConfirmedKpis != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -878,6 +951,20 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadRefreshTokens(ctx, query, nodes,
 			func(n *User) { n.Edges.RefreshTokens = []*RefreshToken{} },
 			func(n *User, e *RefreshToken) { n.Edges.RefreshTokens = append(n.Edges.RefreshTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withKpis; query != nil {
+		if err := _q.loadKpis(ctx, query, nodes,
+			func(n *User) { n.Edges.Kpis = []*Kpi{} },
+			func(n *User, e *Kpi) { n.Edges.Kpis = append(n.Edges.Kpis, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withConfirmedKpis; query != nil {
+		if err := _q.loadConfirmedKpis(ctx, query, nodes,
+			func(n *User) { n.Edges.ConfirmedKpis = []*Kpi{} },
+			func(n *User, e *Kpi) { n.Edges.ConfirmedKpis = append(n.Edges.ConfirmedKpis, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1241,6 +1328,69 @@ func (_q *UserQuery) loadRefreshTokens(ctx context.Context, query *RefreshTokenQ
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadKpis(ctx context.Context, query *KpiQuery, nodes []*User, init func(*User), assign func(*User, *Kpi)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(kpi.FieldUserID)
+	}
+	query.Where(predicate.Kpi(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.KpisColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadConfirmedKpis(ctx context.Context, query *KpiQuery, nodes []*User, init func(*User), assign func(*User, *Kpi)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(kpi.FieldConfirmedBy)
+	}
+	query.Where(predicate.Kpi(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ConfirmedKpisColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ConfirmedBy
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "confirmed_by" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "confirmed_by" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

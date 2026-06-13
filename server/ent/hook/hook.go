@@ -56,6 +56,18 @@ func (f ExportTypeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExportTypeMutation", m)
 }
 
+// The KpiFunc type is an adapter to allow the use of ordinary
+// function as Kpi mutator.
+type KpiFunc func(context.Context, *ent.KpiMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f KpiFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.KpiMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.KpiMutation", m)
+}
+
 // The NotificationFunc type is an adapter to allow the use of ordinary
 // function as Notification mutator.
 type NotificationFunc func(context.Context, *ent.NotificationMutation) (ent.Value, error)

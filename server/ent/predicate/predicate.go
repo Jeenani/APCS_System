@@ -18,6 +18,9 @@ type ExportLogTask func(*sql.Selector)
 // ExportType is the predicate function for exporttype builders.
 type ExportType func(*sql.Selector)
 
+// Kpi is the predicate function for kpi builders.
+type Kpi func(*sql.Selector)
+
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
 

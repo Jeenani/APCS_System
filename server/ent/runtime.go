@@ -6,6 +6,7 @@ import (
 	"asutp-server/ent/changetype"
 	"asutp-server/ent/exportlog"
 	"asutp-server/ent/exporttype"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/notificationtype"
@@ -79,6 +80,34 @@ func init() {
 			return nil
 		}
 	}()
+	kpiFields := schema.Kpi{}.Fields()
+	_ = kpiFields
+	// kpiDescScore is the schema descriptor for score field.
+	kpiDescScore := kpiFields[2].Descriptor()
+	// kpi.ScoreValidator is a validator for the "score" field. It is called by the builders before save.
+	kpi.ScoreValidator = func() func(float64) error {
+		validators := kpiDescScore.Validators
+		fns := [...]func(float64) error{
+			validators[0].(func(float64) error),
+			validators[1].(func(float64) error),
+		}
+		return func(score float64) error {
+			for _, fn := range fns {
+				if err := fn(score); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// kpiDescIsConfirmed is the schema descriptor for is_confirmed field.
+	kpiDescIsConfirmed := kpiFields[3].Descriptor()
+	// kpi.DefaultIsConfirmed holds the default value on creation for the is_confirmed field.
+	kpi.DefaultIsConfirmed = kpiDescIsConfirmed.Default.(bool)
+	// kpiDescCreatedAt is the schema descriptor for created_at field.
+	kpiDescCreatedAt := kpiFields[6].Descriptor()
+	// kpi.DefaultCreatedAt holds the default value on creation for the created_at field.
+	kpi.DefaultCreatedAt = kpiDescCreatedAt.Default.(func() time.Time)
 	notificationFields := schema.Notification{}.Fields()
 	_ = notificationFields
 	// notificationDescTitle is the schema descriptor for title field.

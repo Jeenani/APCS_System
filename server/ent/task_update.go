@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/predicate"
 	"asutp-server/ent/priority"
@@ -322,6 +323,21 @@ func (_u *TaskUpdate) AddNotifications(v ...*Notification) *TaskUpdate {
 	return _u.AddNotificationIDs(ids...)
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by IDs.
+func (_u *TaskUpdate) AddKpiIDs(ids ...int) *TaskUpdate {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the Kpi entity.
+func (_u *TaskUpdate) AddKpis(v ...*Kpi) *TaskUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (_u *TaskUpdate) Mutation() *TaskMutation {
 	return _u.mutation
@@ -445,6 +461,27 @@ func (_u *TaskUpdate) RemoveNotifications(v ...*Notification) *TaskUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveNotificationIDs(ids...)
+}
+
+// ClearKpis clears all "kpis" edges to the Kpi entity.
+func (_u *TaskUpdate) ClearKpis() *TaskUpdate {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to Kpi entities by IDs.
+func (_u *TaskUpdate) RemoveKpiIDs(ids ...int) *TaskUpdate {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to Kpi entities.
+func (_u *TaskUpdate) RemoveKpis(v ...*Kpi) *TaskUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -894,6 +931,51 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -1201,6 +1283,21 @@ func (_u *TaskUpdateOne) AddNotifications(v ...*Notification) *TaskUpdateOne {
 	return _u.AddNotificationIDs(ids...)
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by IDs.
+func (_u *TaskUpdateOne) AddKpiIDs(ids ...int) *TaskUpdateOne {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the Kpi entity.
+func (_u *TaskUpdateOne) AddKpis(v ...*Kpi) *TaskUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (_u *TaskUpdateOne) Mutation() *TaskMutation {
 	return _u.mutation
@@ -1324,6 +1421,27 @@ func (_u *TaskUpdateOne) RemoveNotifications(v ...*Notification) *TaskUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveNotificationIDs(ids...)
+}
+
+// ClearKpis clears all "kpis" edges to the Kpi entity.
+func (_u *TaskUpdateOne) ClearKpis() *TaskUpdateOne {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to Kpi entities by IDs.
+func (_u *TaskUpdateOne) RemoveKpiIDs(ids ...int) *TaskUpdateOne {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to Kpi entities.
+func (_u *TaskUpdateOne) RemoveKpis(v ...*Kpi) *TaskUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
 }
 
 // Where appends a list predicates to the TaskUpdate builder.
@@ -1796,6 +1914,51 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.KpisTable,
+			Columns: []string{task.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

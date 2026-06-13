@@ -85,6 +85,43 @@ var (
 		Columns:    ExportTypesColumns,
 		PrimaryKey: []*schema.Column{ExportTypesColumns[0]},
 	}
+	// KpisColumns holds the columns for the "kpis" table.
+	KpisColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "score", Type: field.TypeFloat64},
+		{Name: "is_confirmed", Type: field.TypeBool, Default: false},
+		{Name: "confirmed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "task_id", Type: field.TypeInt},
+		{Name: "user_id", Type: field.TypeInt},
+		{Name: "confirmed_by", Type: field.TypeInt, Nullable: true},
+	}
+	// KpisTable holds the schema information for the "kpis" table.
+	KpisTable = &schema.Table{
+		Name:       "kpis",
+		Columns:    KpisColumns,
+		PrimaryKey: []*schema.Column{KpisColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "kpis_tasks_kpis",
+				Columns:    []*schema.Column{KpisColumns[5]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "kpis_users_kpis",
+				Columns:    []*schema.Column{KpisColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "kpis_users_confirmed_kpis",
+				Columns:    []*schema.Column{KpisColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// NotificationsColumns holds the columns for the "notifications" table.
 	NotificationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -443,6 +480,7 @@ var (
 		ExportLogsTable,
 		ExportLogTasksTable,
 		ExportTypesTable,
+		KpisTable,
 		NotificationsTable,
 		NotificationSettingsTable,
 		NotificationTypesTable,
@@ -464,6 +502,9 @@ func init() {
 	ExportLogsTable.ForeignKeys[1].RefTable = UsersTable
 	ExportLogTasksTable.ForeignKeys[0].RefTable = ExportLogsTable
 	ExportLogTasksTable.ForeignKeys[1].RefTable = TasksTable
+	KpisTable.ForeignKeys[0].RefTable = TasksTable
+	KpisTable.ForeignKeys[1].RefTable = UsersTable
+	KpisTable.ForeignKeys[2].RefTable = UsersTable
 	NotificationsTable.ForeignKeys[0].RefTable = NotificationTypesTable
 	NotificationsTable.ForeignKeys[1].RefTable = PrioritiesTable
 	NotificationsTable.ForeignKeys[2].RefTable = TasksTable

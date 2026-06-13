@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/api_client.dart';
+import '../models/kpi_model.dart';
 import '../models/task_model.dart';
 
 class TaskProvider extends ChangeNotifier {
@@ -119,6 +120,31 @@ class TaskProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<bool> confirmCompletion(int taskId) async {
+    try {
+      await ApiClient.post('/tasks/$taskId/confirm-completion', {});
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Ошибка подключения: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<KpiSummary?> getMyKpi() async {
+    try {
+      final response = await ApiClient.get('/my-kpi') as Map<String, dynamic>;
+      return KpiSummary.fromJson(response);
+    } catch (e) {
+      debugPrint('getMyKpi error: $e');
+      return null;
     }
   }
 }

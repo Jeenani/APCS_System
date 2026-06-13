@@ -58,6 +58,10 @@ const (
 	EdgePasswordResetTokens = "password_reset_tokens"
 	// EdgeRefreshTokens holds the string denoting the refresh_tokens edge name in mutations.
 	EdgeRefreshTokens = "refresh_tokens"
+	// EdgeKpis holds the string denoting the kpis edge name in mutations.
+	EdgeKpis = "kpis"
+	// EdgeConfirmedKpis holds the string denoting the confirmed_kpis edge name in mutations.
+	EdgeConfirmedKpis = "confirmed_kpis"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// RoleTable is the table that holds the role relation/edge.
@@ -144,6 +148,20 @@ const (
 	RefreshTokensInverseTable = "refresh_tokens"
 	// RefreshTokensColumn is the table column denoting the refresh_tokens relation/edge.
 	RefreshTokensColumn = "user_id"
+	// KpisTable is the table that holds the kpis relation/edge.
+	KpisTable = "kpis"
+	// KpisInverseTable is the table name for the Kpi entity.
+	// It exists in this package in order to avoid circular dependency with the "kpi" package.
+	KpisInverseTable = "kpis"
+	// KpisColumn is the table column denoting the kpis relation/edge.
+	KpisColumn = "user_id"
+	// ConfirmedKpisTable is the table that holds the confirmed_kpis relation/edge.
+	ConfirmedKpisTable = "kpis"
+	// ConfirmedKpisInverseTable is the table name for the Kpi entity.
+	// It exists in this package in order to avoid circular dependency with the "kpi" package.
+	ConfirmedKpisInverseTable = "kpis"
+	// ConfirmedKpisColumn is the table column denoting the confirmed_kpis relation/edge.
+	ConfirmedKpisColumn = "confirmed_by"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -405,6 +423,34 @@ func ByRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByKpisCount orders the results by kpis count.
+func ByKpisCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newKpisStep(), opts...)
+	}
+}
+
+// ByKpis orders the results by kpis terms.
+func ByKpis(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newKpisStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByConfirmedKpisCount orders the results by confirmed_kpis count.
+func ByConfirmedKpisCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConfirmedKpisStep(), opts...)
+	}
+}
+
+// ByConfirmedKpis orders the results by confirmed_kpis terms.
+func ByConfirmedKpis(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConfirmedKpisStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newRoleStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -487,5 +533,19 @@ func newRefreshTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RefreshTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RefreshTokensTable, RefreshTokensColumn),
+	)
+}
+func newKpisStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(KpisInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
+	)
+}
+func newConfirmedKpisStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConfirmedKpisInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConfirmedKpisTable, ConfirmedKpisColumn),
 	)
 }

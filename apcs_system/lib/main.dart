@@ -16,6 +16,7 @@ import 'screens/task_history_screen.dart';
 import 'screens/notification_settings_screen.dart';
 import 'screens/admin_users_screen.dart';
 import 'screens/admin_categories_screen.dart';
+import 'screens/kpi_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +81,8 @@ class AsutpTasksApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const AdminUsersScreen());
             case '/admin/categories':
               return MaterialPageRoute(builder: (_) => const AdminCategoriesScreen());
+            case '/kpi':
+              return MaterialPageRoute(builder: (_) => const KpiScreen());
             default:
               return MaterialPageRoute(builder: (_) => const LoginScreen());
           }

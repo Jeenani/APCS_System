@@ -15,6 +15,7 @@ import (
 	"asutp-server/ent/exportlog"
 	"asutp-server/ent/exportlogtask"
 	"asutp-server/ent/exporttype"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/notificationtype"
@@ -48,6 +49,8 @@ type Client struct {
 	ExportLogTask *ExportLogTaskClient
 	// ExportType is the client for interacting with the ExportType builders.
 	ExportType *ExportTypeClient
+	// Kpi is the client for interacting with the Kpi builders.
+	Kpi *KpiClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
 	// NotificationSetting is the client for interacting with the NotificationSetting builders.
@@ -89,6 +92,7 @@ func (c *Client) init() {
 	c.ExportLog = NewExportLogClient(c.config)
 	c.ExportLogTask = NewExportLogTaskClient(c.config)
 	c.ExportType = NewExportTypeClient(c.config)
+	c.Kpi = NewKpiClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
 	c.NotificationSetting = NewNotificationSettingClient(c.config)
 	c.NotificationType = NewNotificationTypeClient(c.config)
@@ -198,6 +202,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ExportLog:           NewExportLogClient(cfg),
 		ExportLogTask:       NewExportLogTaskClient(cfg),
 		ExportType:          NewExportTypeClient(cfg),
+		Kpi:                 NewKpiClient(cfg),
 		Notification:        NewNotificationClient(cfg),
 		NotificationSetting: NewNotificationSettingClient(cfg),
 		NotificationType:    NewNotificationTypeClient(cfg),
@@ -234,6 +239,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ExportLog:           NewExportLogClient(cfg),
 		ExportLogTask:       NewExportLogTaskClient(cfg),
 		ExportType:          NewExportTypeClient(cfg),
+		Kpi:                 NewKpiClient(cfg),
 		Notification:        NewNotificationClient(cfg),
 		NotificationSetting: NewNotificationSettingClient(cfg),
 		NotificationType:    NewNotificationTypeClient(cfg),
@@ -276,7 +282,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ChangeType, c.ExportLog, c.ExportLogTask, c.ExportType, c.Notification,
+		c.ChangeType, c.ExportLog, c.ExportLogTask, c.ExportType, c.Kpi, c.Notification,
 		c.NotificationSetting, c.NotificationType, c.PasswordResetToken, c.Priority,
 		c.RefreshToken, c.Role, c.Task, c.TaskAssignee, c.TaskCategory, c.TaskHistory,
 		c.TaskStatus, c.User,
@@ -289,7 +295,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ChangeType, c.ExportLog, c.ExportLogTask, c.ExportType, c.Notification,
+		c.ChangeType, c.ExportLog, c.ExportLogTask, c.ExportType, c.Kpi, c.Notification,
 		c.NotificationSetting, c.NotificationType, c.PasswordResetToken, c.Priority,
 		c.RefreshToken, c.Role, c.Task, c.TaskAssignee, c.TaskCategory, c.TaskHistory,
 		c.TaskStatus, c.User,
@@ -309,6 +315,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ExportLogTask.mutate(ctx, m)
 	case *ExportTypeMutation:
 		return c.ExportType.mutate(ctx, m)
+	case *KpiMutation:
+		return c.Kpi.mutate(ctx, m)
 	case *NotificationMutation:
 		return c.Notification.mutate(ctx, m)
 	case *NotificationSettingMutation:
@@ -981,6 +989,187 @@ func (c *ExportTypeClient) mutate(ctx context.Context, m *ExportTypeMutation) (V
 		return (&ExportTypeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ExportType mutation op: %q", m.Op())
+	}
+}
+
+// KpiClient is a client for the Kpi schema.
+type KpiClient struct {
+	config
+}
+
+// NewKpiClient returns a client for the Kpi from the given config.
+func NewKpiClient(c config) *KpiClient {
+	return &KpiClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `kpi.Hooks(f(g(h())))`.
+func (c *KpiClient) Use(hooks ...Hook) {
+	c.hooks.Kpi = append(c.hooks.Kpi, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `kpi.Intercept(f(g(h())))`.
+func (c *KpiClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Kpi = append(c.inters.Kpi, interceptors...)
+}
+
+// Create returns a builder for creating a Kpi entity.
+func (c *KpiClient) Create() *KpiCreate {
+	mutation := newKpiMutation(c.config, OpCreate)
+	return &KpiCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Kpi entities.
+func (c *KpiClient) CreateBulk(builders ...*KpiCreate) *KpiCreateBulk {
+	return &KpiCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *KpiClient) MapCreateBulk(slice any, setFunc func(*KpiCreate, int)) *KpiCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &KpiCreateBulk{err: fmt.Errorf("calling to KpiClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*KpiCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &KpiCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Kpi.
+func (c *KpiClient) Update() *KpiUpdate {
+	mutation := newKpiMutation(c.config, OpUpdate)
+	return &KpiUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *KpiClient) UpdateOne(_m *Kpi) *KpiUpdateOne {
+	mutation := newKpiMutation(c.config, OpUpdateOne, withKpi(_m))
+	return &KpiUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *KpiClient) UpdateOneID(id int) *KpiUpdateOne {
+	mutation := newKpiMutation(c.config, OpUpdateOne, withKpiID(id))
+	return &KpiUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Kpi.
+func (c *KpiClient) Delete() *KpiDelete {
+	mutation := newKpiMutation(c.config, OpDelete)
+	return &KpiDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *KpiClient) DeleteOne(_m *Kpi) *KpiDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *KpiClient) DeleteOneID(id int) *KpiDeleteOne {
+	builder := c.Delete().Where(kpi.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &KpiDeleteOne{builder}
+}
+
+// Query returns a query builder for Kpi.
+func (c *KpiClient) Query() *KpiQuery {
+	return &KpiQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeKpi},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Kpi entity by its id.
+func (c *KpiClient) Get(ctx context.Context, id int) (*Kpi, error) {
+	return c.Query().Where(kpi.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *KpiClient) GetX(ctx context.Context, id int) *Kpi {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTask queries the task edge of a Kpi.
+func (c *KpiClient) QueryTask(_m *Kpi) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, kpi.TaskTable, kpi.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Kpi.
+func (c *KpiClient) QueryUser(_m *Kpi) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, kpi.UserTable, kpi.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConfirmer queries the confirmer edge of a Kpi.
+func (c *KpiClient) QueryConfirmer(_m *Kpi) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kpi.Table, kpi.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, kpi.ConfirmerTable, kpi.ConfirmerColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *KpiClient) Hooks() []Hook {
+	return c.hooks.Kpi
+}
+
+// Interceptors returns the client interceptors.
+func (c *KpiClient) Interceptors() []Interceptor {
+	return c.inters.Kpi
+}
+
+func (c *KpiClient) mutate(ctx context.Context, m *KpiMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&KpiCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&KpiUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&KpiUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&KpiDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Kpi mutation op: %q", m.Op())
 	}
 }
 
@@ -2359,6 +2548,22 @@ func (c *TaskClient) QueryNotifications(_m *Task) *NotificationQuery {
 	return query
 }
 
+// QueryKpis queries the kpis edge of a Task.
+func (c *TaskClient) QueryKpis(_m *Task) *KpiQuery {
+	query := (&KpiClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.KpisTable, task.KpisColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
@@ -3360,6 +3565,38 @@ func (c *UserClient) QueryRefreshTokens(_m *User) *RefreshTokenQuery {
 	return query
 }
 
+// QueryKpis queries the kpis edge of a User.
+func (c *UserClient) QueryKpis(_m *User) *KpiQuery {
+	query := (&KpiClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.KpisTable, user.KpisColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConfirmedKpis queries the confirmed_kpis edge of a User.
+func (c *UserClient) QueryConfirmedKpis(_m *User) *KpiQuery {
+	query := (&KpiClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(kpi.Table, kpi.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfirmedKpisTable, user.ConfirmedKpisColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -3388,13 +3625,13 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ChangeType, ExportLog, ExportLogTask, ExportType, Notification,
+		ChangeType, ExportLog, ExportLogTask, ExportType, Kpi, Notification,
 		NotificationSetting, NotificationType, PasswordResetToken, Priority,
 		RefreshToken, Role, Task, TaskAssignee, TaskCategory, TaskHistory, TaskStatus,
 		User []ent.Hook
 	}
 	inters struct {
-		ChangeType, ExportLog, ExportLogTask, ExportType, Notification,
+		ChangeType, ExportLog, ExportLogTask, ExportType, Kpi, Notification,
 		NotificationSetting, NotificationType, PasswordResetToken, Priority,
 		RefreshToken, Role, Task, TaskAssignee, TaskCategory, TaskHistory, TaskStatus,
 		User []ent.Interceptor

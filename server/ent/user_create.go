@@ -4,6 +4,7 @@ package ent
 
 import (
 	"asutp-server/ent/exportlog"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/passwordresettoken"
@@ -301,6 +302,36 @@ func (_c *UserCreate) AddRefreshTokens(v ...*RefreshToken) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRefreshTokenIDs(ids...)
+}
+
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by IDs.
+func (_c *UserCreate) AddKpiIDs(ids ...int) *UserCreate {
+	_c.mutation.AddKpiIDs(ids...)
+	return _c
+}
+
+// AddKpis adds the "kpis" edges to the Kpi entity.
+func (_c *UserCreate) AddKpis(v ...*Kpi) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddKpiIDs(ids...)
+}
+
+// AddConfirmedKpiIDs adds the "confirmed_kpis" edge to the Kpi entity by IDs.
+func (_c *UserCreate) AddConfirmedKpiIDs(ids ...int) *UserCreate {
+	_c.mutation.AddConfirmedKpiIDs(ids...)
+	return _c
+}
+
+// AddConfirmedKpis adds the "confirmed_kpis" edges to the Kpi entity.
+func (_c *UserCreate) AddConfirmedKpis(v ...*Kpi) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConfirmedKpiIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -661,6 +692,38 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refreshtoken.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConfirmedKpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

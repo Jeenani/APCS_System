@@ -603,6 +603,7 @@ class _ProfileTab extends StatelessWidget {
             _MenuItem(icon: Icons.history, label: 'История активности', onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите задачу для просмотра истории')));
             }),
+            _MenuItem(icon: Icons.analytics_outlined, label: 'Мой KPI', onTap: () => Navigator.pushNamed(context, '/kpi')),
             if (canExport)
               _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => _exportCSV(context)),
 

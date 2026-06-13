@@ -9,6 +9,7 @@ import (
 
 	"asutp-server/ent"
 	"asutp-server/ent/changetype"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notificationtype"
 	"asutp-server/ent/role"
 	"asutp-server/ent/task"
@@ -1078,4 +1079,135 @@ func getNotificationTypeID(client *ent.Client, c *gin.Context, code string) (int
 		return 0, err
 	}
 	return nt.ID, nil
+}
+
+// ConfirmCompletion — asutp_chief or admin confirms task completion and awards KPI
+func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID задачи"})
+		return
+	}
+
+	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName, _ := roleVal.(string)
+	if roleName != "admin" && roleName != "asutp_chief" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Только начальник АСУТП или администратор могут подтвердить выполнение"})
+		return
+	}
+
+	t, err := h.client.Task.Query().
+		Where(task.IDEQ(id)).
+		WithStatus().
+		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
+			q.WithUser()
+		}).
+		Only(c)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+		return
+	}
+
+	if t.Edges.Status == nil || t.Edges.Status.Code != "completed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Задача должна быть в статусе 'Выполнена' для подтверждения"})
+		return
+	}
+
+	// Calculate KPI score based on due date
+	var score float64
+	if time.Now().Before(t.DueDate) || time.Now().Equal(t.DueDate) {
+		score = 100.0
+	} else {
+		score = 50.0
+	}
+
+	// Award KPI to all approved assignees
+	awarded := 0
+	for _, ta := range t.Edges.TaskAssignees {
+		if ta.Status != "approved" {
+			continue
+		}
+
+		// Check if KPI already exists for this task+user
+		exists, _ := h.client.Kpi.Query().
+			Where(kpi.TaskIDEQ(id), kpi.UserIDEQ(ta.UserID)).
+			Exist(c)
+		if exists {
+			continue
+		}
+
+		_, err := h.client.Kpi.Create().
+			SetTaskID(id).
+			SetUserID(ta.UserID).
+			SetScore(score).
+			SetIsConfirmed(true).
+			SetConfirmedAt(time.Now()).
+			SetConfirmedBy(userID).
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR creating KPI for user %d on task %d: %v\n", ta.UserID, id, err)
+			continue
+		}
+		awarded++
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Выполнение подтверждено",
+		"kpi_awarded":   awarded,
+		"kpi_score":     score,
+	})
+}
+
+// GetKPI returns KPI records for the authenticated user
+func (h *TaskHandler) GetKPI(c *gin.Context) {
+	userID := c.GetInt("user_id")
+
+	kpis, err := h.client.Kpi.Query().
+		Where(kpi.UserIDEQ(userID)).
+		WithTask(func(q *ent.TaskQuery) {
+			q.WithStatus()
+		}).
+		Order(ent.Desc(kpi.FieldCreatedAt)).
+		All(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки KPI"})
+		return
+	}
+
+	result := make([]gin.H, 0, len(kpis))
+	for _, k := range kpis {
+		item := gin.H{
+			"id":            k.ID,
+			"task_id":       k.TaskID,
+			"score":         k.Score,
+			"is_confirmed":  k.IsConfirmed,
+			"confirmed_at":  k.ConfirmedAt,
+			"created_at":    k.CreatedAt,
+		}
+		if k.Edges.Task != nil {
+			item["task"] = gin.H{
+				"id":     k.Edges.Task.ID,
+				"title":  k.Edges.Task.Title,
+				"status": k.Edges.Task.Edges.Status.Code,
+			}
+		}
+		result = append(result, item)
+	}
+
+	// Calculate average KPI
+	var avg float64
+	if len(kpis) > 0 {
+		var total float64
+		for _, k := range kpis {
+			total += k.Score
+		}
+		avg = total / float64(len(kpis))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"kpis":       result,
+		"average":    avg,
+		"total_count": len(kpis),
+	})
 }

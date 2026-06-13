@@ -4,6 +4,7 @@ package ent
 
 import (
 	"asutp-server/ent/exportlog"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/passwordresettoken"
@@ -335,6 +336,36 @@ func (_u *UserUpdate) AddRefreshTokens(v ...*RefreshToken) *UserUpdate {
 	return _u.AddRefreshTokenIDs(ids...)
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by IDs.
+func (_u *UserUpdate) AddKpiIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the Kpi entity.
+func (_u *UserUpdate) AddKpis(v ...*Kpi) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
+// AddConfirmedKpiIDs adds the "confirmed_kpis" edge to the Kpi entity by IDs.
+func (_u *UserUpdate) AddConfirmedKpiIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddConfirmedKpiIDs(ids...)
+	return _u
+}
+
+// AddConfirmedKpis adds the "confirmed_kpis" edges to the Kpi entity.
+func (_u *UserUpdate) AddConfirmedKpis(v ...*Kpi) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConfirmedKpiIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -560,6 +591,48 @@ func (_u *UserUpdate) RemoveRefreshTokens(v ...*RefreshToken) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRefreshTokenIDs(ids...)
+}
+
+// ClearKpis clears all "kpis" edges to the Kpi entity.
+func (_u *UserUpdate) ClearKpis() *UserUpdate {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to Kpi entities by IDs.
+func (_u *UserUpdate) RemoveKpiIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to Kpi entities.
+func (_u *UserUpdate) RemoveKpis(v ...*Kpi) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
+}
+
+// ClearConfirmedKpis clears all "confirmed_kpis" edges to the Kpi entity.
+func (_u *UserUpdate) ClearConfirmedKpis() *UserUpdate {
+	_u.mutation.ClearConfirmedKpis()
+	return _u
+}
+
+// RemoveConfirmedKpiIDs removes the "confirmed_kpis" edge to Kpi entities by IDs.
+func (_u *UserUpdate) RemoveConfirmedKpiIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveConfirmedKpiIDs(ids...)
+	return _u
+}
+
+// RemoveConfirmedKpis removes "confirmed_kpis" edges to Kpi entities.
+func (_u *UserUpdate) RemoveConfirmedKpis(v ...*Kpi) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConfirmedKpiIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1178,6 +1251,96 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConfirmedKpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConfirmedKpisIDs(); len(nodes) > 0 && !_u.mutation.ConfirmedKpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConfirmedKpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -1496,6 +1659,36 @@ func (_u *UserUpdateOne) AddRefreshTokens(v ...*RefreshToken) *UserUpdateOne {
 	return _u.AddRefreshTokenIDs(ids...)
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by IDs.
+func (_u *UserUpdateOne) AddKpiIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddKpiIDs(ids...)
+	return _u
+}
+
+// AddKpis adds the "kpis" edges to the Kpi entity.
+func (_u *UserUpdateOne) AddKpis(v ...*Kpi) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddKpiIDs(ids...)
+}
+
+// AddConfirmedKpiIDs adds the "confirmed_kpis" edge to the Kpi entity by IDs.
+func (_u *UserUpdateOne) AddConfirmedKpiIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddConfirmedKpiIDs(ids...)
+	return _u
+}
+
+// AddConfirmedKpis adds the "confirmed_kpis" edges to the Kpi entity.
+func (_u *UserUpdateOne) AddConfirmedKpis(v ...*Kpi) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConfirmedKpiIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -1721,6 +1914,48 @@ func (_u *UserUpdateOne) RemoveRefreshTokens(v ...*RefreshToken) *UserUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRefreshTokenIDs(ids...)
+}
+
+// ClearKpis clears all "kpis" edges to the Kpi entity.
+func (_u *UserUpdateOne) ClearKpis() *UserUpdateOne {
+	_u.mutation.ClearKpis()
+	return _u
+}
+
+// RemoveKpiIDs removes the "kpis" edge to Kpi entities by IDs.
+func (_u *UserUpdateOne) RemoveKpiIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveKpiIDs(ids...)
+	return _u
+}
+
+// RemoveKpis removes "kpis" edges to Kpi entities.
+func (_u *UserUpdateOne) RemoveKpis(v ...*Kpi) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveKpiIDs(ids...)
+}
+
+// ClearConfirmedKpis clears all "confirmed_kpis" edges to the Kpi entity.
+func (_u *UserUpdateOne) ClearConfirmedKpis() *UserUpdateOne {
+	_u.mutation.ClearConfirmedKpis()
+	return _u
+}
+
+// RemoveConfirmedKpiIDs removes the "confirmed_kpis" edge to Kpi entities by IDs.
+func (_u *UserUpdateOne) RemoveConfirmedKpiIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveConfirmedKpiIDs(ids...)
+	return _u
+}
+
+// RemoveConfirmedKpis removes "confirmed_kpis" edges to Kpi entities.
+func (_u *UserUpdateOne) RemoveConfirmedKpis(v ...*Kpi) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConfirmedKpiIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -2362,6 +2597,96 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refreshtoken.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedKpisIDs(); len(nodes) > 0 && !_u.mutation.KpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.KpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.KpisTable,
+			Columns: []string{user.KpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConfirmedKpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConfirmedKpisIDs(); len(nodes) > 0 && !_u.mutation.ConfirmedKpisCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConfirmedKpisIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConfirmedKpisTable,
+			Columns: []string{user.ConfirmedKpisColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(kpi.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

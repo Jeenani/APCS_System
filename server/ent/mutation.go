@@ -7,6 +7,7 @@ import (
 	"asutp-server/ent/exportlog"
 	"asutp-server/ent/exportlogtask"
 	"asutp-server/ent/exporttype"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/notificationtype"
@@ -44,6 +45,7 @@ const (
 	TypeExportLog           = "ExportLog"
 	TypeExportLogTask       = "ExportLogTask"
 	TypeExportType          = "ExportType"
+	TypeKpi                 = "Kpi"
 	TypeNotification        = "Notification"
 	TypeNotificationSetting = "NotificationSetting"
 	TypeNotificationType    = "NotificationType"
@@ -2183,6 +2185,892 @@ func (m *ExportTypeMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ExportType edge %s", name)
+}
+
+// KpiMutation represents an operation that mutates the Kpi nodes in the graph.
+type KpiMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	score            *float64
+	addscore         *float64
+	is_confirmed     *bool
+	confirmed_at     *time.Time
+	created_at       *time.Time
+	clearedFields    map[string]struct{}
+	task             *int
+	clearedtask      bool
+	user             *int
+	cleareduser      bool
+	confirmer        *int
+	clearedconfirmer bool
+	done             bool
+	oldValue         func(context.Context) (*Kpi, error)
+	predicates       []predicate.Kpi
+}
+
+var _ ent.Mutation = (*KpiMutation)(nil)
+
+// kpiOption allows management of the mutation configuration using functional options.
+type kpiOption func(*KpiMutation)
+
+// newKpiMutation creates new mutation for the Kpi entity.
+func newKpiMutation(c config, op Op, opts ...kpiOption) *KpiMutation {
+	m := &KpiMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeKpi,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withKpiID sets the ID field of the mutation.
+func withKpiID(id int) kpiOption {
+	return func(m *KpiMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Kpi
+		)
+		m.oldValue = func(ctx context.Context) (*Kpi, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Kpi.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withKpi sets the old Kpi of the mutation.
+func withKpi(node *Kpi) kpiOption {
+	return func(m *KpiMutation) {
+		m.oldValue = func(context.Context) (*Kpi, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m KpiMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m KpiMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *KpiMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *KpiMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Kpi.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTaskID sets the "task_id" field.
+func (m *KpiMutation) SetTaskID(i int) {
+	m.task = &i
+}
+
+// TaskID returns the value of the "task_id" field in the mutation.
+func (m *KpiMutation) TaskID() (r int, exists bool) {
+	v := m.task
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaskID returns the old "task_id" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldTaskID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaskID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaskID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaskID: %w", err)
+	}
+	return oldValue.TaskID, nil
+}
+
+// ResetTaskID resets all changes to the "task_id" field.
+func (m *KpiMutation) ResetTaskID() {
+	m.task = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *KpiMutation) SetUserID(i int) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *KpiMutation) UserID() (r int, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldUserID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *KpiMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetScore sets the "score" field.
+func (m *KpiMutation) SetScore(f float64) {
+	m.score = &f
+	m.addscore = nil
+}
+
+// Score returns the value of the "score" field in the mutation.
+func (m *KpiMutation) Score() (r float64, exists bool) {
+	v := m.score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScore returns the old "score" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldScore(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScore: %w", err)
+	}
+	return oldValue.Score, nil
+}
+
+// AddScore adds f to the "score" field.
+func (m *KpiMutation) AddScore(f float64) {
+	if m.addscore != nil {
+		*m.addscore += f
+	} else {
+		m.addscore = &f
+	}
+}
+
+// AddedScore returns the value that was added to the "score" field in this mutation.
+func (m *KpiMutation) AddedScore() (r float64, exists bool) {
+	v := m.addscore
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetScore resets all changes to the "score" field.
+func (m *KpiMutation) ResetScore() {
+	m.score = nil
+	m.addscore = nil
+}
+
+// SetIsConfirmed sets the "is_confirmed" field.
+func (m *KpiMutation) SetIsConfirmed(b bool) {
+	m.is_confirmed = &b
+}
+
+// IsConfirmed returns the value of the "is_confirmed" field in the mutation.
+func (m *KpiMutation) IsConfirmed() (r bool, exists bool) {
+	v := m.is_confirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsConfirmed returns the old "is_confirmed" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldIsConfirmed(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsConfirmed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsConfirmed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsConfirmed: %w", err)
+	}
+	return oldValue.IsConfirmed, nil
+}
+
+// ResetIsConfirmed resets all changes to the "is_confirmed" field.
+func (m *KpiMutation) ResetIsConfirmed() {
+	m.is_confirmed = nil
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (m *KpiMutation) SetConfirmedAt(t time.Time) {
+	m.confirmed_at = &t
+}
+
+// ConfirmedAt returns the value of the "confirmed_at" field in the mutation.
+func (m *KpiMutation) ConfirmedAt() (r time.Time, exists bool) {
+	v := m.confirmed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmedAt returns the old "confirmed_at" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldConfirmedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmedAt: %w", err)
+	}
+	return oldValue.ConfirmedAt, nil
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (m *KpiMutation) ClearConfirmedAt() {
+	m.confirmed_at = nil
+	m.clearedFields[kpi.FieldConfirmedAt] = struct{}{}
+}
+
+// ConfirmedAtCleared returns if the "confirmed_at" field was cleared in this mutation.
+func (m *KpiMutation) ConfirmedAtCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldConfirmedAt]
+	return ok
+}
+
+// ResetConfirmedAt resets all changes to the "confirmed_at" field.
+func (m *KpiMutation) ResetConfirmedAt() {
+	m.confirmed_at = nil
+	delete(m.clearedFields, kpi.FieldConfirmedAt)
+}
+
+// SetConfirmedBy sets the "confirmed_by" field.
+func (m *KpiMutation) SetConfirmedBy(i int) {
+	m.confirmer = &i
+}
+
+// ConfirmedBy returns the value of the "confirmed_by" field in the mutation.
+func (m *KpiMutation) ConfirmedBy() (r int, exists bool) {
+	v := m.confirmer
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmedBy returns the old "confirmed_by" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldConfirmedBy(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmedBy: %w", err)
+	}
+	return oldValue.ConfirmedBy, nil
+}
+
+// ClearConfirmedBy clears the value of the "confirmed_by" field.
+func (m *KpiMutation) ClearConfirmedBy() {
+	m.confirmer = nil
+	m.clearedFields[kpi.FieldConfirmedBy] = struct{}{}
+}
+
+// ConfirmedByCleared returns if the "confirmed_by" field was cleared in this mutation.
+func (m *KpiMutation) ConfirmedByCleared() bool {
+	_, ok := m.clearedFields[kpi.FieldConfirmedBy]
+	return ok
+}
+
+// ResetConfirmedBy resets all changes to the "confirmed_by" field.
+func (m *KpiMutation) ResetConfirmedBy() {
+	m.confirmer = nil
+	delete(m.clearedFields, kpi.FieldConfirmedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *KpiMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *KpiMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Kpi entity.
+// If the Kpi object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KpiMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *KpiMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *KpiMutation) ClearTask() {
+	m.clearedtask = true
+	m.clearedFields[kpi.FieldTaskID] = struct{}{}
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *KpiMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *KpiMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *KpiMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *KpiMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[kpi.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *KpiMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *KpiMutation) UserIDs() (ids []int) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *KpiMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// SetConfirmerID sets the "confirmer" edge to the User entity by id.
+func (m *KpiMutation) SetConfirmerID(id int) {
+	m.confirmer = &id
+}
+
+// ClearConfirmer clears the "confirmer" edge to the User entity.
+func (m *KpiMutation) ClearConfirmer() {
+	m.clearedconfirmer = true
+	m.clearedFields[kpi.FieldConfirmedBy] = struct{}{}
+}
+
+// ConfirmerCleared reports if the "confirmer" edge to the User entity was cleared.
+func (m *KpiMutation) ConfirmerCleared() bool {
+	return m.ConfirmedByCleared() || m.clearedconfirmer
+}
+
+// ConfirmerID returns the "confirmer" edge ID in the mutation.
+func (m *KpiMutation) ConfirmerID() (id int, exists bool) {
+	if m.confirmer != nil {
+		return *m.confirmer, true
+	}
+	return
+}
+
+// ConfirmerIDs returns the "confirmer" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ConfirmerID instead. It exists only for internal usage by the builders.
+func (m *KpiMutation) ConfirmerIDs() (ids []int) {
+	if id := m.confirmer; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetConfirmer resets all changes to the "confirmer" edge.
+func (m *KpiMutation) ResetConfirmer() {
+	m.confirmer = nil
+	m.clearedconfirmer = false
+}
+
+// Where appends a list predicates to the KpiMutation builder.
+func (m *KpiMutation) Where(ps ...predicate.Kpi) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the KpiMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *KpiMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Kpi, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *KpiMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *KpiMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Kpi).
+func (m *KpiMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *KpiMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.task != nil {
+		fields = append(fields, kpi.FieldTaskID)
+	}
+	if m.user != nil {
+		fields = append(fields, kpi.FieldUserID)
+	}
+	if m.score != nil {
+		fields = append(fields, kpi.FieldScore)
+	}
+	if m.is_confirmed != nil {
+		fields = append(fields, kpi.FieldIsConfirmed)
+	}
+	if m.confirmed_at != nil {
+		fields = append(fields, kpi.FieldConfirmedAt)
+	}
+	if m.confirmer != nil {
+		fields = append(fields, kpi.FieldConfirmedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, kpi.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *KpiMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case kpi.FieldTaskID:
+		return m.TaskID()
+	case kpi.FieldUserID:
+		return m.UserID()
+	case kpi.FieldScore:
+		return m.Score()
+	case kpi.FieldIsConfirmed:
+		return m.IsConfirmed()
+	case kpi.FieldConfirmedAt:
+		return m.ConfirmedAt()
+	case kpi.FieldConfirmedBy:
+		return m.ConfirmedBy()
+	case kpi.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *KpiMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case kpi.FieldTaskID:
+		return m.OldTaskID(ctx)
+	case kpi.FieldUserID:
+		return m.OldUserID(ctx)
+	case kpi.FieldScore:
+		return m.OldScore(ctx)
+	case kpi.FieldIsConfirmed:
+		return m.OldIsConfirmed(ctx)
+	case kpi.FieldConfirmedAt:
+		return m.OldConfirmedAt(ctx)
+	case kpi.FieldConfirmedBy:
+		return m.OldConfirmedBy(ctx)
+	case kpi.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Kpi field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KpiMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case kpi.FieldTaskID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaskID(v)
+		return nil
+	case kpi.FieldUserID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case kpi.FieldScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScore(v)
+		return nil
+	case kpi.FieldIsConfirmed:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsConfirmed(v)
+		return nil
+	case kpi.FieldConfirmedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmedAt(v)
+		return nil
+	case kpi.FieldConfirmedBy:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmedBy(v)
+		return nil
+	case kpi.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *KpiMutation) AddedFields() []string {
+	var fields []string
+	if m.addscore != nil {
+		fields = append(fields, kpi.FieldScore)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *KpiMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case kpi.FieldScore:
+		return m.AddedScore()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *KpiMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case kpi.FieldScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddScore(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *KpiMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(kpi.FieldConfirmedAt) {
+		fields = append(fields, kpi.FieldConfirmedAt)
+	}
+	if m.FieldCleared(kpi.FieldConfirmedBy) {
+		fields = append(fields, kpi.FieldConfirmedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *KpiMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *KpiMutation) ClearField(name string) error {
+	switch name {
+	case kpi.FieldConfirmedAt:
+		m.ClearConfirmedAt()
+		return nil
+	case kpi.FieldConfirmedBy:
+		m.ClearConfirmedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *KpiMutation) ResetField(name string) error {
+	switch name {
+	case kpi.FieldTaskID:
+		m.ResetTaskID()
+		return nil
+	case kpi.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case kpi.FieldScore:
+		m.ResetScore()
+		return nil
+	case kpi.FieldIsConfirmed:
+		m.ResetIsConfirmed()
+		return nil
+	case kpi.FieldConfirmedAt:
+		m.ResetConfirmedAt()
+		return nil
+	case kpi.FieldConfirmedBy:
+		m.ResetConfirmedBy()
+		return nil
+	case kpi.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *KpiMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.task != nil {
+		edges = append(edges, kpi.EdgeTask)
+	}
+	if m.user != nil {
+		edges = append(edges, kpi.EdgeUser)
+	}
+	if m.confirmer != nil {
+		edges = append(edges, kpi.EdgeConfirmer)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *KpiMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case kpi.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	case kpi.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case kpi.EdgeConfirmer:
+		if id := m.confirmer; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *KpiMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *KpiMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *KpiMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedtask {
+		edges = append(edges, kpi.EdgeTask)
+	}
+	if m.cleareduser {
+		edges = append(edges, kpi.EdgeUser)
+	}
+	if m.clearedconfirmer {
+		edges = append(edges, kpi.EdgeConfirmer)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *KpiMutation) EdgeCleared(name string) bool {
+	switch name {
+	case kpi.EdgeTask:
+		return m.clearedtask
+	case kpi.EdgeUser:
+		return m.cleareduser
+	case kpi.EdgeConfirmer:
+		return m.clearedconfirmer
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *KpiMutation) ClearEdge(name string) error {
+	switch name {
+	case kpi.EdgeTask:
+		m.ClearTask()
+		return nil
+	case kpi.EdgeUser:
+		m.ClearUser()
+		return nil
+	case kpi.EdgeConfirmer:
+		m.ClearConfirmer()
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *KpiMutation) ResetEdge(name string) error {
+	switch name {
+	case kpi.EdgeTask:
+		m.ResetTask()
+		return nil
+	case kpi.EdgeUser:
+		m.ResetUser()
+		return nil
+	case kpi.EdgeConfirmer:
+		m.ResetConfirmer()
+		return nil
+	}
+	return fmt.Errorf("unknown Kpi edge %s", name)
 }
 
 // NotificationMutation represents an operation that mutates the Notification nodes in the graph.
@@ -7064,6 +7952,9 @@ type TaskMutation struct {
 	notifications         map[int]struct{}
 	removednotifications  map[int]struct{}
 	clearednotifications  bool
+	kpis                  map[int]struct{}
+	removedkpis           map[int]struct{}
+	clearedkpis           bool
 	done                  bool
 	oldValue              func(context.Context) (*Task, error)
 	predicates            []predicate.Task
@@ -8075,6 +8966,60 @@ func (m *TaskMutation) ResetNotifications() {
 	m.removednotifications = nil
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by ids.
+func (m *TaskMutation) AddKpiIDs(ids ...int) {
+	if m.kpis == nil {
+		m.kpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.kpis[ids[i]] = struct{}{}
+	}
+}
+
+// ClearKpis clears the "kpis" edge to the Kpi entity.
+func (m *TaskMutation) ClearKpis() {
+	m.clearedkpis = true
+}
+
+// KpisCleared reports if the "kpis" edge to the Kpi entity was cleared.
+func (m *TaskMutation) KpisCleared() bool {
+	return m.clearedkpis
+}
+
+// RemoveKpiIDs removes the "kpis" edge to the Kpi entity by IDs.
+func (m *TaskMutation) RemoveKpiIDs(ids ...int) {
+	if m.removedkpis == nil {
+		m.removedkpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.kpis, ids[i])
+		m.removedkpis[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedKpis returns the removed IDs of the "kpis" edge to the Kpi entity.
+func (m *TaskMutation) RemovedKpisIDs() (ids []int) {
+	for id := range m.removedkpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// KpisIDs returns the "kpis" edge IDs in the mutation.
+func (m *TaskMutation) KpisIDs() (ids []int) {
+	for id := range m.kpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetKpis resets all changes to the "kpis" edge.
+func (m *TaskMutation) ResetKpis() {
+	m.kpis = nil
+	m.clearedkpis = false
+	m.removedkpis = nil
+}
+
 // Where appends a list predicates to the TaskMutation builder.
 func (m *TaskMutation) Where(ps ...predicate.Task) {
 	m.predicates = append(m.predicates, ps...)
@@ -8437,7 +9382,7 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.priority != nil {
 		edges = append(edges, task.EdgePriority)
 	}
@@ -8467,6 +9412,9 @@ func (m *TaskMutation) AddedEdges() []string {
 	}
 	if m.notifications != nil {
 		edges = append(edges, task.EdgeNotifications)
+	}
+	if m.kpis != nil {
+		edges = append(edges, task.EdgeKpis)
 	}
 	return edges
 }
@@ -8523,13 +9471,19 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.kpis))
+		for id := range m.kpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.removedchildren != nil {
 		edges = append(edges, task.EdgeChildren)
 	}
@@ -8541,6 +9495,9 @@ func (m *TaskMutation) RemovedEdges() []string {
 	}
 	if m.removednotifications != nil {
 		edges = append(edges, task.EdgeNotifications)
+	}
+	if m.removedkpis != nil {
+		edges = append(edges, task.EdgeKpis)
 	}
 	return edges
 }
@@ -8573,13 +9530,19 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.removedkpis))
+		for id := range m.removedkpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 10)
+	edges := make([]string, 0, 11)
 	if m.clearedpriority {
 		edges = append(edges, task.EdgePriority)
 	}
@@ -8610,6 +9573,9 @@ func (m *TaskMutation) ClearedEdges() []string {
 	if m.clearednotifications {
 		edges = append(edges, task.EdgeNotifications)
 	}
+	if m.clearedkpis {
+		edges = append(edges, task.EdgeKpis)
+	}
 	return edges
 }
 
@@ -8637,6 +9603,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedhistories
 	case task.EdgeNotifications:
 		return m.clearednotifications
+	case task.EdgeKpis:
+		return m.clearedkpis
 	}
 	return false
 }
@@ -8700,6 +9668,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeNotifications:
 		m.ResetNotifications()
+		return nil
+	case task.EdgeKpis:
+		m.ResetKpis()
 		return nil
 	}
 	return fmt.Errorf("unknown Task edge %s", name)
@@ -11662,6 +12633,12 @@ type UserMutation struct {
 	refresh_tokens               map[int]struct{}
 	removedrefresh_tokens        map[int]struct{}
 	clearedrefresh_tokens        bool
+	kpis                         map[int]struct{}
+	removedkpis                  map[int]struct{}
+	clearedkpis                  bool
+	confirmed_kpis               map[int]struct{}
+	removedconfirmed_kpis        map[int]struct{}
+	clearedconfirmed_kpis        bool
 	done                         bool
 	oldValue                     func(context.Context) (*User, error)
 	predicates                   []predicate.User
@@ -12744,6 +13721,114 @@ func (m *UserMutation) ResetRefreshTokens() {
 	m.removedrefresh_tokens = nil
 }
 
+// AddKpiIDs adds the "kpis" edge to the Kpi entity by ids.
+func (m *UserMutation) AddKpiIDs(ids ...int) {
+	if m.kpis == nil {
+		m.kpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.kpis[ids[i]] = struct{}{}
+	}
+}
+
+// ClearKpis clears the "kpis" edge to the Kpi entity.
+func (m *UserMutation) ClearKpis() {
+	m.clearedkpis = true
+}
+
+// KpisCleared reports if the "kpis" edge to the Kpi entity was cleared.
+func (m *UserMutation) KpisCleared() bool {
+	return m.clearedkpis
+}
+
+// RemoveKpiIDs removes the "kpis" edge to the Kpi entity by IDs.
+func (m *UserMutation) RemoveKpiIDs(ids ...int) {
+	if m.removedkpis == nil {
+		m.removedkpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.kpis, ids[i])
+		m.removedkpis[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedKpis returns the removed IDs of the "kpis" edge to the Kpi entity.
+func (m *UserMutation) RemovedKpisIDs() (ids []int) {
+	for id := range m.removedkpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// KpisIDs returns the "kpis" edge IDs in the mutation.
+func (m *UserMutation) KpisIDs() (ids []int) {
+	for id := range m.kpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetKpis resets all changes to the "kpis" edge.
+func (m *UserMutation) ResetKpis() {
+	m.kpis = nil
+	m.clearedkpis = false
+	m.removedkpis = nil
+}
+
+// AddConfirmedKpiIDs adds the "confirmed_kpis" edge to the Kpi entity by ids.
+func (m *UserMutation) AddConfirmedKpiIDs(ids ...int) {
+	if m.confirmed_kpis == nil {
+		m.confirmed_kpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.confirmed_kpis[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConfirmedKpis clears the "confirmed_kpis" edge to the Kpi entity.
+func (m *UserMutation) ClearConfirmedKpis() {
+	m.clearedconfirmed_kpis = true
+}
+
+// ConfirmedKpisCleared reports if the "confirmed_kpis" edge to the Kpi entity was cleared.
+func (m *UserMutation) ConfirmedKpisCleared() bool {
+	return m.clearedconfirmed_kpis
+}
+
+// RemoveConfirmedKpiIDs removes the "confirmed_kpis" edge to the Kpi entity by IDs.
+func (m *UserMutation) RemoveConfirmedKpiIDs(ids ...int) {
+	if m.removedconfirmed_kpis == nil {
+		m.removedconfirmed_kpis = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.confirmed_kpis, ids[i])
+		m.removedconfirmed_kpis[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConfirmedKpis returns the removed IDs of the "confirmed_kpis" edge to the Kpi entity.
+func (m *UserMutation) RemovedConfirmedKpisIDs() (ids []int) {
+	for id := range m.removedconfirmed_kpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConfirmedKpisIDs returns the "confirmed_kpis" edge IDs in the mutation.
+func (m *UserMutation) ConfirmedKpisIDs() (ids []int) {
+	for id := range m.confirmed_kpis {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConfirmedKpis resets all changes to the "confirmed_kpis" edge.
+func (m *UserMutation) ResetConfirmedKpis() {
+	m.confirmed_kpis = nil
+	m.clearedconfirmed_kpis = false
+	m.removedconfirmed_kpis = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -13042,7 +14127,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 14)
 	if m.role != nil {
 		edges = append(edges, user.EdgeRole)
 	}
@@ -13078,6 +14163,12 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.refresh_tokens != nil {
 		edges = append(edges, user.EdgeRefreshTokens)
+	}
+	if m.kpis != nil {
+		edges = append(edges, user.EdgeKpis)
+	}
+	if m.confirmed_kpis != nil {
+		edges = append(edges, user.EdgeConfirmedKpis)
 	}
 	return edges
 }
@@ -13154,13 +14245,25 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.kpis))
+		for id := range m.kpis {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeConfirmedKpis:
+		ids := make([]ent.Value, 0, len(m.confirmed_kpis))
+		for id := range m.confirmed_kpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 14)
 	if m.removedcreated_tasks != nil {
 		edges = append(edges, user.EdgeCreatedTasks)
 	}
@@ -13190,6 +14293,12 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedrefresh_tokens != nil {
 		edges = append(edges, user.EdgeRefreshTokens)
+	}
+	if m.removedkpis != nil {
+		edges = append(edges, user.EdgeKpis)
+	}
+	if m.removedconfirmed_kpis != nil {
+		edges = append(edges, user.EdgeConfirmedKpis)
 	}
 	return edges
 }
@@ -13258,13 +14367,25 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeKpis:
+		ids := make([]ent.Value, 0, len(m.removedkpis))
+		for id := range m.removedkpis {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeConfirmedKpis:
+		ids := make([]ent.Value, 0, len(m.removedconfirmed_kpis))
+		for id := range m.removedconfirmed_kpis {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 12)
+	edges := make([]string, 0, 14)
 	if m.clearedrole {
 		edges = append(edges, user.EdgeRole)
 	}
@@ -13301,6 +14422,12 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedrefresh_tokens {
 		edges = append(edges, user.EdgeRefreshTokens)
 	}
+	if m.clearedkpis {
+		edges = append(edges, user.EdgeKpis)
+	}
+	if m.clearedconfirmed_kpis {
+		edges = append(edges, user.EdgeConfirmedKpis)
+	}
 	return edges
 }
 
@@ -13332,6 +14459,10 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedpassword_reset_tokens
 	case user.EdgeRefreshTokens:
 		return m.clearedrefresh_tokens
+	case user.EdgeKpis:
+		return m.clearedkpis
+	case user.EdgeConfirmedKpis:
+		return m.clearedconfirmed_kpis
 	}
 	return false
 }
@@ -13389,6 +14520,12 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeRefreshTokens:
 		m.ResetRefreshTokens()
+		return nil
+	case user.EdgeKpis:
+		m.ResetKpis()
+		return nil
+	case user.EdgeConfirmedKpis:
+		m.ResetConfirmedKpis()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

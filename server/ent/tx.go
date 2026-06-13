@@ -20,6 +20,8 @@ type Tx struct {
 	ExportLogTask *ExportLogTaskClient
 	// ExportType is the client for interacting with the ExportType builders.
 	ExportType *ExportTypeClient
+	// Kpi is the client for interacting with the Kpi builders.
+	Kpi *KpiClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
 	// NotificationSetting is the client for interacting with the NotificationSetting builders.
@@ -181,6 +183,7 @@ func (tx *Tx) init() {
 	tx.ExportLog = NewExportLogClient(tx.config)
 	tx.ExportLogTask = NewExportLogTaskClient(tx.config)
 	tx.ExportType = NewExportTypeClient(tx.config)
+	tx.Kpi = NewKpiClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
 	tx.NotificationSetting = NewNotificationSettingClient(tx.config)
 	tx.NotificationType = NewNotificationTypeClient(tx.config)

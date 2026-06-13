@@ -93,6 +93,7 @@ func main() {
 	allAuth.GET("/tasks", taskH.List)       // Все видят задачи
 	allAuth.GET("/tasks/:id", taskH.Get)    // Все видят детали
 	allAuth.GET("/tasks/:id/history", taskH.History) // Все видят историю
+	allAuth.GET("/my-kpi", taskH.GetKPI)
 	allAuth.GET("/notifications", notifH.List)
 	allAuth.PUT("/notifications/:id/read", notifH.MarkRead)
 	allAuth.PUT("/notifications/read-all", notifH.MarkAllRead)
@@ -107,8 +108,9 @@ func main() {
 	taskMgr.POST("/tasks", taskH.Create)
 	taskMgr.PUT("/tasks/:id", taskH.Update)
 	taskMgr.GET("/export/csv", taskH.ExportCSV)
+	taskMgr.POST("/tasks/:id/confirm-completion", taskH.ConfirmCompletion)
 
-	// ========== APPROVER (asutp_chief, admin) ==========
+	// ========== APPROVER (chief_engineer, admin) ==========
 	approver := api.Group("")
 	approver.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 	approver.Use(middleware.RequireApprover())

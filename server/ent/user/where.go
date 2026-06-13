@@ -866,6 +866,52 @@ func HasRefreshTokensWith(preds ...predicate.RefreshToken) predicate.User {
 	})
 }
 
+// HasKpis applies the HasEdge predicate on the "kpis" edge.
+func HasKpis() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasKpisWith applies the HasEdge predicate on the "kpis" edge with a given conditions (other predicates).
+func HasKpisWith(preds ...predicate.Kpi) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newKpisStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasConfirmedKpis applies the HasEdge predicate on the "confirmed_kpis" edge.
+func HasConfirmedKpis() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConfirmedKpisTable, ConfirmedKpisColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConfirmedKpisWith applies the HasEdge predicate on the "confirmed_kpis" edge with a given conditions (other predicates).
+func HasConfirmedKpisWith(preds ...predicate.Kpi) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newConfirmedKpisStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

@@ -73,9 +73,11 @@ type TaskEdges struct {
 	Histories []*TaskHistory `json:"histories,omitempty"`
 	// Notifications holds the value of the notifications edge.
 	Notifications []*Notification `json:"notifications,omitempty"`
+	// Kpis holds the value of the kpis edge.
+	Kpis []*Kpi `json:"kpis,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [10]bool
+	loadedTypes [11]bool
 }
 
 // PriorityOrErr returns the Priority value or an error if the edge
@@ -178,6 +180,15 @@ func (e TaskEdges) NotificationsOrErr() ([]*Notification, error) {
 		return e.Notifications, nil
 	}
 	return nil, &NotLoadedError{edge: "notifications"}
+}
+
+// KpisOrErr returns the Kpis value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) KpisOrErr() ([]*Kpi, error) {
+	if e.loadedTypes[10] {
+		return e.Kpis, nil
+	}
+	return nil, &NotLoadedError{edge: "kpis"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -349,6 +360,11 @@ func (_m *Task) QueryHistories() *TaskHistoryQuery {
 // QueryNotifications queries the "notifications" edge of the Task entity.
 func (_m *Task) QueryNotifications() *NotificationQuery {
 	return NewTaskClient(_m.config).QueryNotifications(_m)
+}
+
+// QueryKpis queries the "kpis" edge of the Task entity.
+func (_m *Task) QueryKpis() *KpiQuery {
+	return NewTaskClient(_m.config).QueryKpis(_m)
 }
 
 // Update returns a builder for updating this Task.

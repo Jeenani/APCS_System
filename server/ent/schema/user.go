@@ -65,5 +65,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("export_logs", ExportLog.Type),
 		edge.To("password_reset_tokens", PasswordResetToken.Type),
 		edge.To("refresh_tokens", RefreshToken.Type),
+		edge.To("kpis", Kpi.Type),
+		edge.To("confirmed_kpis", Kpi.Type),
 	}
 }

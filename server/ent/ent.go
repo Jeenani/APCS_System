@@ -7,6 +7,7 @@ import (
 	"asutp-server/ent/exportlog"
 	"asutp-server/ent/exportlogtask"
 	"asutp-server/ent/exporttype"
+	"asutp-server/ent/kpi"
 	"asutp-server/ent/notification"
 	"asutp-server/ent/notificationsetting"
 	"asutp-server/ent/notificationtype"
@@ -93,6 +94,7 @@ func checkColumn(t, c string) error {
 			exportlog.Table:           exportlog.ValidColumn,
 			exportlogtask.Table:       exportlogtask.ValidColumn,
 			exporttype.Table:          exporttype.ValidColumn,
+			kpi.Table:                 kpi.ValidColumn,
 			notification.Table:        notification.ValidColumn,
 			notificationsetting.Table: notificationsetting.ValidColumn,
 			notificationtype.Table:    notificationtype.ValidColumn,

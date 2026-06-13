@@ -795,6 +795,29 @@ func HasNotificationsWith(preds ...predicate.Notification) predicate.Task {
 	})
 }
 
+// HasKpis applies the HasEdge predicate on the "kpis" edge.
+func HasKpis() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, KpisTable, KpisColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasKpisWith applies the HasEdge predicate on the "kpis" edge with a given conditions (other predicates).
+func HasKpisWith(preds ...predicate.Kpi) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := newKpisStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Task) predicate.Task {
 	return predicate.Task(sql.AndPredicates(predicates...))

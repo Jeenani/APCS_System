@@ -222,6 +222,10 @@ func Run(ctx context.Context, client *ent.Client) error {
 		{"PLC", "icon_plc_rack", "Стойки и модули ПЛК"},
 		{"SCADA", "icon_scada", "Системы диспетчерского управления"},
 		{"Контроль оборудования", "icon_equipment", "Общий контроль и техобслуживание"},
+		{"Осмотр", "icon_inspection", "Визуальный и инструментальный осмотр оборудования"},
+		{"Чистка", "icon_cleaning", "Чистка компонентов и оборудования"},
+		{"Прошивка ПЛК", "icon_firmware", "Обновление прошивки программируемых логических контроллеров"},
+		{"Обновление безопасности ARM", "icon_security", "Установка обновлений безопасности на ARM-устройства"},
 	}
 	catMap := make(map[string]*ent.TaskCategory)
 	for _, cat := range categories {

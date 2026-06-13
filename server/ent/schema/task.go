@@ -78,5 +78,6 @@ func (Task) Edges() []ent.Edge {
 		edge.To("task_assignees", TaskAssignee.Type),
 		edge.To("histories", TaskHistory.Type),
 		edge.To("notifications", Notification.Type),
+		edge.To("kpis", Kpi.Type),
 	}
 }
