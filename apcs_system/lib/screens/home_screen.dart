@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Профиль'),
         ],
       ),
-      floatingActionButton: _currentIndex <= 1 && (context.watch<AuthProvider>().user?.canManageTasks ?? false)
+      floatingActionButton: _currentIndex <= 1 && (context.watch<AuthProvider>().user?.canCreateMainTasks ?? false)
           ? FloatingActionButton(
               onPressed: () => Navigator.pushNamed(context, '/create-task'),
               backgroundColor: AppColors.primary,
@@ -699,7 +699,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Создайте первую задачу для вашего\nобъекта автоматизации', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[500])),
             const SizedBox(height: 20),
-            if (context.watch<AuthProvider>().user?.canManageTasks ?? false)
+            if (context.watch<AuthProvider>().user?.canCreateMainTasks ?? false)
               ElevatedButton.icon(
                 onPressed: () => Navigator.pushNamed(context, '/create-task'),
                 icon: const Icon(Icons.add),

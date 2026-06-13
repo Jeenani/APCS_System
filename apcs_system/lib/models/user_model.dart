@@ -47,6 +47,10 @@ class UserModel {
   bool get canManageTasks =>
       role == 'admin' || role == 'chief_engineer' || role == 'asutp_chief';
 
+  /// Может создавать основные задачи (не подзадачи)
+  bool get canCreateMainTasks =>
+      role == 'admin' || role == 'chief_engineer';
+
   /// Может экспортировать CSV
   bool get canExport =>
       role == 'admin' || role == 'chief_engineer' || role == 'asutp_chief';

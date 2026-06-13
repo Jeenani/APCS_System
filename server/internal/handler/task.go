@@ -184,6 +184,21 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 
 	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	role := ""
+	if r, ok := roleVal.(string); ok {
+		role = r
+	}
+
+	// Role-based creation restrictions
+	if role == "chief_engineer" && req.ParentID != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Главный инженер может создавать только основные задачи"})
+		return
+	}
+	if role == "asutp_chief" && req.ParentID == nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Начальник АСУТП может создавать только подзадачи"})
+		return
+	}
 
 	// Get "new" status
 	newStatus, err := h.client.TaskStatus.Query().
