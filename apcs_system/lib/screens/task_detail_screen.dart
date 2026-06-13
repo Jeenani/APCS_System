@@ -379,134 +379,142 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       if (_task!.parentId != null) const SizedBox(height: 12),
 
-                      // Active Subtasks
-                      final activeChildren = _task!.children.where((c) => c.status?.code != 'archived').toList();
-                      final archivedChildren = _task!.children.where((c) => c.status?.code == 'archived').toList();
-
-                      if (activeChildren.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
+                      // Subtasks section
+                      Builder(
+                        builder: (context) {
+                          final activeChildren = _task!.children.where((c) => c.status?.code != 'archived').toList();
+                          final archivedChildren = _task!.children.where((c) => c.status?.code == 'archived').toList();
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Подзадачи (${activeChildren.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              ...activeChildren.map((child) {
-                                return InkWell(
-                                  onTap: () => Navigator.pushNamed(context, '/task-detail', arguments: child.id),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${child.progress}%',
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(child.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                              Text(
-                                                child.status?.label ?? '',
-                                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const Icon(Icons.chevron_right, color: Colors.grey),
-                                      ],
-                                    ),
+                              if (activeChildren.isNotEmpty) ...[
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                      if (activeChildren.isNotEmpty) const SizedBox(height: 12),
-
-                      // Archived Subtasks
-                      if (archivedChildren.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.archive_outlined, size: 18, color: Colors.grey),
-                                  const SizedBox(width: 8),
-                                  Text('Архивированные подзадачи (${archivedChildren.length})', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              ...archivedChildren.map((child) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${child.progress}%',
-                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700]),
-                                          ),
-                                        ),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Подзадачи (${activeChildren.length})', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        ],
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(child.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey[700])),
-                                            Text(
-                                              child.status?.label ?? '',
-                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      const SizedBox(height: 12),
+                                      ...activeChildren.map((child) {
+                                        return InkWell(
+                                          onTap: () => Navigator.pushNamed(context, '/task-detail', arguments: child.id),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(bottom: 10),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${child.progress}%',
+                                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(child.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                                      Text(
+                                                        child.status?.label ?? '',
+                                                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const Icon(Icons.chevron_right, color: Colors.grey),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Icon(Icons.chevron_right, color: Colors.grey),
+                                          ),
+                                        );
+                                      }),
                                     ],
                                   ),
-                                );
-                              }),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              if (archivedChildren.isNotEmpty) ...[
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.archive_outlined, size: 18, color: Colors.grey),
+                                          const SizedBox(width: 8),
+                                          Text('Архивированные подзадачи (${archivedChildren.length})', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ...archivedChildren.map((child) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 10),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[300],
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    '${child.progress}%',
+                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(child.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey[700])),
+                                                    Text(
+                                                      child.status?.label ?? '',
+                                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const Icon(Icons.chevron_right, color: Colors.grey),
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                             ],
-                          ),
-                        ),
-                      if (archivedChildren.isNotEmpty) const SizedBox(height: 12),
+                          );
+                        },
+                      ),
 
                       // Create subtask button (only for top-level tasks, not subtasks)
                       if (_task!.parentId == null && (context.watch<AuthProvider>().user?.canCreateSubtasks ?? false))
