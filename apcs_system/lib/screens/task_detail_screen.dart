@@ -484,7 +484,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                                 child: Center(
                                                   child: Text(
                                                     '${child.progress}%',
-                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey[700]),
                                                   ),
                                                 ),
                                               ),
