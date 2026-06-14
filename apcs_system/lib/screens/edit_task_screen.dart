@@ -43,8 +43,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     if (mounted) {
       final existingIds = widget.task.assignees
           .map((a) => a.user?.id)
-          .where((id) => id != null)
+          .whereType<int>()
           .toSet();
+      _selectedAssignees.addAll(existingIds);
       setState(() {
         _availableAssignees = assignees.where((u) {
           final id = u['id'] as int?;
