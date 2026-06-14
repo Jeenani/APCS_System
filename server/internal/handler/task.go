@@ -152,7 +152,14 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		return
 	}
 
-	t, err := h.client.Task.Query().
+	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName := ""
+	if r, ok := roleVal.(string); ok {
+		roleName = r
+	}
+
+	query := h.client.Task.Query().
 		Where(task.IDEQ(id)).
 		WithPriority().
 		WithStatus().
@@ -167,8 +174,20 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		}).
 		WithChildren(func(q *ent.TaskQuery) {
 			q.WithPriority().WithStatus().WithCreator()
-		}).
-		Only(c)
+		})
+
+	// Restricted roles can only view their own tasks or approved assignments
+	if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+		query = query.Where(task.Or(
+			task.CreatedByEQ(userID),
+			task.HasTaskAssigneesWith(
+				taskassignee.UserIDEQ(userID),
+				taskassignee.StatusEQ("approved"),
+			),
+		))
+	}
+
+	t, err := query.Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
 		return
@@ -287,7 +306,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		assigneeRole := assigneeUser.Edges.Role.Name
 		var allowedRoles []string
 		switch proposer.Edges.Role.Name {
-		case "chief_engineer":
+		case "chief_engineer", "admin":
 			allowedRoles = []string{"asutp_chief"}
 		case "asutp_chief":
 			allowedRoles = []string{"engineer"}
@@ -608,7 +627,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			assigneeRole := assigneeUser.Edges.Role.Name
 			var allowedRoles []string
 			switch updater.Edges.Role.Name {
-			case "chief_engineer":
+			case "chief_engineer", "admin":
 				allowedRoles = []string{"asutp_chief"}
 			case "asutp_chief":
 				allowedRoles = []string{"engineer"}
@@ -876,8 +895,29 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.client.Task.DeleteOneID(id).Exec(c); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
+	tx, err := h.client.Tx(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка транзакции"})
+		return
+	}
+
+	parentID := t.ParentID
+
+	if err := tx.Task.DeleteOneID(id).Exec(c); err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления"})
+		return
+	}
+
+	// Recalculate parent progress if this was a subtask
+	if parentID != nil {
+		if err := h.recalculateParentProgress(tx, c, *parentID); err != nil {
+			fmt.Printf("ERROR recalculating parent progress after delete: %v\n", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сохранения"})
 		return
 	}
 
@@ -889,6 +929,31 @@ func (h *TaskHandler) History(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
 		return
+	}
+
+	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName := ""
+	if r, ok := roleVal.(string); ok {
+		roleName = r
+	}
+
+	// Restricted roles can only view history of their own tasks or approved assignments
+	if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+		allowed, err := h.client.Task.Query().
+			Where(task.IDEQ(id)).
+			Where(task.Or(
+				task.CreatedByEQ(userID),
+				task.HasTaskAssigneesWith(
+					taskassignee.UserIDEQ(userID),
+					taskassignee.StatusEQ("approved"),
+				),
+			)).
+			Exist(c)
+		if err != nil || !allowed {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Нет доступа к истории этой задачи"})
+			return
+		}
 	}
 
 	histories, err := h.client.TaskHistory.Query().
@@ -1262,6 +1327,13 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		}
 	}
 
+	// Start transaction for atomic KPI + archive
+	tx, err := h.client.Tx(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка транзакции"})
+		return
+	}
+
 	// Calculate KPI score based on due date
 	var score float64
 	if time.Now().Before(t.DueDate) || time.Now().Equal(t.DueDate) {
@@ -1278,14 +1350,14 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		}
 
 		// Check if KPI already exists for this task+user
-		exists, _ := h.client.Kpi.Query().
+		exists, _ := tx.Kpi.Query().
 			Where(kpi.TaskIDEQ(id), kpi.UserIDEQ(ta.UserID)).
 			Exist(c)
 		if exists {
 			continue
 		}
 
-		_, err := h.client.Kpi.Create().
+		_, err := tx.Kpi.Create().
 			SetTaskID(id).
 			SetUserID(ta.UserID).
 			SetScore(score).
@@ -1301,12 +1373,12 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	}
 
 	// Archive the task after KPI confirmation
-	archivedStatus, err := h.client.TaskStatus.Query().
+	archivedStatus, err := tx.TaskStatus.Query().
 		Where(taskstatus.CodeEQ("archived")).
 		Only(c)
 	archived := false
 	if err == nil {
-		_, archiveErr := h.client.Task.UpdateOneID(id).
+		_, archiveErr := tx.Task.UpdateOneID(id).
 			SetStatusID(archivedStatus.ID).
 			Save(c)
 		if archiveErr != nil {
@@ -1316,6 +1388,11 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		}
 	} else {
 		fmt.Printf("ERROR: archived status not found, cannot archive task %d after KPI confirmation: %v\n", id, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сохранения"})
+		return
 	}
 
 	msg := "Выполнение подтверждено"
@@ -1394,6 +1471,13 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления статуса"})
 		return
+	}
+
+	// Recalculate parent progress if this is a subtask
+	if t.ParentID != nil {
+		if err := h.recalculateParentProgress(tx, c, *t.ParentID); err != nil {
+			fmt.Printf("ERROR recalculating parent progress after complete: %v\n", err)
+		}
 	}
 
 	// Log history

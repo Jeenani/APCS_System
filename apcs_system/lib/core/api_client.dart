@@ -12,6 +12,7 @@ class ApiClient {
   static String? _baseUrl;
 
   static http.Client? _httpClient;
+  static Future<void>? _refreshFuture;
 
   static http.Client get client {
     if (_httpClient != null) return _httpClient!;
@@ -111,41 +112,88 @@ class ApiClient {
       };
 
   // ============================================
-  // HTTP методы
+  // Token refresh
   // ============================================
 
+  static Future<void> _refresh() async {
+    if (_refreshFuture != null) return _refreshFuture!;
+
+    _refreshFuture = _doRefresh();
+    try {
+      await _refreshFuture;
+    } finally {
+      _refreshFuture = null;
+    }
+  }
+
+  static Future<void> _doRefresh() async {
+    final refresh = _refreshToken;
+    if (refresh == null) throw ApiException(statusCode: 401, message: 'Требуется авторизация');
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl${ApiConfig.authRefresh}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refresh_token': refresh}),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final newAccess = body['access_token'] as String?;
+      if (newAccess != null) {
+        _accessToken = newAccess;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', newAccess);
+        return;
+      }
+    }
+    throw ApiException(statusCode: 401, message: 'Сессия истекла, войдите снова');
+  }
+
+  // ============================================
+  // HTTP методы с автоматическим retry на 401
+  // ============================================
+
+  static Future<dynamic> _execute(Future<http.Response> Function() request) async {
+    var response = await request();
+    if (response.statusCode == 401) {
+      try {
+        await _refresh();
+      } catch (_) {
+        rethrow;
+      }
+      response = await request();
+    }
+    return _handleResponse(response);
+  }
+
   static Future<dynamic> get(String path) async {
-    final response = await _client.get(
+    return _execute(() => _client.get(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
-    );
-    return _handleResponse(response);
+    ));
   }
 
   static Future<dynamic> post(String path, Map<String, dynamic> body) async {
-    final response = await _client.post(
+    return _execute(() => _client.post(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
       body: jsonEncode(body),
-    );
-    return _handleResponse(response);
+    ));
   }
 
   static Future<dynamic> put(String path, Map<String, dynamic> body) async {
-    final response = await _client.put(
+    return _execute(() => _client.put(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
       body: jsonEncode(body),
-    );
-    return _handleResponse(response);
+    ));
   }
 
   static Future<dynamic> delete(String path) async {
-    final response = await _client.delete(
+    return _execute(() => _client.delete(
       Uri.parse('$baseUrl$path'),
       headers: _headers,
-    );
-    return _handleResponse(response);
+    ));
   }
 
   static dynamic _handleResponse(http.Response response) {

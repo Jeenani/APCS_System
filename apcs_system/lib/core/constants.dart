@@ -27,7 +27,9 @@ class ApiConfig {
   
   // Текущий API URL (из файла конфигурации)
   static const String baseUrl = Environment.apiBaseUrl;
-  
+
+  static const String authRefresh = '/auth/refresh';
+
   // Альтернативные URL (для справки)
   // Android эмулятор: http://10.0.2.2:8080/api/v1
   // iOS симулятор: http://localhost:8080/api/v1

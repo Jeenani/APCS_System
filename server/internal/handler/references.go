@@ -106,12 +106,11 @@ func (h *ReferenceHandler) GetAssignees(c *gin.Context) {
 
 	var allowedRoles []string
 	switch requesterRole {
-	case "chief_engineer":
+	case "chief_engineer", "admin":
 		allowedRoles = []string{"asutp_chief"}
 	case "asutp_chief":
 		allowedRoles = []string{"engineer"}
 	default:
-		// admin and anyone else can see all assignable roles
 		allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer"}
 	}
 
