@@ -70,31 +70,26 @@ func (h *TaskHandler) List(c *gin.Context) {
 	// Engineers and asutp_chiefs only see tasks they created or are approved assignees on
 	// Operators see all tasks (read-only)
 	userID := c.GetInt("user_id")
+	roleName := ""
 	if roleVal, ok := c.Get("role"); ok {
-		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" || roleName == "asutp_chief" {
-				query = query.Where(task.Or(
-					task.CreatedByEQ(userID),
-					task.HasTaskAssigneesWith(
-						taskassignee.UserIDEQ(userID),
-						taskassignee.StatusEQ("approved"),
-					),
-				))
-			}
+		if r, ok := roleVal.(string); ok {
+			roleName = r
 		}
+	}
+	if roleName == "engineer" || roleName == "asutp_chief" {
+		query = query.Where(task.Or(
+			task.CreatedByEQ(userID),
+			task.HasTaskAssigneesWith(
+				taskassignee.UserIDEQ(userID),
+				taskassignee.StatusEQ("approved"),
+			),
+		))
 	}
 
 	// Determine if user has restricted view (needs to see assigned subtasks too)
 	// Only simple engineers see subtasks as standalone tasks.
-	// Chiefs and operators see only top-level tasks; subtasks are viewed inside the parent task.
-	restrictiveView := false
-	if roleVal, ok := c.Get("role"); ok {
-		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" {
-				restrictiveView = true
-			}
-		}
-	}
+	// Chiefs see only top-level tasks; subtasks are viewed inside the parent task.
+	restrictiveView := roleName == "engineer"
 
 	// Parent filter: default top-level only, unless specific parent_id requested
 	// Exception: restricted roles see their assigned subtasks even without include_subtasks
@@ -103,7 +98,10 @@ func (h *TaskHandler) List(c *gin.Context) {
 			query = query.Where(task.ParentIDEQ(pid))
 		}
 	} else if !restrictiveView && c.Query("include_subtasks") != "true" {
-		query = query.Where(task.ParentIDIsNil())
+		// Operators can see all tasks including subtasks; chiefs see top-level only by default
+		if roleName != "operator" {
+			query = query.Where(task.ParentIDIsNil())
+		}
 	}
 
 	// Archive filter: default exclude archived, unless archived=true
