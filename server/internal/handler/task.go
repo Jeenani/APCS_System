@@ -84,10 +84,12 @@ func (h *TaskHandler) List(c *gin.Context) {
 	}
 
 	// Determine if user has restricted view (needs to see assigned subtasks too)
+	// Only simple engineers and operators see subtasks as standalone tasks.
+	// Chiefs see only top-level tasks; subtasks are viewed inside the parent task.
 	restrictiveView := false
 	if roleVal, ok := c.Get("role"); ok {
 		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+			if roleName == "engineer" || roleName == "operator" {
 				restrictiveView = true
 			}
 		}
