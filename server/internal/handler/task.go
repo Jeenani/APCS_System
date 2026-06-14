@@ -67,11 +67,12 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithChildren().
 		Order(ent.Desc(task.FieldCreatedAt))
 
-	// Engineers, asutp_chiefs and operators only see tasks they created or are approved assignees on
+	// Engineers and asutp_chiefs only see tasks they created or are approved assignees on
+	// Operators see all tasks (read-only)
 	userID := c.GetInt("user_id")
 	if roleVal, ok := c.Get("role"); ok {
 		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+			if roleName == "engineer" || roleName == "asutp_chief" {
 				query = query.Where(task.Or(
 					task.CreatedByEQ(userID),
 					task.HasTaskAssigneesWith(
@@ -1408,7 +1409,7 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		return
 	}
 	for _, child := range children {
-		if child.Edges.Status == nil || child.Edges.Status.Code != "completed" {
+		if child.Edges.Status == nil || (child.Edges.Status.Code != "completed" && child.Edges.Status.Code != "archived") {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Сначала отметьте выполненными все подзадачи"})
 			return
 		}
