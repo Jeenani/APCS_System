@@ -354,7 +354,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         Builder(
                           builder: (context) {
                             final userRole = context.read<AuthProvider>().user?.role ?? '';
-                            final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin';
+                            final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin' || userRole == 'operator';
                             if (!canSeeHierarchy) return const SizedBox.shrink();
                             return Container(
                               width: double.infinity,
@@ -394,7 +394,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       Builder(
                         builder: (context) {
                           final userRole = context.read<AuthProvider>().user?.role ?? '';
-                          final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin';
+                          final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin' || userRole == 'operator';
                           if (!canSeeHierarchy) return const SizedBox.shrink();
                           final activeChildren = _task!.children.where((c) => c.status?.code != 'archived').toList();
                           final archivedChildren = _task!.children.where((c) => c.status?.code == 'archived').toList();
