@@ -349,43 +349,53 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Parent task link
+                      // Parent task link (visible only to chiefs/admins)
                       if (_task!.parentId != null)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Родительская задача', style: TextStyle(fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 8),
-                              InkWell(
-                                onTap: () => Navigator.pushReplacementNamed(context, '/task-detail', arguments: _task!.parentId),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.arrow_upward, size: 18, color: AppColors.primary),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _task!.parentId.toString(),
-                                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        Builder(
+                          builder: (context) {
+                            final userRole = context.read<AuthProvider>().user?.role ?? '';
+                            final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin';
+                            if (!canSeeHierarchy) return const SizedBox.shrink();
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ],
-                          ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Родительская задача', style: TextStyle(fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 8),
+                                  InkWell(
+                                    onTap: () => Navigator.pushReplacementNamed(context, '/task-detail', arguments: _task!.parentId),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.arrow_upward, size: 18, color: AppColors.primary),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _task!.parentId.toString(),
+                                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       if (_task!.parentId != null) const SizedBox(height: 12),
 
-                      // Subtasks section
+                      // Subtasks section (visible only to chiefs/admins)
                       Builder(
                         builder: (context) {
+                          final userRole = context.read<AuthProvider>().user?.role ?? '';
+                          final canSeeHierarchy = userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin';
+                          if (!canSeeHierarchy) return const SizedBox.shrink();
                           final activeChildren = _task!.children.where((c) => c.status?.code != 'archived').toList();
                           final archivedChildren = _task!.children.where((c) => c.status?.code == 'archived').toList();
                           return Column(
