@@ -84,12 +84,12 @@ func (h *TaskHandler) List(c *gin.Context) {
 	}
 
 	// Determine if user has restricted view (needs to see assigned subtasks too)
-	// Only simple engineers and operators see subtasks as standalone tasks.
-	// Chiefs see only top-level tasks; subtasks are viewed inside the parent task.
+	// Only simple engineers see subtasks as standalone tasks.
+	// Chiefs and operators see only top-level tasks; subtasks are viewed inside the parent task.
 	restrictiveView := false
 	if roleVal, ok := c.Get("role"); ok {
 		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" || roleName == "operator" {
+			if roleName == "engineer" {
 				restrictiveView = true
 			}
 		}
@@ -191,7 +191,7 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		})
 
 	// Restricted roles can only view their own tasks or approved assignments
-	if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+	if roleName == "engineer" || roleName == "asutp_chief" {
 		query = query.Where(task.Or(
 			task.CreatedByEQ(userID),
 			task.HasTaskAssigneesWith(
@@ -240,6 +240,10 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 
 	// Role-based creation restrictions
+	if role == "operator" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Оператор не может создавать задачи"})
+		return
+	}
 	if role == "chief_engineer" && req.ParentID != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Главный инженер может создавать только основные задачи"})
 		return
@@ -786,6 +790,30 @@ func (h *TaskHandler) ApproveAssignee(c *gin.Context) {
 	}
 
 	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName := ""
+	if r, ok := roleVal.(string); ok {
+		roleName = r
+	}
+
+	// Role-based approval check
+	canApprove := false
+	if roleName == "chief_engineer" || roleName == "admin" {
+		canApprove = true
+	} else if roleName == "asutp_chief" {
+		if t.CreatedBy == userID {
+			canApprove = true
+		} else {
+			isAssignee, _ := h.client.TaskAssignee.Query().
+				Where(taskassignee.TaskIDEQ(id), taskassignee.UserIDEQ(userID), taskassignee.StatusEQ("approved")).
+				Exist(c)
+			canApprove = isAssignee
+		}
+	}
+	if !canApprove {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав для одобрения назначения"})
+		return
+	}
 
 	ta, err := h.client.TaskAssignee.Query().
 		Where(taskassignee.IDEQ(assigneeID)).
@@ -849,6 +877,32 @@ func (h *TaskHandler) RejectAssignee(c *gin.Context) {
 	t, err := h.client.Task.Query().Where(task.IDEQ(id)).WithStatus().Only(c)
 	if err == nil && t.Edges.Status != nil && t.Edges.Status.Code == "archived" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Архивированные задачи нельзя изменять"})
+		return
+	}
+
+	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName := ""
+	if r, ok := roleVal.(string); ok {
+		roleName = r
+	}
+
+	// Role-based rejection check
+	canReject := false
+	if roleName == "chief_engineer" || roleName == "admin" {
+		canReject = true
+	} else if roleName == "asutp_chief" {
+		if t.CreatedBy == userID {
+			canReject = true
+		} else {
+			isAssignee, _ := h.client.TaskAssignee.Query().
+				Where(taskassignee.TaskIDEQ(id), taskassignee.UserIDEQ(userID), taskassignee.StatusEQ("approved")).
+				Exist(c)
+			canReject = isAssignee
+		}
+	}
+	if !canReject {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав для отклонения назначения"})
 		return
 	}
 
