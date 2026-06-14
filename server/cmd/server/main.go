@@ -10,6 +10,7 @@ import (
 	"asutp-server/internal/config"
 	"asutp-server/internal/handler"
 	"asutp-server/internal/middleware"
+	"asutp-server/internal/scheduler"
 	"asutp-server/internal/seed"
 
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,9 @@ func main() {
 	if err := seed.Run(ctx, client); err != nil {
 		log.Fatalf("Ошибка seed: %v", err)
 	}
+
+	// Запуск фонового планировщика уведомлений о дедлайнах
+	scheduler.StartDeadlineScheduler(client)
 
 	r := gin.Default()
 

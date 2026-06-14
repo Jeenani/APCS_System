@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -82,12 +83,23 @@ func (h *TaskHandler) List(c *gin.Context) {
 		}
 	}
 
+	// Determine if user has restricted view (needs to see assigned subtasks too)
+	restrictiveView := false
+	if roleVal, ok := c.Get("role"); ok {
+		if roleName, ok := roleVal.(string); ok {
+			if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
+				restrictiveView = true
+			}
+		}
+	}
+
 	// Parent filter: default top-level only, unless specific parent_id requested
+	// Exception: restricted roles see their assigned subtasks even without include_subtasks
 	if parentID := c.Query("parent_id"); parentID != "" {
 		if pid, err := strconv.Atoi(parentID); err == nil {
 			query = query.Where(task.ParentIDEQ(pid))
 		}
-	} else if c.Query("include_subtasks") != "true" {
+	} else if !restrictiveView && c.Query("include_subtasks") != "true" {
 		query = query.Where(task.ParentIDIsNil())
 	}
 
@@ -1255,10 +1267,10 @@ func getChangeTypeID(client *ent.Client, c *gin.Context, code string) (int, erro
 	return ct.ID, nil
 }
 
-func getNotificationTypeID(client *ent.Client, c *gin.Context, code string) (int, error) {
+func getNotificationTypeID(client *ent.Client, ctx context.Context, code string) (int, error) {
 	nt, err := client.NotificationType.Query().
 		Where(notificationtype.CodeEQ(code)).
-		Only(c)
+		Only(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -1280,6 +1292,7 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 	t, err := h.client.Task.Query().
 		Where(task.IDEQ(id)).
 		WithStatus().
+		WithCreator().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
 			q.WithUser()
 		}).
@@ -1395,6 +1408,43 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		return
 	}
 
+	// Notify approved assignees about KPI
+	ntID, _ := getNotificationTypeID(h.client, c, "update")
+	if ntID == 0 {
+		ntID = 3 // fallback
+	}
+	for _, ta := range t.Edges.TaskAssignees {
+		if ta.Status != "approved" || ta.Edges.User == nil {
+			continue
+		}
+		_, err := h.client.Notification.Create().
+			SetUserID(ta.UserID).
+			SetTaskID(id).
+			SetTitle("KPI начислен").
+			SetBody(fmt.Sprintf("Задача \"%s\" выполнена. Вам начислено %.0f KPI.", t.Title, score)).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR: failed to create KPI notification for user %d: %v\n", ta.UserID, err)
+		}
+	}
+
+	// Notify task creator about completion
+	if t.Edges.Creator != nil {
+		_, err := h.client.Notification.Create().
+			SetUserID(t.Edges.Creator.ID).
+			SetTaskID(id).
+			SetTitle("Задача выполнена и подтверждена").
+			SetBody(fmt.Sprintf("Задача \"%s\" подтверждена и архивирована.", t.Title)).
+			SetNotificationTypeID(ntID).
+			SetScheduledAt(time.Now()).
+			Save(c)
+		if err != nil {
+			fmt.Printf("ERROR: failed to create completion notification for creator %d: %v\n", t.Edges.Creator.ID, err)
+		}
+	}
+
 	msg := "Выполнение подтверждено"
 	if archived {
 		msg += ", задача архивирована"
@@ -1496,6 +1546,20 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сохранения"})
 		return
 	}
+
+	// Notify task creator that task is completed and ready for confirmation
+	ntID, _ := getNotificationTypeID(h.client, c, "update")
+	if ntID == 0 {
+		ntID = 3 // fallback
+	}
+	_, _ = h.client.Notification.Create().
+		SetUserID(t.CreatedBy).
+		SetTaskID(id).
+		SetTitle("Задача готова к подтверждению").
+		SetBody(fmt.Sprintf("Задача \"%s\" отмечена выполненной. Требуется подтверждение.", t.Title)).
+		SetNotificationTypeID(ntID).
+		SetScheduledAt(time.Now()).
+		Save(c)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Задача отмечена выполненной"})
 }
