@@ -221,6 +221,15 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Due date must not be in the past
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	taskDate := time.Date(dueDate.Year(), dueDate.Month(), dueDate.Day(), 0, 0, 0, 0, time.UTC)
+	if taskDate.Before(today) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Дата выполнения не может быть меньше текущей"})
+		return
+	}
+
 	userID := c.GetInt("user_id")
 	roleVal, _ := c.Get("role")
 	role := ""
@@ -492,6 +501,15 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.DueDate != nil {
 		dueDate, err := time.Parse("2006-01-02", *req.DueDate)
 		if err == nil {
+			// Due date must not be in the past
+			now := time.Now()
+			today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+			taskDate := time.Date(dueDate.Year(), dueDate.Month(), dueDate.Day(), 0, 0, 0, 0, time.UTC)
+			if taskDate.Before(today) {
+				tx.Rollback()
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Дата выполнения не может быть меньше текущей"})
+				return
+			}
 			changeID, _ := getChangeTypeID(tx.Client(), c, "due_date_changed")
 			if changeID > 0 {
 				tx.TaskHistory.Create().

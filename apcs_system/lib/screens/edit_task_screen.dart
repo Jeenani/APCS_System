@@ -66,7 +66,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: _dueDate,
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date != null) setState(() => _dueDate = date);

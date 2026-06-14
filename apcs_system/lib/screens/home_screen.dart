@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import '../core/constants.dart';
 import '../core/api_client.dart';
 import '../models/task_model.dart';
@@ -592,37 +589,6 @@ class _ProfileTabState extends State<_ProfileTab> {
     }
   }
 
-  Future<void> _exportCSV(BuildContext context) async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Экспорт CSV...')));
-      final response = await ApiClient.client.get(
-        Uri.parse('${ApiConfig.baseUrl}/export/csv'),
-        headers: {'Authorization': 'Bearer ${ApiClient.accessToken}'},
-      );
-      if (response.statusCode == 200) {
-        final downloadsDir = await getDownloadsDirectory();
-        final baseDir = downloadsDir ?? await getApplicationDocumentsDirectory();
-        final appDir = Directory('${baseDir.path}/APCS_System');
-        if (!await appDir.exists()) {
-          await appDir.create(recursive: true);
-        }
-        final file = File('${appDir.path}/tasks_export.csv');
-        await file.writeAsBytes(response.bodyBytes);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Сохранено: ${file.path}')));
-        }
-      } else if (response.statusCode == 403) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Недостаточно прав для экспорта')));
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка экспорта: $e')));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
@@ -700,7 +666,7 @@ class _ProfileTabState extends State<_ProfileTab> {
             _MenuItem(icon: Icons.notifications_outlined, label: 'Настройки уведомлений', onTap: () => Navigator.pushNamed(context, '/notification-settings')),
             _MenuItem(icon: Icons.analytics_outlined, label: 'Подробный KPI', onTap: () => Navigator.pushNamed(context, '/kpi')),
             if (canExport)
-              _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => _exportCSV(context)),
+              _MenuItem(icon: Icons.download, label: 'Экспорт данных (CSV)', onTap: () => Navigator.pushNamed(context, '/csv-exports')),
 
             // Админ-панель
             if (isAdmin || user?.role == 'chief_engineer') ...[

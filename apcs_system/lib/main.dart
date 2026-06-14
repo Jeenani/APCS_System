@@ -19,6 +19,7 @@ import 'screens/admin_categories_screen.dart';
 import 'screens/kpi_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/reset_requests_screen.dart';
+import 'screens/csv_exports_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,6 +90,8 @@ class AsutpTasksApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const ResetRequestsScreen());
             case '/kpi':
               return MaterialPageRoute(builder: (_) => const KpiScreen());
+            case '/csv-exports':
+              return MaterialPageRoute(builder: (_) => const CsvExportsScreen());
             default:
               return MaterialPageRoute(builder: (_) => const LoginScreen());
           }
