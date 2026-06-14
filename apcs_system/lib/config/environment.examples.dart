@@ -1,5 +1,5 @@
 // ============================================
-// АСУТП Tasks — Конфигурация для Flutter
+// АИТ Прософт-Системы — Конфигурация для Flutter
 // 
 // Примеры для РАЗНЫХ СЦЕНАРИЕВ
 // Выберите нужный и скопируйте в lib/config/environment.dart
@@ -15,7 +15,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks';
+  static const String appName = 'АИТ Прософт-Системы';
   static const String appVersion = '1.0.0';
   static const bool isDebugMode = true;
   
@@ -39,7 +39,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks';
+  static const String appName = 'АИТ Прософт-Системы';
   static const String appVersion = '1.0.0';
   static const bool isDebugMode = true;
   
@@ -64,7 +64,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks';
+  static const String appName = 'АИТ Прософт-Системы';
   static const String appVersion = '1.0.0';
   static const bool isDebugMode = true;
   
@@ -88,7 +88,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks';
+  static const String appName = 'АИТ Прософт-Системы';
   static const String appVersion = '1.0.0';
   static const bool isDebugMode = false;            // ❌ Production!
   
@@ -112,7 +112,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks (Staging)';
+  static const String appName = 'АИТ Прософт-Системы (Staging)';
   static const String appVersion = '1.0.0-staging';
   static const bool isDebugMode = true;
   
@@ -136,7 +136,7 @@ class Environment {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
   
-  static const String appName = 'АСУТП Tasks';
+  static const String appName = 'АИТ Прософт-Системы';
   static const String appVersion = '1.0.0';
   static const bool isDebugMode = false;
   

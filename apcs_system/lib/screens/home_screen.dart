@@ -111,6 +111,10 @@ class _HomeTabState extends State<_HomeTab> {
       case 'icon_plc_rack': return Icons.dns;
       case 'icon_scada': return Icons.dashboard;
       case 'icon_equipment': return Icons.build;
+      case 'icon_inspection': return Icons.visibility;
+      case 'icon_cleaning': return Icons.cleaning_services;
+      case 'icon_firmware': return Icons.system_update;
+      case 'icon_security': return Icons.security;
       default: return Icons.category;
     }
   }
@@ -717,7 +721,7 @@ class _ProfileTabState extends State<_ProfileTab> {
             _MenuItem(icon: Icons.help_outline, label: 'Справка', onTap: () {
               showAboutDialog(
                 context: context,
-                applicationName: 'АСУТП Tasks',
+                applicationName: 'АИТ Прософт-Системы',
                 applicationVersion: '1.0.0',
                 children: [
                   const Text('Приложение для управления задачами в системах промышленной автоматизации (SCADA/PLC).'),

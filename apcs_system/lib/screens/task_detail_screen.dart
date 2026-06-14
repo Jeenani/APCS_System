@@ -51,6 +51,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       case 'icon_plc_rack': return Icons.dns;
       case 'icon_scada': return Icons.dashboard;
       case 'icon_equipment': return Icons.build;
+      case 'icon_inspection': return Icons.visibility;
+      case 'icon_cleaning': return Icons.cleaning_services;
+      case 'icon_firmware': return Icons.system_update;
+      case 'icon_security': return Icons.security;
       default: return Icons.task;
     }
   }

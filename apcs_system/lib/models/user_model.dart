@@ -61,7 +61,7 @@ class UserModel {
 
   /// Может создавать подзадачи
   bool get canCreateSubtasks =>
-      role == 'chief_engineer' || role == 'asutp_chief' || role == 'admin';
+      role == 'asutp_chief' || role == 'admin';
 
   /// Администратор системы
   bool get isAdmin => role == 'admin';

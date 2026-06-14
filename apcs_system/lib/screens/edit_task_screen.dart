@@ -108,7 +108,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       if (userRole == 'chief_engineer' || userRole == 'asutp_chief' || userRole == 'admin') {
         message = 'Исполнители назначены';
       } else {
-        message = 'Запрос на назначение отправлен главному инженеру';
+        message = 'Запрос на назначение отправлен руководителям';
       }
     } else {
       message = 'Задача обновлена';

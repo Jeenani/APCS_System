@@ -52,6 +52,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     'icon_plc_rack': Icons.dns,
     'icon_scada': Icons.dashboard,
     'icon_equipment': Icons.build,
+    'icon_inspection': Icons.visibility,
+    'icon_cleaning': Icons.cleaning_services,
+    'icon_firmware': Icons.system_update,
+    'icon_security': Icons.security,
   };
 
   Future<void> _toggleActive(int id, bool current) async {
@@ -217,6 +221,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       case 'icon_plc_rack': return Icons.dns;
       case 'icon_scada': return Icons.dashboard;
       case 'icon_equipment': return Icons.build;
+      case 'icon_inspection': return Icons.visibility;
+      case 'icon_cleaning': return Icons.cleaning_services;
+      case 'icon_firmware': return Icons.system_update;
+      case 'icon_security': return Icons.security;
       default: return Icons.category;
     }
   }

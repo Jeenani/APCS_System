@@ -44,7 +44,7 @@ class AsutpTasksApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TaskProvider()),
       ],
       child: MaterialApp(
-        title: 'АСУТП Tasks',
+        title: 'АИТ Прософт-Системы',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorSchemeSeed: AppColors.primary,
@@ -129,7 +129,7 @@ class _AuthGateState extends State<_AuthGate> {
             children: [
               Icon(Icons.settings, size: 64, color: AppColors.primary),
               SizedBox(height: 16),
-              Text('АСУТП Tasks', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+              Text('АИТ Прософт-Системы', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
               SizedBox(height: 16),
               CircularProgressIndicator(),
             ],

@@ -66,11 +66,11 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithChildren().
 		Order(ent.Desc(task.FieldCreatedAt))
 
-	// Engineers and asutp_chiefs only see tasks they created or are approved assignees on
+	// Engineers, asutp_chiefs and operators only see tasks they created or are approved assignees on
 	userID := c.GetInt("user_id")
 	if roleVal, ok := c.Get("role"); ok {
 		if roleName, ok := roleVal.(string); ok {
-			if roleName == "engineer" || roleName == "asutp_chief" {
+			if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
 				query = query.Where(task.Or(
 					task.CreatedByEQ(userID),
 					task.HasTaskAssigneesWith(
@@ -271,8 +271,42 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	}
 	canDirectAssign := proposer.Edges.Role != nil && (proposer.Edges.Role.Name == "chief_engineer" || proposer.Edges.Role.Name == "asutp_chief" || proposer.Edges.Role.Name == "admin")
 
-	// Create assignees
+	// Validate and create assignees
 	for _, assigneeID := range req.Assignees {
+		assigneeUser, err := tx.User.Query().Where(user.IDEQ(assigneeID)).WithRole().Only(c)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Исполнитель с ID %d не найден", assigneeID)})
+			return
+		}
+		if assigneeUser.Edges.Role == nil {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Не удалось определить роль исполнителя %d", assigneeID)})
+			return
+		}
+		assigneeRole := assigneeUser.Edges.Role.Name
+		var allowedRoles []string
+		switch proposer.Edges.Role.Name {
+		case "chief_engineer":
+			allowedRoles = []string{"asutp_chief"}
+		case "asutp_chief":
+			allowedRoles = []string{"engineer"}
+		default:
+			allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer"}
+		}
+		roleAllowed := false
+		for _, r := range allowedRoles {
+			if r == assigneeRole {
+				roleAllowed = true
+				break
+			}
+		}
+		if !roleAllowed {
+			tx.Rollback()
+			c.JSON(http.StatusForbidden, gin.H{"error": fmt.Sprintf("Нельзя назначить пользователя с ролью '%s' на задачу", assigneeRole)})
+			return
+		}
+
 		builder := tx.TaskAssignee.Create().
 			SetTaskID(t.ID).
 			SetUserID(assigneeID).
@@ -283,7 +317,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 				SetApproverID(userID).
 				SetApprovedAt(time.Now())
 		}
-		_, err := builder.Save(c)
+		_, err = builder.Save(c)
 		if err != nil {
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка назначения исполнителей"})
@@ -306,7 +340,7 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	// Create history entry
 	taskCreatedType, _ := getChangeTypeID(tx.Client(), c, "task_created")
 	if taskCreatedType > 0 {
-		h.client.TaskHistory.Create().
+		tx.TaskHistory.Create().
 			SetTaskID(t.ID).
 			SetChangedBy(userID).
 			SetChangeTypeID(taskCreatedType).
@@ -399,7 +433,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.Title != nil && *req.Title != existing.Title {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "title_changed")
 		if changeID > 0 {
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("title").SetOldValue(existing.Title).SetNewValue(*req.Title).
 				SetDisplayText(fmt.Sprintf("Название: %s → %s", existing.Title, *req.Title)).
@@ -415,7 +449,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			if existing.Description != nil {
 				oldDesc = *existing.Description
 			}
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("description").SetOldValue(oldDesc).SetNewValue(*req.Description).
 				SetDisplayText("Описание изменено").
@@ -429,7 +463,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		if err == nil {
 			changeID, _ := getChangeTypeID(tx.Client(), c, "due_date_changed")
 			if changeID > 0 {
-				h.client.TaskHistory.Create().
+				tx.TaskHistory.Create().
 					SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 					SetFieldName("due_date").
 					SetOldValue(existing.DueDate.Format("2006-01-02")).
@@ -444,7 +478,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.PriorityID != nil && *req.PriorityID != existing.PriorityID {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "priority_changed")
 		if changeID > 0 {
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("priority_id").
 				SetOldValue(strconv.Itoa(existing.PriorityID)).
@@ -458,7 +492,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.StatusID != nil && *req.StatusID != existing.StatusID {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "status_changed")
 		if changeID > 0 {
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("status_id").
 				SetOldValue(strconv.Itoa(existing.StatusID)).
@@ -472,7 +506,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.Progress != nil && *req.Progress != existing.Progress {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "progress_changed")
 		if changeID > 0 {
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("progress").
 				SetOldValue(fmt.Sprintf("%d%%", existing.Progress)).
@@ -484,7 +518,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 
 		// Auto-complete at 100%
 		if *req.Progress == 100 {
-			completedStatus, err := h.client.TaskStatus.Query().
+			completedStatus, err := tx.TaskStatus.Query().
 				Where(taskstatus.CodeEQ("completed")).Only(c)
 			if err == nil {
 				builder = builder.SetStatusID(completedStatus.ID)
@@ -499,7 +533,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	if req.AssignedTo != nil {
 		changeID, _ := getChangeTypeID(tx.Client(), c, "assignee_changed")
 		if changeID > 0 {
-			h.client.TaskHistory.Create().
+			tx.TaskHistory.Create().
 				SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 				SetFieldName("assigned_to").
 				SetDisplayText("Исполнитель изменён").
@@ -558,6 +592,43 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		}
 		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "chief_engineer" || updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
+		// Validate assignee roles before any mutations
+		for _, assigneeID := range req.Assignees {
+			assigneeUser, err := tx.User.Query().Where(user.IDEQ(assigneeID)).WithRole().Only(c)
+			if err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Исполнитель с ID %d не найден", assigneeID)})
+				return
+			}
+			if assigneeUser.Edges.Role == nil {
+				tx.Rollback()
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Не удалось определить роль исполнителя %d", assigneeID)})
+				return
+			}
+			assigneeRole := assigneeUser.Edges.Role.Name
+			var allowedRoles []string
+			switch updater.Edges.Role.Name {
+			case "chief_engineer":
+				allowedRoles = []string{"asutp_chief"}
+			case "asutp_chief":
+				allowedRoles = []string{"engineer"}
+			default:
+				allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer"}
+			}
+			roleAllowed := false
+			for _, r := range allowedRoles {
+				if r == assigneeRole {
+					roleAllowed = true
+					break
+				}
+			}
+			if !roleAllowed {
+				tx.Rollback()
+				c.JSON(http.StatusForbidden, gin.H{"error": fmt.Sprintf("Нельзя назначить пользователя с ролью '%s' на задачу", assigneeRole)})
+				return
+			}
+		}
+
 		// Load existing assignees for this task
 		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
 		if err != nil {
@@ -567,26 +638,18 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			return
 		}
 
-		// Track which users already have approved/rejected entries (preserve decisions)
-		existingDecisions := make(map[int]string) // userID -> status
+		// Delete ALL existing assignees to allow full replacement (approved included)
 		for _, ta := range taskWithAssignees.Edges.TaskAssignees {
-			existingDecisions[ta.UserID] = ta.Status
-			// Only delete pending proposals; approved/rejected stay intact
-			if ta.Status == "pending" {
-				if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
-					fmt.Printf("ERROR: deleting pending assignee %d: %v\n", ta.ID, err)
-					tx.Rollback()
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
-					return
-				}
+			if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
+				fmt.Printf("ERROR: deleting assignee %d: %v\n", ta.ID, err)
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+				return
 			}
 		}
 
+		// Create new assignees from scratch
 		for _, assigneeID := range req.Assignees {
-			// Skip if user already has an approved/rejected decision
-			if status, ok := existingDecisions[assigneeID]; ok && status != "pending" {
-				continue
-			}
 			b := tx.TaskAssignee.Create().
 				SetTaskID(id).
 				SetUserID(assigneeID).
@@ -1183,6 +1246,22 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		return
 	}
 
+	// Check all children are completed before confirming parent
+	children, err := h.client.Task.Query().
+		Where(task.ParentIDEQ(id)).
+		WithStatus().
+		All(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка проверки подзадач"})
+		return
+	}
+	for _, child := range children {
+		if child.Edges.Status == nil || child.Edges.Status.Code != "completed" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Сначала отметьте выполненными все подзадачи"})
+			return
+		}
+	}
+
 	// Calculate KPI score based on due date
 	var score float64
 	if time.Now().Before(t.DueDate) || time.Now().Equal(t.DueDate) {
@@ -1301,25 +1380,37 @@ func (h *TaskHandler) CompleteTask(c *gin.Context) {
 		return
 	}
 
-	_, err = h.client.Task.UpdateOneID(id).
+	tx, err := h.client.Tx(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка транзакции"})
+		return
+	}
+
+	_, err = tx.Task.UpdateOneID(id).
 		SetStatusID(completedStatus.ID).
 		SetProgress(100).
 		Save(c)
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления статуса"})
 		return
 	}
 
 	// Log history
-	changeID, _ := getChangeTypeID(h.client, c, "status_changed")
+	changeID, _ := getChangeTypeID(tx.Client(), c, "status_changed")
 	if changeID > 0 {
-		h.client.TaskHistory.Create().
+		tx.TaskHistory.Create().
 			SetTaskID(id).SetChangedBy(userID).SetChangeTypeID(changeID).
 			SetFieldName("status_id").
 			SetOldValue(strconv.Itoa(t.StatusID)).
 			SetNewValue(strconv.Itoa(completedStatus.ID)).
 			SetDisplayText("Статус изменён на 'Выполнена'").
 			Save(c)
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сохранения"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Задача отмечена выполненной"})
