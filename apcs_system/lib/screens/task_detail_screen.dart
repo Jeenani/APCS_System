@@ -72,10 +72,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           if (_task != null)
             Builder(builder: (context) {
               final user = context.watch<AuthProvider>().user;
+              final isApprovedAssignee = _task!.assignees.any(
+                (a) => a.user?.id == user.id && a.status == 'approved',
+              );
               final canEdit = user != null && (
                 user.role == 'admin' ||
                 user.role == 'chief_engineer' ||
-                (user.role == 'asutp_chief' && _task!.creator?.id == user.id)
+                (user.role == 'asutp_chief' && _task!.creator?.id == user.id) ||
+                (user.role == 'operator' && isApprovedAssignee)
               );
               if (!canEdit) return const SizedBox.shrink();
               return IconButton(

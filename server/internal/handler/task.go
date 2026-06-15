@@ -460,6 +460,13 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			canEdit = true
 		case "asutp_chief":
 			canEdit = existing.CreatedBy == userID
+		case "operator":
+			for _, ta := range existing.Edges.TaskAssignees {
+				if ta.UserID == userID && ta.Status == "approved" {
+					canEdit = true
+					break
+				}
+			}
 		}
 	}
 	if !canEdit {

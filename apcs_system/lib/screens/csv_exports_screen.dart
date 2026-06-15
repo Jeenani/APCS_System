@@ -60,7 +60,12 @@ class _CsvExportsScreenState extends State<CsvExportsScreen> {
         final dir = await _getExportsDir();
         final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
         final file = File('${dir.path}/tasks_export_$timestamp.csv');
-        await file.writeAsBytes(response.bodyBytes);
+        var bytes = response.bodyBytes;
+        // Убираем UTF-8 BOM — мобильные приложения не распознают его
+        if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+          bytes = bytes.sublist(3);
+        }
+        await file.writeAsBytes(bytes);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('CSV экспорт создан')),
@@ -92,7 +97,7 @@ class _CsvExportsScreenState extends State<CsvExportsScreen> {
   }
 
   Future<void> _openFile(File file) async {
-    final result = await OpenFilex.open(file.path);
+    final result = await OpenFilex.open(file.path, type: 'text/csv');
     if (result.type != ResultType.done && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Не удалось открыть файл: ${result.message}')),
@@ -102,7 +107,7 @@ class _CsvExportsScreenState extends State<CsvExportsScreen> {
 
   Future<void> _shareFile(File file) async {
     await Share.shareXFiles(
-      [XFile(file.path)],
+      [XFile(file.path, mimeType: 'text/csv')],
       subject: 'Экспорт задач CSV',
     );
   }
