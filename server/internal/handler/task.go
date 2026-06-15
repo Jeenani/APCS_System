@@ -1000,6 +1000,15 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// Role-based deletion check
+	userID := c.GetInt("user_id")
+	roleVal, _ := c.Get("role")
+	roleName, _ := roleVal.(string)
+	if roleName == "asutp_chief" && t.CreatedBy != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Недостаточно прав для удаления этой задачи"})
+		return
+	}
+
 	// Block deletion of archived tasks
 	status, _ := h.client.TaskStatus.Query().Where(taskstatus.IDEQ(t.StatusID)).Only(c)
 	if status != nil && status.Code == "archived" {
