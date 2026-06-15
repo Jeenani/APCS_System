@@ -67,8 +67,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithChildren().
 		Order(ent.Desc(task.FieldCreatedAt))
 
-	// Engineers and asutp_chiefs only see tasks they created or are approved assignees on
-	// Operators see all tasks (read-only)
+	// Engineers, asutp_chiefs and operators only see tasks they created or are approved assignees on
 	userID := c.GetInt("user_id")
 	roleName := ""
 	if roleVal, ok := c.Get("role"); ok {
@@ -76,7 +75,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 			roleName = r
 		}
 	}
-	if roleName == "engineer" || roleName == "asutp_chief" {
+	if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
 		query = query.Where(task.Or(
 			task.CreatedByEQ(userID),
 			task.HasTaskAssigneesWith(
@@ -98,7 +97,7 @@ func (h *TaskHandler) List(c *gin.Context) {
 			query = query.Where(task.ParentIDEQ(pid))
 		}
 	} else if !restrictiveView && c.Query("include_subtasks") != "true" {
-		// Operators can see all tasks including subtasks; chiefs see top-level only by default
+		// Chiefs see top-level only by default; subtasks are viewed inside the parent task.
 		if roleName != "operator" {
 			query = query.Where(task.ParentIDIsNil())
 		}

@@ -272,58 +272,113 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 ),
               const SizedBox(height: 16),
 
-              // Assignees
-              const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              if (_loadingAssignees)
-                const SizedBox(
-                  height: 40,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                )
-              else if (_availableAssignees.isEmpty)
-                Text('Нет доступных исполнителей', style: TextStyle(fontSize: 13, color: Colors.grey[600]))
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _availableAssignees.map((u) {
-                    final id = u['id'] as int;
-                    final isSelected = _selectedAssignees.contains(id);
-                    return GestureDetector(
-                      onTap: () => setState(() {
-                        if (isSelected) {
-                          _selectedAssignees.remove(id);
-                        } else {
-                          _selectedAssignees.add(id);
-                        }
-                      }),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+              // Operators and Executors
+              final availableOperators = _availableAssignees.where((u) => u['role_name'] == 'operator').toList();
+              final availableExecutors = _availableAssignees.where((u) => u['role_name'] != 'operator').toList();
+
+              if (availableOperators.isNotEmpty) ...[
+                const Text('Операторы', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                if (_loadingAssignees)
+                  const SizedBox(
+                    height: 40,
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: availableOperators.map((u) {
+                      final id = u['id'] as int;
+                      final isSelected = _selectedAssignees.contains(id);
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          if (isSelected) {
+                            _selectedAssignees.remove(id);
+                          } else {
+                            _selectedAssignees.add(id);
+                          }
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isSelected ? Icons.check_circle : Icons.person_outline,
+                                size: 16,
+                                color: isSelected ? Colors.white : AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                u['full_name'] as String,
+                                style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isSelected ? Icons.check_circle : Icons.person_outline,
-                              size: 16,
-                              color: isSelected ? Colors.white : AppColors.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              u['full_name'] as String,
-                              style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary),
-                            ),
-                          ],
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 16),
+              ],
+
+              if (availableExecutors.isNotEmpty) ...[
+                const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                if (_loadingAssignees)
+                  const SizedBox(
+                    height: 40,
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: availableExecutors.map((u) {
+                      final id = u['id'] as int;
+                      final isSelected = _selectedAssignees.contains(id);
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          if (isSelected) {
+                            _selectedAssignees.remove(id);
+                          } else {
+                            _selectedAssignees.add(id);
+                          }
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isSelected ? AppColors.primary : Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isSelected ? Icons.check_circle : Icons.person_outline,
+                                size: 16,
+                                color: isSelected ? Colors.white : AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                u['full_name'] as String,
+                                style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : AppColors.textPrimary),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              const SizedBox(height: 32),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 32),
+              ],
 
               // Save button
               SizedBox(
