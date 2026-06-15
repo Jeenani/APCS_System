@@ -72,7 +72,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           if (_task != null)
             Builder(builder: (context) {
               final user = context.watch<AuthProvider>().user;
-              final isApprovedAssignee = _task!.assignees.any(
+              final isApprovedAssignee = user != null && _task!.assignees.any(
                 (a) => a.user?.id == user.id && a.status == 'approved',
               );
               final canEdit = user != null && (

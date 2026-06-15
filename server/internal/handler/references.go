@@ -109,7 +109,7 @@ func (h *ReferenceHandler) GetAssignees(c *gin.Context) {
 	case "chief_engineer", "admin":
 		allowedRoles = []string{"asutp_chief"}
 	case "asutp_chief":
-		allowedRoles = []string{"engineer"}
+		allowedRoles = []string{"engineer", "operator"}
 	default:
 		allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer"}
 	}
