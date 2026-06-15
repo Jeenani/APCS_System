@@ -4,6 +4,7 @@ import '../core/constants.dart';
 import '../core/api_client.dart';
 import '../models/task_model.dart';
 import '../models/kpi_model.dart';
+import '../models/notification_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 
@@ -528,32 +529,194 @@ class _TasksTabState extends State<_TasksTab> {
 }
 
 // ===================== NOTIFICATIONS TAB =====================
-class _NotificationsTab extends StatelessWidget {
+class _NotificationsTab extends StatefulWidget {
   const _NotificationsTab();
+
+  @override
+  State<_NotificationsTab> createState() => _NotificationsTabState();
+}
+
+class _NotificationsTabState extends State<_NotificationsTab> {
+  List<NotificationModel> _notifications = [];
+  bool _loading = false;
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() => _loading = true);
+    try {
+      final response = await ApiClient.get('/notifications') as Map<String, dynamic>;
+      final list = (response['notifications'] as List<dynamic>? ?? [])
+          .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      if (mounted) {
+        setState(() {
+          _notifications = list;
+          _unreadCount = response['unread_count'] ?? 0;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _markRead(int id) async {
+    try {
+      await ApiClient.put('/notifications/$id/read', {});
+      if (mounted) {
+        setState(() {
+          final index = _notifications.indexWhere((n) => n.id == id);
+          if (index != -1) {
+            _notifications[index] = _notifications[index].copyWith(isRead: true);
+            if (_unreadCount > 0) _unreadCount--;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markAllRead() async {
+    try {
+      await ApiClient.put('/notifications/read-all', {});
+      if (mounted) {
+        setState(() {
+          _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+          _unreadCount = 0;
+        });
+      }
+    } catch (_) {}
+  }
+
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inMinutes < 1) return 'Только что';
+      if (diff.inHours < 1) return '${diff.inMinutes} мин. назад';
+      if (diff.inDays < 1) return '${diff.inHours} ч. назад';
+      if (diff.inDays == 1) return 'Вчера';
+      return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+    } catch (_) {
+      return raw;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Уведомления', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.notifications_none, size: 80, color: Colors.grey[300]),
-                    const SizedBox(height: 16),
-                    Text('Нет новых уведомлений', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
-                  ],
-                ),
+      child: RefreshIndicator(
+        onRefresh: _loadNotifications,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Уведомления', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  if (_unreadCount > 0)
+                    TextButton(
+                      onPressed: _markAllRead,
+                      child: const Text('Прочитать все'),
+                    ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              if (_loading && _notifications.isEmpty)
+                const Expanded(child: Center(child: CircularProgressIndicator()))
+              else if (_notifications.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.notifications_none, size: 80, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text('Нет уведомлений', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: _notifications.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final n = _notifications[index];
+                      return Dismissible(
+                        key: ValueKey(n.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          color: Colors.green,
+                          child: const Icon(Icons.check, color: Colors.white),
+                        ),
+                        onDismissed: (_) => _markRead(n.id),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: n.isRead ? Colors.grey[200] : AppColors.primary.withOpacity(0.1),
+                            child: Icon(
+                              n.isRead ? Icons.notifications_none : Icons.notifications,
+                              color: n.isRead ? Colors.grey : AppColors.primary,
+                            ),
+                          ),
+                          title: Text(
+                            n.title,
+                            style: TextStyle(
+                              fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (n.body != null && n.body!.isNotEmpty)
+                                Text(
+                                  n.body!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDate(n.createdAt),
+                                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                              ),
+                            ],
+                          ),
+                          trailing: n.isRead
+                              ? null
+                              : Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                          onTap: () {
+                            if (!n.isRead) _markRead(n.id);
+                            if (n.task != null) {
+                              Navigator.pushNamed(context, '/task-detail', arguments: n.task!.id);
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

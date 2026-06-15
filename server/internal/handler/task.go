@@ -1090,13 +1090,12 @@ func (h *TaskHandler) ExportCSV(c *gin.Context) {
 	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", "attachment; filename=tasks_export.csv")
 
-	// BOM for Excel
-	c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
-
 	w := csv.NewWriter(c.Writer)
-	w.Comma = ';'
 
-	w.Write([]string{"ID", "Название", "Описание", "Срок", "Приоритет", "Статус", "Категория", "Прогресс", "Автор", "Исполнитель", "Создана"})
+	if err := w.Write([]string{"ID", "Название", "Описание", "Срок", "Приоритет", "Статус", "Категория", "Прогресс", "Автор", "Исполнитель", "Создана"}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка формирования CSV"})
+		return
+	}
 
 	for _, t := range tasks {
 		desc := ""
@@ -1124,7 +1123,7 @@ func (h *TaskHandler) ExportCSV(c *gin.Context) {
 			assignee = t.Edges.Assignee.FullName
 		}
 
-		w.Write([]string{
+		if err := w.Write([]string{
 			strconv.Itoa(t.ID),
 			t.Title,
 			desc,
@@ -1136,10 +1135,17 @@ func (h *TaskHandler) ExportCSV(c *gin.Context) {
 			creator,
 			assignee,
 			t.CreatedAt.Format("02.01.2006 15:04"),
-		})
+		}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка записи CSV"})
+			return
+		}
 	}
 
 	w.Flush()
+	if err := w.Error(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка записи CSV"})
+		return
+	}
 }
 
 func taskToJSON(t *ent.Task) gin.H {
