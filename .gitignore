@@ -165,6 +165,9 @@ database/*.db-journal
 Images/temp/
 Images/cache/
 
+# Отчеты и документы
+Otchet/
+
 # Файлы окружения и конфигурации с секретами
 *.env.local
 *.key
