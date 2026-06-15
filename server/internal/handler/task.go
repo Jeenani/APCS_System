@@ -660,8 +660,26 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		}
 		canDirectAssign := updater.Edges.Role != nil && (updater.Edges.Role.Name == "chief_engineer" || updater.Edges.Role.Name == "asutp_chief" || updater.Edges.Role.Name == "admin")
 
-		// Validate assignee roles before any mutations
+		// Load existing assignees for this task
+		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
+		if err != nil {
+			fmt.Printf("ERROR: loading task with assignees: %v\n", err)
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки задачи"})
+			return
+		}
+
+		// Build set of existing assignee IDs
+		existingAssigneeIDs := make(map[int]bool)
+		for _, ta := range taskWithAssignees.Edges.TaskAssignees {
+			existingAssigneeIDs[ta.UserID] = true
+		}
+
+		// Validate assignee roles only for NEW assignees
 		for _, assigneeID := range req.Assignees {
+			if existingAssigneeIDs[assigneeID] {
+				continue // already assigned, skip validation
+			}
 			assigneeUser, err := tx.User.Query().Where(user.IDEQ(assigneeID)).WithRole().Only(c)
 			if err != nil {
 				tx.Rollback()
@@ -699,27 +717,29 @@ func (h *TaskHandler) Update(c *gin.Context) {
 			}
 		}
 
-		// Load existing assignees for this task
-		taskWithAssignees, err := tx.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
-		if err != nil {
-			fmt.Printf("ERROR: loading task with assignees: %v\n", err)
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки задачи"})
-			return
+		// Determine which assignees to add/remove
+		newAssigneeIDs := make(map[int]bool)
+		for _, assigneeID := range req.Assignees {
+			newAssigneeIDs[assigneeID] = true
 		}
 
-		// Delete ALL existing assignees to allow full replacement (approved included)
+		// Remove assignees that are no longer selected
 		for _, ta := range taskWithAssignees.Edges.TaskAssignees {
-			if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
-				fmt.Printf("ERROR: deleting assignee %d: %v\n", ta.ID, err)
-				tx.Rollback()
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
-				return
+			if !newAssigneeIDs[ta.UserID] {
+				if err := tx.TaskAssignee.DeleteOneID(ta.ID).Exec(c); err != nil {
+					fmt.Printf("ERROR: deleting assignee %d: %v\n", ta.ID, err)
+					tx.Rollback()
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления старых назначений"})
+					return
+				}
 			}
 		}
 
-		// Create new assignees from scratch
+		// Create new assignees only for those not already existing
 		for _, assigneeID := range req.Assignees {
+			if existingAssigneeIDs[assigneeID] {
+				continue // already exists, skip
+			}
 			b := tx.TaskAssignee.Create().
 				SetTaskID(id).
 				SetUserID(assigneeID).
