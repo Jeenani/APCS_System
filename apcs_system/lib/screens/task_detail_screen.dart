@@ -172,30 +172,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 },
               );
             }),
-          if (_task != null && (context.watch<AuthProvider>().user?.canApproveAssignees ?? false))
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.error),
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Удалить задачу?'),
-                    content: const Text('Это действие нельзя отменить'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Удалить', style: TextStyle(color: AppColors.error)),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true && mounted) {
-                  await context.read<TaskProvider>().deleteTask(_task!.id);
-                  if (mounted) Navigator.pop(context);
-                }
-              },
-            ),
+          if (_task != null)
+            Builder(builder: (context) {
+              final user = context.watch<AuthProvider>().user;
+              if (user == null) return const SizedBox.shrink();
+              final canDelete = user.canApproveAssignees &&
+                  (user.role != 'asutp_chief' || _task!.creator?.id == user.id);
+              if (!canDelete) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Удалить задачу?'),
+                      content: const Text('Это действие нельзя отменить'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Удалить', style: TextStyle(color: AppColors.error)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    await context.read<TaskProvider>().deleteTask(_task!.id);
+                    if (mounted) Navigator.pop(context);
+                  }
+                },
+              );
+            }),
         ],
       ),
       body: _loading

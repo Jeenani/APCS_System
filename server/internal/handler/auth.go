@@ -21,7 +21,6 @@ import (
 	"asutp-server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/resend/resend-go/v3"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -406,20 +405,7 @@ func (h *AuthHandler) sendEmail(to, subject, body string) error {
 		return smtp.SendMail(addr, auth, from, []string{to}, msg)
 	}
 
-	// Fallback to Resend
-	apiKey := h.cfg.ResendAPIKey
-	if apiKey == "" {
-		return fmt.Errorf("RESEND_API_KEY=your_resend_api_key_here не настроен")
-	}
-	client := resend.NewClient(apiKey)
-	params := &resend.SendEmailRequest{
-		From:    from,
-		To:      []string{to},
-		Subject: subject,
-		Text:    body,
-	}
-	_, err := client.Emails.Send(params)
-	return err
+	return fmt.Errorf("SMTP не настроен")
 }
 
 // ForgotPassword — user requests password reset, admin gets notified

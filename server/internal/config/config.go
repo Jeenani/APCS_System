@@ -13,9 +13,8 @@ type Config struct {
 	DB           DBConfig
 	Server       ServerConfig
 	JWT          JWTConfig
-	ResendAPIKey string
-	EmailFrom    string
-	SMTP         SMTPConfig
+	EmailFrom string
+	SMTP      SMTPConfig
 }
 
 type SMTPConfig struct {
@@ -81,8 +80,7 @@ func Load() (*Config, error) {
 			AccessTTL:  accessTTL,
 			RefreshTTL: refreshTTL,
 		},
-		ResendAPIKey: getEnv("RESEND_API_KEY=your_resend_api_key_here", ""),
-		EmailFrom:    getEnv("EMAIL_FROM", "noreply@missednoteserv.chickenkiller.com"),
+		EmailFrom: getEnv("EMAIL_FROM", ""),
 		SMTP: SMTPConfig{
 			Host: getEnv("SMTP_HOST", ""),
 			Port: getEnv("SMTP_PORT", "587"),

@@ -103,9 +103,10 @@ server/vendor/
 server/go.sum.bak
 
 # Переменные окружения (НИКОГДА не коммитить с реальными значениями!)
-#server/.env
-#server/.env.local
-#server/.env.production
+server/.env
+.env
+server/.env.local
+server/.env.production
 
 # Тестовые файлы и покрытие
 server/*.test
@@ -165,7 +166,6 @@ Images/temp/
 Images/cache/
 
 # Файлы окружения и конфигурации с секретами
-#.env
 *.env.local
 *.key
 *.pem
