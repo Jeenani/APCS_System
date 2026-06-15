@@ -1,245 +1,80 @@
-# 📊 АСУТП Tasks — Система управления задачами
+# АСУТП Tasks
 
-**Go REST API + Flutter приложение + PostgreSQL + Docker**
+Система управления задачами для службы АСУТП. Backend на Go (Gin + Ent ORM), мобильное приложение на Flutter, PostgreSQL в Docker.
 
----
+## Быстрый старт
 
-## ⚡ Быстрый старт
-
-### 🖥️ **Сервер (Windows/Mac/Ubuntu)**
-
+Сервер:
 ```bash
-# Локально
 cd server && go run ./cmd/server/
-
-# Или Docker
+# или
 docker-compose up -d
 ```
+API: `http://localhost:8080/api/v1`
 
-**API:** `http://localhost:8080/api/v1`  
-**Тестовые данные:** `ivan.petrov` / `__seed_pass__`
-
----
-## 🏗️ Запуск сервера
-
-### Вариант 1: Docker (рекомендуется)
+Flutter:
 ```bash
-docker-compose up -d
-# API: http://localhost:8080/api/v1
+cd apcs_system
+flutter run
 ```
 
-### Вариант 2: Локально
-```bash
-cd server
-go run ./cmd/server/
-# API: http://localhost:8080/api/v1
+Перед запуском отредактируйте `apcs_system/lib/config/environment.dart` — укажите IP сервера.
+
+## Требования
+
+- Go 1.23+
+- PostgreSQL 16 (или Docker)
+- Flutter 3.11+
+
+## Структура
+
+```
+server/          # Go REST API
+apcs_system/     # Flutter приложение
+database/        # PostgreSQL схема
+docker-compose.yml
+deploy.sh        # Деплой на сервер
 ```
 
-### Вариант 3: Ubuntu
-```bash
-cd ~
-sudo chmod +x *.sh
-./setup_ubuntu.sh     # установка
-./start_docker.sh up  # запуск
-# или: ./start_server.sh
-```
+## Роли
 
+- `admin` — полный доступ
+- `chief_engineer` — создает задачи, контролирует
+- `asutp_chief` — создает подзадачи, управляет выполнением
+- `engineer` — выполняет задачи
+- `operator` — предлагает исполнителей в подзадачи
 
-## 📍 Три сценария использования
-
-### **Сценарий 1: Локальное тестирование (БЕЗ Caddy)**
+## Деплой
 
 ```bash
-# Просто запустите текущий docker-compose
-docker-compose up -d
+cp server/.env.example server/.env
+# Заполните .env (SMTP, JWT_SECRET=<JWT_SECRET>, DB_PASSWORD)
 
-# API доступен на: http://localhost:8080/api/v1
-```
-
-**Когда использовать:**
-- Локальная разработка на Windows/Mac
-- Мобильное приложение на эмуляторе/симуляторе
-
----
-
-### **Сценарий 2: Ubuntu + Caddy (с HTTPS)**
-
-**Требования:**
-- Доменное имя (например `api.example.com`)
-- VPS/сервер с открытыми портами 80 и 443
-- DNS A запись, указывающая на IP сервера
-
-**Шаг 1: Обновить Caddyfile**
-
-Отредактируйте `Caddyfile`:
-
-```caddy
-# Замените example.com на ваш домен
-example.com, www.example.com {
-  reverse_proxy localhost:8080 {
-    header_up Host {http.request.host}
-    header_up X-Forwarded-For {http.request.remote.host}
-  }
-  encode gzip
-}
-```
-
-**Шаг 2: Запустить Docker Compose с Caddy**
-
-```bash
-# Включить Caddy в docker-compose
-docker-compose -f docker-compose.prod.yml up -d
-
-# Проверить статус
-docker-compose logs -f caddy
-
-# Проверить доступность
-curl https://api.example.com/api/v1/references/categories
-
-docker compose -f docker-compose.prod.yml build --no-cache server
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml up -d --no-cache
-docker compose -f docker-compose.prod.yml up -d server
-```
-
-```bash
-# ====== РЕКОМЕНДУЕМЫЙ способ (сохраняет БД и сертификаты) ======
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-```bash
-# ⚠️ ОПАСНО: полный сброс с удалением ВСЕХ данных (БД + сертификаты)
-# Используй ТОЛЬКО если нужно начать с чистой базы!
-# После этого Caddy будет запрашивать новый сертификат и может
-# упереться в Let's Encrypt rate limit (5 шт за 7 дней)
-git pull
-docker compose -f docker-compose.prod.yml down -v
-docker compose -f docker-compose.prod.yml build --no-cache server
-docker compose -f docker-compose.prod.yml up -d
-docker ps
+Для HTTPS отредактируйте `Caddyfile` (см. `docker-compose.prod.yml`).
 
-git pull
-docker compose -f docker-compose.prod.yml down
-docker volume rm $(docker volume ls -q | grep pgdata)
-docker compose -f docker-compose.prod.yml up -d --build
+## Что реализовано
 
-```
+Backend:
+- JWT авторизация
+- CRUD задач с подзадачами
+- Ролевая модель
+- Назначение исполнителей (с одобрением)
+- KPI и архивация
+- Email-уведомления (SMTP)
 
-```bash
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Ручной перезапуск с пересборкой (сохраняет volumes)
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d --build
-# Или быстрый restart без пересборки
-docker compose -f docker-compose.prod.yml restart
-```
-Проверка логов и статуса:
-
-```bash
-# Логи всех сервисов
-docker compose -f docker-compose.prod.yml logs -f
- 
-# Только сервер
-docker compose -f docker-compose.prod.yml logs -f server
- 
-# Статус контейнеров
-docker compose -f docker-compose.prod.yml ps
-```
-
-
-### 📱 **Flutter приложение**
-
-```bash
-cd apcs_system
-
-# Конфигурация сервера
-# Отредактируйте: lib/config/environment.dart
-# Примеры:
-#   - Android эмулятор: http://10.0.2.2:8080/api/v1
-#   - Real device: http://192.168.1.100:8080/api/v1
-#   - Production: https://api.example.com/api/v1
-
-# Запустить на эмуляторе/устройстве
-flutter run
-
-# Собрать Release APK (с подписью)
-..\build_release_apk.bat
-flutter clean 
-flutter pub get 
-flutter build apk --release --split-per-abi
-flutter emulators --launch Medium_Phone_API_36.1
-flutter run
-```
-
-**Выходной файл:** `asutp-tasks-release.apk`
-
----
-
-## 📚 Документация
-
-| Документ | Для чего |
-|----------|---------|
-| [README_COMPLETE.md](README_COMPLETE.md) | Полная документация (архитектура, API, Troubleshooting) |
-| [UBUNTU_SETUP_QUICK.md](UBUNTU_SETUP_QUICK.md) | Установка на Ubuntu (локально или Docker) |
-| [FLUTTER_ENV_CONFIG.md](FLUTTER_ENV_CONFIG.md) | Конфигурация Flutter (.env параметры) |
-
----
-
-## 📂 Структура
-
-```
-ASUTP_Praktik/
-├── server/              # Go REST API (Gin + Ent ORM)
-├── apcs_system/         # Flutter приложение
-├── database/            # PostgreSQL схема
-├── docker-compose.yml   # Docker контейнеры
-├── build_release_apk.bat # Сборка APK релиза
-└── *.md                 # Документация
-```
-
----
-
-## 🛠️ Требования
-
-- **Go** 1.23+ — [golang.org/dl](https://golang.org/dl)
-- **PostgreSQL** 16 — [postgresql.org](https://www.postgresql.org/download)
-- **Flutter** 3.11+ — [flutter.dev](https://flutter.dev)
-- **Docker** (опционально) — [docker.com](https://www.docker.com)
-
----
-
-## 🚀 Что реализовано
-
-✅ **Backend:**
-- REST API с JWT авторизацией
-- 16 таблиц (Ent ORM)
-- Автомиграция + seed-данные
-- CORS для мобильных клиентов
-
-✅ **Frontend:**
-- Вход/Регистрация
-- Управление задачами
-- История изменений
+Flutter:
+- Авторизация
+- Список задач с фильтрами
+- Детали, редактирование, подзадачи
 - Уведомления
-- Поиск и фильтрация
+- Экспорт CSV
 
-✅ **DevOps:**
-- Docker & Docker Compose
-- Автомиграция БД
-- Health checks
-- Persistent volumes
+## Настройка
 
----
-
-## 📝 Следующие шаги
-
-1. **Конфигурация:** Отредактируйте `apcs_system/lib/config/environment.dart`
-2. **Сервер:** `docker-compose up -d` или `cd server && go run ./cmd/server/`
-3. **Приложение:** `cd apcs_system && flutter run`
-4. **Release APK:** `build_release_apk.bat`
-5. **Подробнее:** Смотрите [README_COMPLETE.md](README_COMPLETE.md)
-
-**
+1. Заполните `server/.env` (шаблон в `.env.example`)
+2. Укажите API URL в `apcs_system/lib/config/environment.dart`
+3. Для релиза APK: `build_release_apk.bat`
