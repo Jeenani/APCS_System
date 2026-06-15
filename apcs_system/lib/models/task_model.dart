@@ -157,14 +157,16 @@ class CreatorModel {
   final int id;
   final String fullName;
   final String initials;
+  final String? role;
 
-  CreatorModel({required this.id, required this.fullName, required this.initials});
+  CreatorModel({required this.id, required this.fullName, required this.initials, this.role});
 
   factory CreatorModel.fromJson(Map<String, dynamic> json) {
     return CreatorModel(
       id: json['id'] ?? 0,
       fullName: json['full_name'] ?? '',
       initials: json['initials'] ?? '',
+      role: json['role'],
     );
   }
 }

@@ -59,8 +59,90 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  Widget _buildAssigneeBlock(String title, List<TaskAssigneeModel> assignees) {
+    if (assignees.isEmpty) return const SizedBox.shrink();
+    final canApprove = context.read<AuthProvider>().user?.canApproveAssignees ?? false;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        ...assignees.map((ta) {
+          final isPending = ta.status == 'pending';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: isPending
+                      ? Colors.orange
+                      : ta.status == 'approved'
+                          ? Colors.green
+                          : Colors.red,
+                  child: Text(
+                    ta.user?.initials ?? '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ta.user?.fullName ?? 'Неизвестно',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      Text(
+                        ta.statusLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isPending
+                              ? Colors.orange[700]
+                              : ta.status == 'approved'
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                        ),
+                      ),
+                      if (ta.proposedBy != null)
+                        Text(
+                          'Предложил: ${ta.proposedBy!.fullName}',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                    ],
+                  ),
+                ),
+                if (canApprove && isPending) ...[
+                  IconButton(
+                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                    tooltip: 'Одобрить',
+                    onPressed: () async {
+                      final ok = await context.read<TaskProvider>().approveAssignee(_task!.id, ta.id);
+                      if (ok && mounted) _loadTask();
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.red),
+                    tooltip: 'Отклонить',
+                    onPressed: () async {
+                      final ok = await context.read<TaskProvider>().rejectAssignee(_task!.id, ta.id);
+                      if (ok && mounted) _loadTask();
+                    },
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final operatorAssignees = _task?.assignees.where((a) => a.user?.role == 'operator').toList() ?? [];
+    final executorAssignees = _task?.assignees.where((a) => a.user?.role != 'operator').toList() ?? [];
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -263,94 +345,43 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       const SizedBox(height: 12),
 
-                      // Assignees
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                      // Assignees split by role
+                      if (operatorAssignees.isNotEmpty || executorAssignees.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildAssigneeBlock('Операторы', operatorAssignees),
+                              if (operatorAssignees.isNotEmpty && executorAssignees.isNotEmpty) const SizedBox(height: 16),
+                              _buildAssigneeBlock('Исполнители', executorAssignees),
+                              if (operatorAssignees.isEmpty && executorAssignees.isEmpty)
+                                Text('Не назначены', style: TextStyle(color: Colors.grey[600])),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 12),
+                              Text('Не назначены', style: TextStyle(color: Colors.grey[600])),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Исполнители', style: TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 12),
-                            if (_task!.assignees.isEmpty)
-                              Text('Не назначены', style: TextStyle(color: Colors.grey[600]))
-                            else
-                              ..._task!.assignees.map((ta) {
-                                final canApprove = context.read<AuthProvider>().user?.canApproveAssignees ?? false;
-                                final isPending = ta.status == 'pending';
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: isPending
-                                            ? Colors.orange
-                                            : ta.status == 'approved'
-                                                ? Colors.green
-                                                : Colors.red,
-                                        child: Text(
-                                          ta.user?.initials ?? '?',
-                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              ta.user?.fullName ?? 'Неизвестно',
-                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                            ),
-                                            Text(
-                                              ta.statusLabel,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: isPending
-                                                    ? Colors.orange[700]
-                                                    : ta.status == 'approved'
-                                                        ? Colors.green[700]
-                                                        : Colors.red[700],
-                                              ),
-                                            ),
-                                            if (ta.proposedBy != null)
-                                              Text(
-                                                'Предложил: ${ta.proposedBy!.fullName}',
-                                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (canApprove && isPending) ...[
-                                        IconButton(
-                                          icon: const Icon(Icons.check_circle, color: Colors.green),
-                                          tooltip: 'Одобрить',
-                                          onPressed: () async {
-                                            final ok = await context.read<TaskProvider>().approveAssignee(_task!.id, ta.id);
-                                            if (ok && mounted) _loadTask();
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.cancel, color: Colors.red),
-                                          tooltip: 'Отклонить',
-                                          onPressed: () async {
-                                            final ok = await context.read<TaskProvider>().rejectAssignee(_task!.id, ta.id);
-                                            if (ok && mounted) _loadTask();
-                                          },
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 16),
 
                       // Parent task link (visible only to chiefs/admins)
