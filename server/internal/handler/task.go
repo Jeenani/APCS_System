@@ -339,6 +339,8 @@ func (h *TaskHandler) Create(c *gin.Context) {
 			allowedRoles = []string{"asutp_chief"}
 		case "asutp_chief":
 			allowedRoles = []string{"engineer", "operator"}
+		case "operator":
+			allowedRoles = []string{"engineer"}
 		default:
 			allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer", "operator"}
 		}
@@ -678,6 +680,8 @@ func (h *TaskHandler) Update(c *gin.Context) {
 				allowedRoles = []string{"asutp_chief"}
 			case "asutp_chief":
 				allowedRoles = []string{"engineer", "operator"}
+			case "operator":
+				allowedRoles = []string{"engineer"}
 			default:
 				allowedRoles = []string{"chief_engineer", "asutp_chief", "engineer", "operator"}
 			}

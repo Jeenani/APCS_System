@@ -105,13 +105,13 @@ func main() {
 	allAuth.GET("/profile", profileH.GetProfile)
 	allAuth.PUT("/profile/notification-settings", profileH.UpdateNotificationSettings)
 	allAuth.GET("/references/assignees", refH.GetAssignees)
+	allAuth.PUT("/tasks/:id", taskH.Update) // All auth users can attempt edit; handler checks canEdit
 
 	// ========== TASK MANAGERS (chief_engineer, asutp_chief, admin) ==========
 	taskMgr := api.Group("")
 	taskMgr.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 	taskMgr.Use(middleware.RequireTaskManager())
 	taskMgr.POST("/tasks", taskH.Create)
-	taskMgr.PUT("/tasks/:id", taskH.Update)
 	taskMgr.GET("/export/csv", taskH.ExportCSV)
 	taskMgr.POST("/tasks/:id/confirm-completion", taskH.ConfirmCompletion)
 
