@@ -122,6 +122,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final availableOperators = _availableAssignees.where((u) => u['role_name'] == 'operator').toList();
+    final availableExecutors = _availableAssignees.where((u) => u['role_name'] != 'operator').toList();
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -242,10 +244,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Operators
-            final availableOperators = _availableAssignees.where((u) => u['role_name'] == 'operator').toList();
-            final availableExecutors = _availableAssignees.where((u) => u['role_name'] != 'operator').toList();
-
+            // Operators and Executors
             if (availableOperators.isNotEmpty) ...[
               const Text('Операторы', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),

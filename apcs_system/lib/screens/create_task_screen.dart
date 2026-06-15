@@ -139,6 +139,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final availableOperators = _availableAssignees.where((u) => u['role_name'] == 'operator').toList();
+    final availableExecutors = _availableAssignees.where((u) => u['role_name'] != 'operator').toList();
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -273,9 +275,6 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               const SizedBox(height: 16),
 
               // Operators and Executors
-              final availableOperators = _availableAssignees.where((u) => u['role_name'] == 'operator').toList();
-              final availableExecutors = _availableAssignees.where((u) => u['role_name'] != 'operator').toList();
-
               if (availableOperators.isNotEmpty) ...[
                 const Text('Операторы', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),

@@ -62,7 +62,9 @@ func (h *TaskHandler) List(c *gin.Context) {
 		WithCreator().
 		WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser()
+			q.WithUser(func(uq *ent.UserQuery) {
+				uq.WithRole()
+			})
 		}).
 		WithChildren().
 		Order(ent.Desc(task.FieldCreatedAt))
@@ -179,7 +181,9 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		WithCreator().
 		WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser()
+			q.WithUser(func(uq *ent.UserQuery) {
+				uq.WithRole()
+			})
 		}).
 		WithParent(func(q *ent.TaskQuery) {
 			q.WithPriority().WithStatus().WithCategory()
@@ -189,7 +193,7 @@ func (h *TaskHandler) Get(c *gin.Context) {
 		})
 
 	// Restricted roles can only view their own tasks or approved assignments
-	if roleName == "engineer" || roleName == "asutp_chief" {
+	if roleName == "engineer" || roleName == "asutp_chief" || roleName == "operator" {
 		query = query.Where(task.Or(
 			task.CreatedByEQ(userID),
 			task.HasTaskAssigneesWith(
@@ -406,7 +410,9 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		WithCreator().
 		WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser()
+			q.WithUser(func(uq *ent.UserQuery) {
+				uq.WithRole()
+			})
 		}).
 		Only(c)
 	if err != nil {
@@ -435,7 +441,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		return
 	}
 
-	existing, err := h.client.Task.Get(c, id)
+	existing, err := h.client.Task.Query().Where(task.IDEQ(id)).WithTaskAssignees().Only(c)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Задача не найдена"})
 		return
@@ -763,7 +769,9 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		Where(task.IDEQ(id)).
 		WithPriority().WithStatus().WithCategory().WithCreator().WithAssignee().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser()
+			q.WithUser(func(uq *ent.UserQuery) {
+				uq.WithRole()
+			})
 		}).
 		Only(c)
 	if err != nil {
@@ -1253,11 +1261,15 @@ func taskToJSON(t *ent.Task) gin.H {
 			"status": ta.Status,
 		}
 		if ta.Edges.User != nil {
-			item["user"] = gin.H{
+			userObj := gin.H{
 				"id":        ta.Edges.User.ID,
 				"full_name": ta.Edges.User.FullName,
 				"initials":  ta.Edges.User.Initials,
 			}
+			if ta.Edges.User.Edges.Role != nil {
+				userObj["role"] = ta.Edges.User.Edges.Role.Name
+			}
+			item["user"] = userObj
 		}
 		if ta.Edges.Proposer != nil {
 			item["proposed_by"] = gin.H{
@@ -1382,7 +1394,9 @@ func (h *TaskHandler) ConfirmCompletion(c *gin.Context) {
 		WithStatus().
 		WithCreator().
 		WithTaskAssignees(func(q *ent.TaskAssigneeQuery) {
-			q.WithUser()
+			q.WithUser(func(uq *ent.UserQuery) {
+				uq.WithRole()
+			})
 		}).
 		Only(c)
 	if err != nil {
