@@ -1090,6 +1090,9 @@ func (h *TaskHandler) ExportCSV(c *gin.Context) {
 	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", "attachment; filename=tasks_export.csv")
 
+	// UTF-8 BOM для корректного распознавания кодировки в Excel и мобильных приложениях
+	c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
+
 	w := csv.NewWriter(c.Writer)
 
 	if err := w.Write([]string{"ID", "Название", "Описание", "Срок", "Приоритет", "Статус", "Категория", "Прогресс", "Автор", "Исполнитель", "Создана"}); err != nil {
